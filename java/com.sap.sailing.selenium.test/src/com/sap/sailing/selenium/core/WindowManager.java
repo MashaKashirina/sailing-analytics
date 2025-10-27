@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
@@ -21,6 +22,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  *   Riccardo Nimser (D049941)
  */
 public class WindowManager {
+    private static final Logger logger = Logger.getLogger(WindowManager.class.getName());
+
     private WebDriverWindow defaultWindow;
     private final Set<WebDriverWindow> allWindows = new HashSet<>();
     private WebDriver driver;
@@ -144,7 +147,13 @@ public class WindowManager {
     public void closeAllWindows() {
         forEachOpenedWindow(WebDriverWindow::close);
         if (driver != null) {
-            driver.quit();
+            try {
+                driver.close();
+                driver.quit();
+            } catch (org.openqa.selenium.NoSuchSessionException e) {
+                logger.warning("The Selenium driver seems to have already been closed");
+                // Already closed — ignore
+            }
             driver = null;
         }
     }

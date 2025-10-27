@@ -290,7 +290,6 @@ public class JumpyTrackSmootheningTest {
         addFixedMarkPassingToRaceLog("2020-10-14T18:21:38Z", gallagherZelenka, 4, raceLog);
         trackedRace.setStatus(new TrackedRaceStatusImpl(TrackedRaceStatusEnum.LOADING, 0.0));
         final DynamicGPSFixTrack<Competitor, GPSFixMoving> competitorTrackInRace = trackedRace.getTrack(gallagherZelenka);
-        // TODO switch race into suspended mode to avoid updates during mass fix insertion:
         competitorTrack.lockForRead();
         try {
             for (final GPSFixMoving fix : competitorTrack.getRawFixes()) {
@@ -300,7 +299,6 @@ public class JumpyTrackSmootheningTest {
             competitorTrack.unlockAfterRead();
         }
         trackedRace.setStatus(new TrackedRaceStatusImpl(TrackedRaceStatusEnum.TRACKING, 1.0));
-        // TODO resume race
         return trackedRace;
     }
     
