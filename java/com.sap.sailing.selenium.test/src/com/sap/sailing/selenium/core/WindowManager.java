@@ -108,12 +108,18 @@ public class WindowManager {
     }
     
     private boolean isDriverAlive(WebDriver driver) {
-        try {
-            driver.getWindowHandles();
-            return true;
-        } catch (NoSuchSessionException | SessionNotCreatedException e) {
-            return false;
+        boolean result;
+        if (driver == null) {
+            result = false;
+        } else {
+            try {
+                driver.getWindowHandles();
+                result = true;
+            } catch (NoSuchSessionException | SessionNotCreatedException e) {
+                result = false;
+            }
         }
+        return result;
     }
     
     private void setWindowMaximized(WebDriver driver) {
@@ -137,6 +143,8 @@ public class WindowManager {
     
     public void closeAllWindows() {
         forEachOpenedWindow(WebDriverWindow::close);
+        driver.quit();
+        driver = null;
     }
     
     private class ManagedWebDriverWindow extends WebDriverWindow {
