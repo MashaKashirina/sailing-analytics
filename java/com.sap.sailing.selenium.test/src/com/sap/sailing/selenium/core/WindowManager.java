@@ -143,8 +143,10 @@ public class WindowManager {
     
     public void closeAllWindows() {
         forEachOpenedWindow(WebDriverWindow::close);
-        driver.quit();
-        driver = null;
+        if (driver != null) {
+            driver.quit();
+            driver = null;
+        }
     }
     
     private class ManagedWebDriverWindow extends WebDriverWindow {
