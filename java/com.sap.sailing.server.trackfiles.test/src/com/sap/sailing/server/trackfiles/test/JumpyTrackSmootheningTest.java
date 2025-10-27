@@ -228,7 +228,8 @@ public class JumpyTrackSmootheningTest {
     }
     
     /**
-     * Simulates the "Oak cliff DH Distance Race" R1 with a single competitor, Gallagher / Zelenka, sail number "1" with
+     * Simulates the "Oak cliff DH Distance Race" R1 (see https://my.sapsailing.com/gwt/RaceBoard.html?regattaName=Oak+cliff+DH+Distance+Race&raceName=R1&leaderboardName=Oak+cliff+DH+Distance+Race&leaderboardGroupId=a3902560-6bfa-43be-85e1-2b82a4963416&eventId=bf48a59d-f2af-47b6-a2f7-a5b78b22b9f2)
+     * with a single competitor, Gallagher / Zelenka, sail number "1" with
      * the marks pinged statically to establish the course. The track of Gallagher / Zelenka is provided as a track of
      * their GPS positions. This could be the raw track, or it may be a filtered variant of the track with outliers
      * removed or adjusted.<p>
