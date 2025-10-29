@@ -81,6 +81,8 @@ terminationCheck "$?"
 ssh -A "root@${IP}" "bash -s" << BUGZILLAEOF &>log.txt
 cd /usr/share/bugzilla/
 # essentials bugzilla
+/usr/bin/perl -MCPAN -e 'install App::cpanminus'
+cpanm --notest SOAP::Lite
 /usr/bin/perl install-module.pl DateTime
 /usr/bin/perl install-module.pl DateTime::TimeZone
 /usr/bin/perl install-module.pl Email::Sender
@@ -113,6 +115,15 @@ cd /usr/share/bugzilla/
 /usr/bin/perl install-module.pl File::Copy::Recursive
 /usr/bin/perl install-module.pl MIME::Base64
 /usr/bin/perl install-module.pl Authen::SASL
+/usr/bin/perl install-module.pl XML::Twig
+/usr/bin/perl install-module.pl Net::LDAP
+/usr/bin/perl install-module.pl Net::SMTP::SSL
+/usr/bin/perl install-module.pl XMLRPC::Lite
+/usr/bin/perl install-module.pl Test::Taint
+/usr/bin/perl install-module.pl HTML::Scrubber
+/usr/bin/perl install-module.pl Email::Reply
+/usr/bin/perl install-module.pl HTML::FormatText::WithLinks
+/usr/bin/perl install-module.pl Cache::Memcached
 BUGZILLAEOF
 terminationCheck "$?"
 read -n 1  -p "Bugzilla installation complete, when ready press a key to continue." key_pressed
