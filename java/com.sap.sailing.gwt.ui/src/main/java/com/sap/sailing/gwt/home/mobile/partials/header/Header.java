@@ -67,8 +67,10 @@ public class Header extends Composite implements HeaderConstants {
         navigationPathDisplay = new DropdownNavigationPathDisplay();
         addNavigation(placeNavigator.getHomeNavigation(), StringMessages.INSTANCE.home());
         addNavigation(placeNavigator.getEventsNavigation(), StringMessages.INSTANCE.events());
-        addNavigation(placeNavigator.getSolutionsNavigation(SolutionsNavigationTabs.SailingAnalytics),
-                StringMessages.INSTANCE.solutions());
+        if (ClientConfiguration.getInstance().isBrandingActive()) {
+            addNavigation(placeNavigator.getSolutionsNavigation(SolutionsNavigationTabs.SailingAnalytics),
+                    StringMessages.INSTANCE.solutions());
+        }
         addNavigation(placeNavigator.getSubscriptionsNavigation(),
                 StringMessages.INSTANCE.subscriptions());
         HeaderNavigationItem manageEventsNavItem = addNavigation(ADMIN_CONSOLE_PATH,
@@ -130,6 +132,7 @@ public class Header extends Composite implements HeaderConstants {
             logoImage.getStyle().setDisplay(Display.NONE);
             logoAnchor.setHref("");
             logoAnchor.setTitle(StringMessages.INSTANCE.sailingAnalytics());
+            
         } else {
             logoAnchor.setHref(UriUtils.fromString(StringMessages.INSTANCE.sapAnalyticsURL()).asString());
         }

@@ -93,57 +93,16 @@ public class ClientConfiguration implements BrandingConfiguration {
     private String instagramLink;
     private String welcomeToSailingAnalytics;
     private String welcomeToSailingAnalyticsBody;
-    private String solutions1Headline;
-    private String solutions2Headline;
-    private String solutions3Headline;
-    private String solutions4Headline;
-    private String solutions5Headline;
-    private String solutions6Headline;
-    private String solutions1Title;
-    private String contentSolutions11;
-    private String contentSolutions12;
-    private String contentSolutions13;
-    private String contentSolutions14;
-    private String contentSolutions15;
-    private String contentSolutions17;
-    private String contentSolutions18;
-    private String contentSolutions19;
-    private String contentSolutions110;
-    private String contentSolutions111;
-    private String contentSolutions112;
-    private String contentSolutions113;
-    private String solutions2Title;
-    private String contentSolutions21;
-    private String contentSolutions22;
-    private String solutions3Title;
-    private String contentSolutions3;
-    private String solutions3ReadMore;
-    private String solutions4Title;
-    private String contentSolutions4;
-    private String solutions4ReadMore;
-    private String solutions5Title;
-    private String contentSolutions5;
-    private String solutions5ReadMore;
-    private String solutions6Title;
-    private String contentSolutions6;
-    private String solutions6ReadMore;
-    private String solutions3PlayStoreURL;
-    private String solutions4AppStoreURL;
-    private String solutions4PlayStoreURL;
-    private String solutions5PlayStoreURL;
-    private String solution2ReadMoreLink;
-    private String solutions3ReadMoreLink;
-    private String solutions4ReadMoreLink;
-    private String solutions5ReadMoreLink;
-    private String solutions6ReadMoreLink;
     private String moreLoginInformationNotificationsURL;
     private String moreLoginInformationSettingsURL;
     private String moreLoginInformationSailorProfilesURL;
     private String moreLoginInformationSimulatorURL;
+    private String inSailingContent;
 
     public ClientConfiguration() {
         try {
             ClientConfigurationContextDataJSO dataJso = new ClientConfigurationContextDataFactoryImpl().getInstance();
+            
             id = dataJso.getId();
             brandTitle = dataJso.getBrandTitle();
             defaultBrandingLogoURL = dataJso.getDefaultBrandingLogoURL();
@@ -173,49 +132,6 @@ public class ClientConfiguration implements BrandingConfiguration {
             instagramLink = dataJso.getInstagramLink();
             welcomeToSailingAnalytics = dataJso.getWelcomeToSailingAnalytics();
             welcomeToSailingAnalyticsBody = dataJso.getWelcomeToSailingAnalyticsBody();
-            solutions1Headline = dataJso.getSolutions1Headline();
-            solutions2Headline = dataJso.getSolutions2Headline();
-            solutions3Headline = dataJso.getSolutions3Headline();
-            solutions4Headline = dataJso.getSolutions4Headline();
-            solutions5Headline = dataJso.getSolutions5Headline();
-            solutions6Headline = dataJso.getSolutions6Headline();
-            solutions1Title = dataJso.getSolutions1Title();
-            contentSolutions11 = dataJso.getContentSolutions11();
-            contentSolutions12 = dataJso.getContentSolutions12();
-            contentSolutions13 = dataJso.getContentSolutions13();
-            contentSolutions14 = dataJso.getContentSolutions14();
-            contentSolutions15 = dataJso.getContentSolutions15();
-            contentSolutions17 = dataJso.getContentSolutions17();
-            contentSolutions18 = dataJso.getContentSolutions18();
-            contentSolutions19 = dataJso.getContentSolutions19();
-            contentSolutions110 = dataJso.getContentSolutions110();
-            contentSolutions111 = dataJso.getContentSolutions111();
-            contentSolutions112 = dataJso.getContentSolutions112();
-            contentSolutions113 = dataJso.getContentSolutions113();
-            solutions2Title = dataJso.getSolutions2Title();
-            contentSolutions21 = dataJso.getContentSolutions21();
-            contentSolutions22 = dataJso.getContentSolutions22();
-            solutions3Title = dataJso.getSolutions3Title();
-            contentSolutions3 = dataJso.getContentSolutions3();
-            solutions3ReadMore = dataJso.getSolutions3ReadMore();
-            solutions4Title = dataJso.getSolutions4Title();
-            contentSolutions4 = dataJso.getContentSolutions4();
-            solutions4ReadMore = dataJso.getSolutions4ReadMore();
-            solutions5Title = dataJso.getSolutions5Title();
-            contentSolutions5 = dataJso.getContentSolutions5();
-            solutions5ReadMore = dataJso.getSolutions5ReadMore();
-            solutions6Title = dataJso.getSolutions6Title();
-            contentSolutions6 = dataJso.getContentSolutions6();
-            solutions6ReadMore = dataJso.getSolutions6ReadMore();
-            solutions3PlayStoreURL = dataJso.getSolutions3PlayStoreURL();
-            solutions4AppStoreURL = dataJso.getSolutions4AppStoreURL();
-            solutions4PlayStoreURL = dataJso.getSolutions4PlayStoreURL();
-            solutions5PlayStoreURL = dataJso.getSolutions5PlayStoreURL();
-            solution2ReadMoreLink = dataJso.getSolution2ReadMoreLink();
-            solutions3ReadMoreLink = dataJso.getSolutions3ReadMoreLink();
-            solutions4ReadMoreLink = dataJso.getSolutions4ReadMoreLink();
-            solutions5ReadMoreLink = dataJso.getSolutions5ReadMoreLink();
-            solutions6ReadMoreLink = dataJso.getSolutions6ReadMoreLink();
             moreLoginInformationNotificationsURL = dataJso.getMoreLoginInformationNotificationsURL();
             moreLoginInformationSettingsURL = dataJso.getMoreLoginInformationSettingsURL();
             moreLoginInformationSailorProfilesURL = dataJso.getMoreLoginInformationSailorProfilesURL();
@@ -341,145 +257,7 @@ public class ClientConfiguration implements BrandingConfiguration {
     public String getWelcomeToSailingAnalyticsBody(Optional<String> locale) {
         return welcomeToSailingAnalyticsBody;
     }
-    public String getSolutions1Headline(Optional<String> locale) {
-        return solutions1Headline;
-    }
-    public String getSolutions2Headline(Optional<String> locale) {
-        return solutions2Headline;
-    }
-    public String getSolutions3Headline(Optional<String> locale) {
-        return solutions3Headline;
-    }
-    public String getSolutions4Headline(Optional<String> locale) {
-        return solutions4Headline;
-    }
-    public String getSolutions5Headline(Optional<String> locale) {
-        return solutions5Headline;
-    }
-    public String getSolutions6Headline(Optional<String> locale) {
-        return solutions6Headline;
-    }
-    public String getSolutions1Title(Optional<String> locale) {
-        return solutions1Title;
-    }
-    public String getContentSolutions11(Optional<String> locale) {
-        return contentSolutions11;
-    }
-    public String getContentSolutions12(Optional<String> locale) {
-        return contentSolutions12;
-    }
-    public String getContentSolutions13(Optional<String> locale) {
-        return contentSolutions13;
-    }
-    public String getContentSolutions14(Optional<String> locale) {
-        return contentSolutions14;
-    }
-    public String getContentSolutions15(Optional<String> locale) {
-        return contentSolutions15;
-    }
-    public String getContentSolutions17(Optional<String> locale) {
-        return contentSolutions17;
-    }
-    public String getContentSolutions18(Optional<String> locale) {
-        return contentSolutions18;
-    }
-    public String getContentSolutions19(Optional<String> locale) {
-        return contentSolutions19;
-    }
-    public String getContentSolutions110(Optional<String> locale) {
-        return contentSolutions110;
-    }
-    public String getContentSolutions111(Optional<String> locale) {
-        return contentSolutions111;
-    }
-    public String getContentSolutions112(Optional<String> locale) {
-        return contentSolutions112;
-    }
-    public String getContentSolutions113(Optional<String> locale) {
-        return contentSolutions113;
-    }
-    public String getSolutions2Title(Optional<String> locale) {
-        return solutions2Title;
-    }
-    public String getContentSolutions21(Optional<String> locale) {
-        return contentSolutions21;
-    }
-    public String getContentSolutions22(Optional<String> locale) {
-        return contentSolutions22;
-    }
-    public String getSolutions3Title(Optional<String> locale) {
-        return solutions3Title;
-    }
-    public String getContentSolutions3(Optional<String> locale) {
-        return contentSolutions3;
-    }
-    public String getSolutions3ReadMore(Optional<String> locale) {
-        return solutions3ReadMore;
-    }
-    public String getSolutions4Title(Optional<String> locale) {
-        return solutions4Title;
-    }
-    public String getContentSolutions4(Optional<String> locale) {
-        return contentSolutions4;
-    }
-    public String getSolutions4ReadMore(Optional<String> locale) {
-        return solutions4ReadMore;
-    }
-    public String getSolutions5Title(Optional<String> locale) {
-        return solutions5Title;
-    }
-    public String getContentSolutions5(Optional<String> locale) {
-        return contentSolutions5;
-    }
-    public String getSolutions5ReadMore(Optional<String> locale) {
-        return solutions5ReadMore;
-    }
-    public String getSolutions6Title(Optional<String> locale) {
-        return solutions6Title;
-    }
-    public String getContentSolutions6(Optional<String> locale) {
-        return contentSolutions6;
-    }
-    public String getSolutions6ReadMore(Optional<String> locale) {
-        return solutions6ReadMore;
-    }
-
-    public String getSolutions3PlayStoreURL() {
-        return solutions3PlayStoreURL;
-    }
-
-    public String getSolutions4AppStoreURL() {
-        return solutions4AppStoreURL;
-    }
-
-    public String getSolutions4PlayStoreURL() {
-        return solutions4PlayStoreURL;
-    }
-
-    public String getSolutions5PlayStoreURL() {
-        return solutions5PlayStoreURL;
-    }
-
-    public String getSolution2ReadMoreLink() {
-        return solution2ReadMoreLink;
-    }
-
-    public String getSolutions3ReadMoreLink() {
-        return solutions3ReadMoreLink;
-    }
-
-    public String getSolutions4ReadMoreLink() {
-        return solutions4ReadMoreLink;
-    }
-
-    public String getSolutions5ReadMoreLink() {
-        return solutions5ReadMoreLink;
-    }
-
-    public String getSolutions6ReadMoreLink() {
-        return solutions6ReadMoreLink;
-    }
-
+    
     public String getMoreLoginInformationNotificationsURL() {
         return moreLoginInformationNotificationsURL;
     }
@@ -494,5 +272,9 @@ public class ClientConfiguration implements BrandingConfiguration {
 
     public String getMoreLoginInformationSimulatorURL() {
         return moreLoginInformationSimulatorURL;
+    }
+    
+    public String getInSailingContent(Optional<String> locale) {
+        return inSailingContent;
     }
 }

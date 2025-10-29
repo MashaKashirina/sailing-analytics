@@ -1,6 +1,7 @@
 package com.sap.sailing.gwt.home.mobile.places.solutions;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
@@ -17,8 +18,15 @@ public class SolutionsViewImpl extends Composite implements SolutionsView {
     @UiField(provided = true) Solutions solutionsUi;
     
     public SolutionsViewImpl(Presenter presenter, MobilePlacesNavigator placesNavigator) {
-        this.solutionsUi = new Solutions();
+        this.solutionsUi = new Solutions(placesNavigator);
         initWidget(uiBinder.createAndBindUi(this));
     }
     
+    public void setContentHtml(SafeHtml html) {
+        solutionsUi.setInSailingContentHtml(html);
+    }
+
+    public void clearContent() {
+        solutionsUi.clearInSailingContent();
+    }    
 }

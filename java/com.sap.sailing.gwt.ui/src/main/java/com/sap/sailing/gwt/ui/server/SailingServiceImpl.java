@@ -453,6 +453,8 @@ import com.sap.sailing.xrr.structureimport.SeriesParameters;
 import com.sap.sailing.xrr.structureimport.StructureImporter;
 import com.sap.sailing.xrr.structureimport.buildstructure.SetRacenumberFromSeries;
 import com.sap.sse.ServerInfo;
+import com.sap.sse.branding.BrandingConfigurationService;
+import com.sap.sse.branding.shared.BrandingConfiguration;
 import com.sap.sse.common.Base64Utils;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.CountryCode;
@@ -540,6 +542,8 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
     private final FullyInitializedReplicableTracker<RacingEventService> racingEventServiceTracker;
     
     private final ServiceTracker<ReplicationService, ReplicationService> replicationServiceTracker;
+    
+    private final ServiceTracker<BrandingConfigurationService, BrandingConfigurationService> brandingConfigurationServiceTracker;
 
     private final ServiceTracker<ScoreCorrectionProvider, ScoreCorrectionProvider> scoreCorrectionProviderServiceTracker;
 
@@ -611,6 +615,7 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
         Activator activator = Activator.getInstance();
         quickRanksLiveCache = new QuickRanksLiveCache(this);
         replicationServiceTracker = ServiceTrackerFactory.createAndOpen(context, ReplicationService.class);
+        brandingConfigurationServiceTracker = ServiceTrackerFactory.createAndOpen(context, BrandingConfigurationService.class);
         racingEventServiceTracker = FullyInitializedReplicableTracker.createAndOpen(context, RacingEventService.class);
         aiAgentTracker = ServiceTrackerFactory.createAndOpen(context,  AIAgent.class);
         sharedSailingDataTracker = FullyInitializedReplicableTracker.createAndOpen(context, SharedSailingData.class);
@@ -6110,5 +6115,24 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
                 .orElse(getIgtimiConnectionFactory().getOrCreateConnection(()->getSecurityService().getCurrentUser() != null
                     ? getSecurityService().getAccessToken(getSecurityService().getCurrentUser().getName())
                     : null));
+    }
+    
+    public String getBrandAffiliationWithSailing(String locale) {
+        Optional<String> optLocale = Optional.ofNullable(locale).filter(s -> !s.isEmpty() && !"default".equalsIgnoreCase(s));
+        if (brandingConfigurationServiceTracker == null) {
+            return "";
+        }
+        BrandingConfigurationService brandingConfigurationService;
+        try {
+            brandingConfigurationService = brandingConfigurationServiceTracker.waitForService(0);
+        } catch (InterruptedException e) {
+            return "";
+        }
+        BrandingConfiguration configuration = brandingConfigurationService.getActiveBrandingConfiguration();
+        if (configuration == null) {
+            return "";
+        } else {
+            return configuration.getInSailingContent(optLocale);
+        }
     }
 }

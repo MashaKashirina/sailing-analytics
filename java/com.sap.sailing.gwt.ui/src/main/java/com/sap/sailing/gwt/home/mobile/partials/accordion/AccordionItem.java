@@ -84,10 +84,15 @@ public class AccordionItem extends Composite {
     public void addContent(Widget content) {
         contentUi.setWidget(content);
     }
+    
     public void setHeaderText(String text) {
         if (text == null) text = "";
         titleUi.setInnerText(text);
         getElement().setAttribute("aria-label", text);
         asWidget().setTitle(text);
+    }
+    
+    public void setContent(String content) {
+        contentWrapperUi.setInnerText(content);
     }
 }

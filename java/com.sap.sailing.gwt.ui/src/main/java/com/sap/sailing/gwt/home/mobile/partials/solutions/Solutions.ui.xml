@@ -1,81 +1,85 @@
 <!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
-<ui:UiBinder
-        xmlns:ui="urn:ui:com.google.gwt.uibinder"
-        xmlns:g="urn:import:com.google.gwt.user.client.ui"
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder" xmlns:g="urn:import:com.google.gwt.user.client.ui"
         xmlns:a="urn:import:com.sap.sailing.gwt.home.mobile.partials.accordion"
         xmlns:s="urn:import:com.sap.sailing.gwt.home.mobile.partials.solutions"
         xmlns:sb="urn:import:com.sap.sailing.gwt.home.shared.partials.storebadges">
-
-  <ui:with field="res" type="com.sap.sailing.gwt.common.client.SharedResources" />
-
-  <a:Accordion>
-    <a:item>
-      <s:SolutionsItem ui:field="item1" title="" showInitial="true">
-        <s:content>
-          <g:HTMLPanel>
-            <p  ui:field="m1P1"/>
-            <ul ui:field="m1List1"/>
-            <p  ui:field="m1P2"/>
-            <ul ui:field="m1List2"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-    <a:item>
-      <s:SolutionsItem ui:field="item2" title="" showInitial="false">
-        <s:content>
-          <g:HTMLPanel>
-            <p ui:field="m2P1"/>
-            <p ui:field="m2P2"/>
-            <g:Anchor ui:field="m2ReadMore" styleName="{res.mainCss.button}"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-    <a:item>
-      <s:SolutionsItem ui:field="item3" title="" showInitial="false">
-        <s:content>
-          <g:HTMLPanel>
-            <p ui:field="m3P"/>
-            <!-- Badges require targetUrl attribute at declarative time; leave empty and set click in Java -->
-            <sb:PlayStoreBadge ui:field="m3PlayBadge" targetUrl=""/>
-            <g:Anchor ui:field="m3ReadMore" styleName="{res.mainCss.button}"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-    <a:item>
-      <s:SolutionsItem ui:field="item4" title="" showInitial="false">
-        <s:content>
-          <g:HTMLPanel>
-            <p ui:field="m4P"/>
-            <sb:AppStoreBadge  ui:field="m4AppBadge"  targetUrl=""/>
-            <sb:PlayStoreBadge ui:field="m4PlayBadge" targetUrl=""/>
-            <g:Anchor ui:field="m4ReadMore" styleName="{res.mainCss.button}"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-    <a:item>
-      <s:SolutionsItem ui:field="item5" title="" showInitial="false">
-        <s:content>
-          <g:HTMLPanel>
-            <p ui:field="m5P"/>
-            <sb:PlayStoreBadge ui:field="m5PlayBadge" targetUrl=""/>
-            <g:Anchor ui:field="m5ReadMore" styleName="{res.mainCss.button}"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-    <a:item>
-      <s:SolutionsItem ui:field="item6" title="" showInitial="false">
-        <s:content>
-          <g:HTMLPanel>
-            <p ui:field="m6P"/>
-            <g:Anchor ui:field="m6ReadMore" styleName="{res.mainCss.button}"/>
-          </g:HTMLPanel>
-        </s:content>
-      </s:SolutionsItem>
-    </a:item>
-  </a:Accordion>
+    <ui:with field="i18n" type="com.sap.sailing.gwt.ui.client.StringMessages" />
+    <ui:with field="res" type="com.sap.sailing.gwt.common.client.SharedResources" />
+    <a:Accordion>
+        <a:item>
+            <s:SolutionsItem ui:field="brandInSailingItem" title="" showInitial="true">
+                <s:content>
+                    <g:HTMLPanel>
+                    <div ui:field="inSailingContentDiv"></div>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+        <a:item>
+            <s:SolutionsItem ui:field="sailingAnalyticsItem" title="" showInitial="false">
+                <s:content>
+                    <g:HTMLPanel>
+                        <p ui:field="contentSailingAnalytics1" />
+                        <p ui:field="contentSailingAnalytics2" />
+                        <a class="{res.mainCss.button}" ui:field="sailingAnalyticsDetailsAnchor">
+                        </a>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+        <a:item>
+            <s:SolutionsItem ui:field="sailingRaceManager" title="" showInitial="false">
+                <s:content>
+                    <g:HTMLPanel>
+                        <p ui:field="contentSailingRaceManager" />
+                        <sb:PlayStoreBadge targetUrl="{i18n.playstoreRacecommitteeApp}"/>
+                        <a class="{res.mainCss.button}" ui:field="raceManagerAppDetailsAnchor">
+                           <ui:text from="{i18n.sailingRaceManagerReadMore}"/>
+                        </a>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+        <a:item>
+            <s:SolutionsItem ui:field="sailInSight" title="" showInitial="false">
+                <s:content>
+                    <g:HTMLPanel>
+                        <p ui:field="contentSailInSight" />
+                        <sb:AppStoreBadge targetUrl="{i18n.appstoreSapSailInsight}"/>
+                        <sb:PlayStoreBadge targetUrl="{i18n.playstoreInsightApp}"/>
+                        <a class="{res.mainCss.button}" ui:field="sailInSightAppDetailsAnchor">
+                           <ui:text from="{i18n.sailInSightReadMore}"/>
+                        </a>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+        <a:item>
+            <s:SolutionsItem ui:field="sailingBuoyPinger" title="" showInitial="false">
+                <s:content>
+                    <g:HTMLPanel>
+                        <p ui:field="contentSailingBuoyPinger" />
+                        <sb:PlayStoreBadge targetUrl="{i18n.playStoreBuoyPingerApp}"/>
+                        <a class="{res.mainCss.button}" ui:field="buoyPingerAppDetailsAnchor">
+                           <ui:text from="{i18n.sailInSightReadMore}"/>
+                        </a>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+        <a:item>
+            <s:SolutionsItem ui:field="strategySimulator" title="{i18n.strategySimulator}" showInitial="false">
+                <s:content>
+                    <g:HTMLPanel>
+                        <p>
+                            <ui:text from='{i18n.contentStrategySimulator}' />
+                        </p>
+                        <a class="{res.mainCss.button}" ui:field="simulatorAppDetailsAnchor">
+                           <ui:text from="{i18n.strategySimulatorReadMore}"/>
+                        </a>
+                    </g:HTMLPanel>
+                </s:content>
+            </s:SolutionsItem>
+        </a:item>
+    </a:Accordion>
 </ui:UiBinder>

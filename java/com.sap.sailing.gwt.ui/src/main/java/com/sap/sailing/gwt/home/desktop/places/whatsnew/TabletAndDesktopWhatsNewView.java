@@ -20,6 +20,7 @@ import com.google.gwt.user.client.ui.impl.HyperlinkImpl;
 import com.sap.sailing.gwt.home.desktop.app.DesktopPlacesNavigator;
 import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace.WhatsNewNavigationTabs;
 import com.sap.sailing.gwt.home.shared.app.PlaceNavigation;
+import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sse.gwt.shared.ClientConfiguration;
 
 public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewView {
@@ -30,6 +31,7 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
 
     private static final HyperlinkImpl HYPERLINK_IMPL = GWT.create(HyperlinkImpl.class);
 
+    @UiField StringMessages i18n;
     @UiField HTML sailingAnalyticsNotes;
     @UiField HTML sailingSimulatorNotes;
     @UiField HTML raceCommitteeAppNotes;
@@ -73,11 +75,14 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
         raceCommitteeAppNotesAnchor.setHref(raceCommitteeAppNotesNavigation.getTargetUrl());
         inSightAppNotesAnchor.setHref(inSightAppNotesNavigation.getTargetUrl());
         buoyPingerAppNotesAnchor.setHref(buoyPingerAppNotesNavigation.getTargetUrl());
-        sailingAnalyticsNotesAnchor.setText(ClientConfiguration.getInstance().getSolutions2Headline(Optional.empty()));
-        sailingSimulatorNotesAnchor.setText(ClientConfiguration.getInstance().getSolutions6Headline(Optional.empty()));
-        raceCommitteeAppNotesAnchor.setText(ClientConfiguration.getInstance().getSolutions3Headline(Optional.empty()));
-        inSightAppNotesAnchor.setText(ClientConfiguration.getInstance().getSolutions4Headline(Optional.empty()));
-        buoyPingerAppNotesAnchor.setText(ClientConfiguration.getInstance().getSolutions5Headline(Optional.empty()));
+        if (ClientConfiguration.getInstance().isBrandingActive()) {
+            String brandName = ClientConfiguration.getInstance().getBrandTitle(Optional.empty());
+            sailingAnalyticsNotesAnchor.setText(i18n.solutionsAnalyticsHeadline(brandName));
+            sailingSimulatorNotesAnchor.setText(i18n.strategySimulator());
+            raceCommitteeAppNotesAnchor.setText(i18n.solutionsRaceHeadline(brandName));
+            inSightAppNotesAnchor.setText(i18n.solutionsInSightHeadline(brandName));
+            buoyPingerAppNotesAnchor.setText(i18n.solutionsBuoyPingerHeadline(brandName));
+        }
         links = Arrays.asList(new Anchor[] { sailingAnalyticsNotesAnchor, sailingSimulatorNotesAnchor, raceCommitteeAppNotesAnchor, inSightAppNotesAnchor, buoyPingerAppNotesAnchor });
         contentWidgets = Arrays.asList(new HTML[] { sailingAnalyticsNotes, sailingSimulatorNotes, raceCommitteeAppNotes, inSightAppNotes, buoyPingerAppNotes });
         switch(navigationTab) {

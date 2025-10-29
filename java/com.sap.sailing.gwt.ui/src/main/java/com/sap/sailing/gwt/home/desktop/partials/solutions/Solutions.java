@@ -3,23 +3,31 @@ package com.sap.sailing.gwt.home.desktop.partials.solutions;
 import java.util.Optional;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.dom.client.DivElement;
-import com.google.gwt.dom.client.HeadingElement;
-import com.google.gwt.dom.client.ParagraphElement;
-import com.google.gwt.dom.client.Style.Display;
-import com.google.gwt.dom.client.UListElement;
 import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Command;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
-import com.sap.sailing.gwt.home.shared.partials.storebadges.AppStoreBadge;
-import com.sap.sailing.gwt.home.shared.partials.storebadges.PlayStoreBadge;
-import com.sap.sse.common.Util;
+import com.google.gwt.user.client.ui.impl.HyperlinkImpl;
+import com.sap.sailing.gwt.home.desktop.app.DesktopPlacesNavigator;
+import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace;
+import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace.WhatsNewNavigationTabs;
+import com.sap.sailing.gwt.home.shared.app.PlaceNavigation;
+import com.sap.sailing.gwt.home.shared.places.solutions.SolutionsPlace;
+import com.sap.sailing.gwt.home.shared.places.solutions.SolutionsPlace.SolutionsNavigationTabs;
+import com.sap.sailing.gwt.ui.client.StringMessages;    
 import com.sap.sse.gwt.shared.ClientConfiguration;
+import com.google.gwt.dom.client.HeadingElement;
+import com.google.gwt.dom.client.ParagraphElement;
 
 public class Solutions extends Composite {
     interface SolutionsUiBinder extends UiBinder<Widget, Solutions> {
@@ -27,232 +35,226 @@ public class Solutions extends Composite {
     
     private static SolutionsUiBinder uiBinder = GWT.create(SolutionsUiBinder.class);
 
+    private static final HyperlinkImpl HYPERLINK_IMPL = GWT.create(HyperlinkImpl.class);
 
-    @UiField Anchor solution1Anchor, solution2Anchor, solution3Anchor, solution4Anchor, solution5Anchor, solution6Anchor;
+    @UiField StringMessages i18n;
+    @UiField
+    Anchor inSailingAnchor;
+    @UiField Anchor sailingAnalyticsAnchor;
+    @UiField Anchor raceAnchor;
+    @UiField Anchor inSightAnchor;
+    @UiField Anchor buoyPingerAnchor;
+    @UiField Anchor simulatorAnchor;
 
-    @UiField DivElement solution1Div, solution1Inner,
-    solution2Div, solution2Bg,
-    solution3Div, solution3Bg,
-    solution4Div, solution4Bg,
-    solution5Div, solution5Bg,
-    solution6Div, solution6Bg;
+    @UiField DivElement inSailingDiv;
+    @UiField DivElement inSailingContentDiv;
+    @UiField DivElement sailingAnalyticsDiv;
+    @UiField DivElement raceDiv;
+    @UiField DivElement inSightDiv;
+    @UiField DivElement buoyPingerDiv;
+    @UiField DivElement simulatorDiv;
+    @UiField DivElement inSailingDivAlternator;
+    @UiField DivElement sailingAnalyticsDivGridAlternator;
+    @UiField DivElement raceDivGridAlternator;
+    @UiField DivElement inSightDivAlternator;
+    @UiField DivElement buoyPingerDivAlternator;
+    @UiField DivElement simulatorDivAlternator;
 
-    @UiField HeadingElement solution1Title, solution2Title, solution3Title, solution4Title, solution5Title, solution6Title;
-    @UiField ParagraphElement solution1P1, solution1P2, solution2P1, solution2P2, solution3P, solution4P, solution5P, solution6P;
-    @UiField UListElement solution1List1, solution1List2;
+
+    @UiField Anchor sailingAnalyticsDetailsAnchor;
+    @UiField Anchor raceCommitteeAppDetailsAnchor;
+    @UiField Anchor inSightAppDetailsAnchor;
+    @UiField Anchor buoyPingerAppDetailsAnchor;
+    @UiField Anchor simulatorAppDetailsAnchor;
     
-    @UiField Anchor solution2ReadMore, solution3ReadMore, solution4ReadMore, solution5ReadMore, solution6ReadMore;
-    @UiField PlayStoreBadge solution3PlayBadge, solution4PlayBadge, solution5PlayBadge;
-    @UiField AppStoreBadge  solution4AppBadge;
+    @UiField HeadingElement inSailingDivHeader;
+    @UiField HeadingElement sailingAnalyticsTitleHeader;
+    @UiField ParagraphElement contentSailingAnalytics1;
+    @UiField ParagraphElement contentSailingAnalytics2;
+    @UiField HeadingElement sailingRaceManagerHeader;
+    @UiField ParagraphElement contentSailingRaceManager;
+    @UiField HeadingElement sailInSightHeader;
+    @UiField ParagraphElement contentSailInSight;
+    @UiField HeadingElement sailingBuoyPingerHeader;
+    @UiField ParagraphElement contentSailingBuoyPinger;
     
-    public Solutions() {
+    
+    
+    
+    private final PlaceNavigation<SolutionsPlace> inSailingNavigation;
+    private final PlaceNavigation<SolutionsPlace> sailingAnalyticsNavigation; 
+    private final PlaceNavigation<SolutionsPlace> raceCommitteeAppNavigation; 
+    private final PlaceNavigation<SolutionsPlace> inSightAppNavigation;
+    private final PlaceNavigation<SolutionsPlace> buoyPingerAppNavigation;
+    private final PlaceNavigation<SolutionsPlace> sailingSimulatorNavigation; 
+    
+    private final SolutionsNavigationTabs navigationTab;
+    
+    private final PlaceNavigation<WhatsNewPlace> sailingAnalyticsDetailsNavigation;
+    private final PlaceNavigation<WhatsNewPlace> raceCommitteeAppDetailsNavigation;
+    private final PlaceNavigation<WhatsNewPlace> buoyPingerAppDetailsNavigation;
+    private final PlaceNavigation<WhatsNewPlace> simulatorAppDetailsNavigation;
+    private final DesktopPlacesNavigator placesNavigator;
+
+    public Solutions(SolutionsNavigationTabs navigationTab, DesktopPlacesNavigator placesNavigator) {
+        this.navigationTab = navigationTab;
+        this.placesNavigator = placesNavigator;
         SolutionsResources.INSTANCE.css().ensureInjected();
         initWidget(uiBinder.createAndBindUi(this));
-
-        final ClientConfiguration cc = ClientConfiguration.getInstance();
-
-        setBackgroundSafe(solution2Bg, cc.getSailingAnalyticsImageURL());
-        setBackgroundSafe(solution1Inner, cc.getSolutionsInSailingImageURL());
-        setBackgroundSafe(solution4Bg, cc.getSailInSightAppImageURL());
-        setBackgroundSafe(solution6Bg, cc.getSailingSimulatorImageURL());
-        setBackgroundSafe(solution3Bg, cc.getSailingRaceManagerAppImageURL());
-        setBackgroundSafe(solution5Bg, cc.getBuoyPingerAppImageURL());
+        if (ClientConfiguration.getInstance().isBrandingActive()) {
+            String brandName = ClientConfiguration.getInstance().getBrandTitle(Optional.empty());
+            inSailingAnchor.setText(i18n.solutionsISHeadline(brandName));
+            sailingAnalyticsAnchor.setText(i18n.solutionsAnalyticsHeadline(brandName));
+            raceAnchor.setText(i18n.solutionsRaceHeadline(brandName));
+            inSightAnchor.setText(i18n.solutionsInSightHeadline(brandName));
+            buoyPingerAnchor.setText(i18n.solutionsBuoyPingerHeadline(brandName));
+            
+            inSailingDivHeader.setInnerText(i18n.inSailing(brandName));
+            sailingAnalyticsTitleHeader.setInnerText(i18n.sailingAnalyticsTitle(brandName));
+            contentSailingAnalytics1.setInnerText(i18n.contentSailingAnalytics1(brandName));
+            contentSailingAnalytics2.setInnerText(i18n.contentSailingAnalytics2(brandName));
+            sailingRaceManagerHeader.setInnerText(i18n.sailingRaceManager(brandName));
+            contentSailingRaceManager.setInnerText(i18n.contentSailingRaceManager(brandName));
+            sailInSightHeader.setInnerText(i18n.sailInSight(brandName));
+            contentSailInSight.setInnerText(i18n.contentSailInSight(brandName));
+            sailingBuoyPingerHeader.setInnerText(i18n.sailingBuoyPinger(brandName));
+            contentSailingBuoyPinger.setInnerText(i18n.contentSailingBuoyPinger(brandName));
+            
+            sailingAnalyticsDivGridAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getSailingAnalyticsImageURL()+"\')");
+            inSailingDivAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getSolutionsInSailingImageURL()+"\')");
+            inSightDivAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getSailInSightAppImageURL()+"\')");
+            simulatorDivAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getSailingSimulatorImageURL()+"\')");
+            raceDivGridAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getSailingRaceManagerAppImageURL()+"\')");
+            buoyPingerDivAlternator.getStyle().setBackgroundImage("url(\'"+ClientConfiguration.getInstance().getBuoyPingerAppImageURL()+"\')");
+        }
+        sailingAnalyticsDetailsNavigation = placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingAnalytics);
+        raceCommitteeAppDetailsNavigation =  placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.RaceManagerApp);
+        buoyPingerAppDetailsNavigation =  placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.BuoyPingerApp);
+        simulatorAppDetailsNavigation =  placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingSimulator);
         
-        populate1(cc);
-        boolean show2 = populate2(cc);
-        boolean show3 = populate3(cc);
-        boolean show4 = populate4(cc);
-        boolean show5 = populate5(cc);
-        boolean show6 = populate6(cc);
+        sailingAnalyticsDetailsAnchor.setHref(sailingAnalyticsDetailsNavigation.getTargetUrl());
+        raceCommitteeAppDetailsAnchor.setHref(raceCommitteeAppDetailsNavigation.getTargetUrl());
+        inSightAppDetailsAnchor.setHref("https://sail-insight.com");
+        buoyPingerAppDetailsAnchor.setHref(buoyPingerAppDetailsNavigation.getTargetUrl());
+        simulatorAppDetailsAnchor.setHref(simulatorAppDetailsNavigation.getTargetUrl());
 
-        setLinkOrHide(solution1Anchor, /* none for #1 */ null); // stays hidden unless you add a link property
-        setLinkOrHide(solution2Anchor, show2 ? cc.getSolution2ReadMoreLink()      : null);
-        setLinkOrHide(solution3Anchor, show3 ? cc.getSolutions3ReadMoreLink()     : null);
-        setLinkOrHide(solution4Anchor, show4 ? cc.getSolutions4ReadMoreLink()     : null);
-        setLinkOrHide(solution5Anchor, show5 ? cc.getSolutions5ReadMoreLink()     : null);
-        setLinkOrHide(solution6Anchor, show6 ? cc.getSolutions6ReadMoreLink()     : null);      
-    }
-    private boolean populate1(ClientConfiguration cc) {
-        String head = cc.getSolutions1Headline(Optional.empty());
-        String title = cc.getSolutions1Title(Optional.empty());
-        if (!has(head) || !has(title)) { hide(solution1Div); return false; }
-        solution1Anchor.setText(head);
-        solution1Title.setInnerText(title);
+        inSailingNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.SapInSailing);
+        sailingAnalyticsNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.SailingAnalytics);
+        raceCommitteeAppNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.RaceManagerApp);
+        inSightAppNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.InSightApp);
+        buoyPingerAppNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.BuoyPingerApp);
+        sailingSimulatorNavigation = placesNavigator.getSolutionsNavigation(SolutionsNavigationTabs.SailingSimulator);
 
-        setOrHide(solution1P1, cc.getContentSolutions11(Optional.empty()));
-        setListItems(solution1List1, cc.getContentSolutions12(Optional.empty()), cc.getContentSolutions13(Optional.empty()), cc.getContentSolutions14(Optional.empty()));
-        setOrHide(solution1P2, cc.getContentSolutions15(Optional.empty()));
-        setListItems(solution1List2,
-            cc.getContentSolutions17(Optional.empty()), cc.getContentSolutions18(Optional.empty()), cc.getContentSolutions111(Optional.empty()), cc.getContentSolutions112(Optional.empty()), cc.getContentSolutions113(Optional.empty()));
-        return true;
+        inSailingAnchor.setHref(inSailingNavigation.getTargetUrl());
+        sailingAnalyticsAnchor.setHref(sailingAnalyticsNavigation.getTargetUrl());
+        raceAnchor.setHref(raceCommitteeAppNavigation.getTargetUrl());
+        inSightAnchor.setHref(inSightAppNavigation.getTargetUrl());
+        buoyPingerAnchor.setHref(buoyPingerAppNavigation.getTargetUrl());
+        simulatorAnchor.setHref(sailingSimulatorNavigation.getTargetUrl());
     }
-    private boolean populate2(ClientConfiguration cc) {
-        String head = cc.getSolutions2Headline(Optional.empty());
-        String title = cc.getSolutions2Title(Optional.empty());
-        if (!has(head) || !has(title)) { hide(solution2Div); return false; }
-        solution2Anchor.setText(head);
-        solution2Title.setInnerText(title);
+
+    @Override
+    protected void onLoad() {
+        Scheduler.get().scheduleDeferred(new Command() {
+            public void execute() {
+                scrollToView(navigationTab);
+            }
+        });
+    }
+
+    @UiHandler("inSailingAnchor")
+    public void scrollTosapInSailingAnchor(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.SapInSailing);
+        handleClickEventWithLocalNavigation(e, inSailingNavigation);
+    }
+    @UiHandler("sailingAnalyticsAnchor")
+    public void scrollToSailingAnalytics(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.SailingAnalytics);
+        handleClickEventWithLocalNavigation(e, sailingAnalyticsNavigation);
+    }
     
-        setOrHide(solution2P1, cc.getContentSolutions21(Optional.empty()));
-        setOrHide(solution2P2, cc.getContentSolutions22(Optional.empty()));
-        setCta(
-                solution2ReadMore,
-                cc.getSailingAnalyticsReadMoreText(Optional.empty()),
-                cc.getSolution2ReadMoreLink()
-              );
-        return true;
+    @UiHandler("raceAnchor")
+    public void scrollToRace(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.RaceManagerApp);
+        handleClickEventWithLocalNavigation(e, raceCommitteeAppNavigation);
     }
-    private boolean populate3(ClientConfiguration cc) {
-        String head = cc.getSolutions3Headline(Optional.empty());
-        String title = cc.getSolutions3Title(Optional.empty());
-        if (!has(head) || !has(title)) { hide(solution3Div); return false; }
-        solution3Anchor.setText(head);
-        solution3Title.setInnerText(title);
-        setOrHide(solution3P, cc.getContentSolutions3(Optional.empty()));
-        setBadgeLinkOrHide(solution3PlayBadge, cc.getSolutions3PlayStoreURL());
-        setCta(
-                solution3ReadMore,
-                cc.getSolutions3ReadMore(Optional.empty()),
-                cc.getSolutions3ReadMoreLink()
-        );
-        return true;
-    }
-    private boolean populate4(ClientConfiguration cc) {
-        String head = cc.getSolutions4Headline(Optional.empty());
-        String title = cc.getSolutions4Title(Optional.empty());
-        if (!has(head) || !has(title)) {
-            hide(solution4Div);
-            return false;
-        }
-        solution4Anchor.setText(head);
-        solution4Title.setInnerText(title);
-        setOrHide(solution4P, cc.getContentSolutions4(Optional.empty()));
 
-        setBadgeLinkOrHide(solution4AppBadge,  cc.getSolutions4AppStoreURL());
-        setBadgeLinkOrHide(solution4PlayBadge, cc.getSolutions4PlayStoreURL());
-
-
-        setCta(solution4ReadMore, cc.getSolutions4ReadMore(Optional.empty()), cc.getSolutions4ReadMoreLink());
-        return true;
+    @UiHandler("inSightAnchor")
+    public void scrollToInSight(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.InSightApp);
+        handleClickEventWithLocalNavigation(e, inSightAppNavigation);
     }
-    private boolean populate5(ClientConfiguration cc) {
-        String head = cc.getSolutions5Headline(Optional.empty());
-        String title = cc.getSolutions5Title(Optional.empty());
-        if (!has(head) || !has(title)) {
-            hide(solution5Div);
-            return false;
-        }
-        solution5Anchor.setText(head);
-        solution5Title.setInnerText(title);
-        setOrHide(solution5P, cc.getContentSolutions5(Optional.empty()));
 
-        setBadgeLinkOrHide(solution5PlayBadge, cc.getSolutions5PlayStoreURL());
+    @UiHandler("buoyPingerAnchor")
+    public void scrollToBuoyPinger(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.BuoyPingerApp);
+        handleClickEventWithLocalNavigation(e, buoyPingerAppNavigation);
+    }
 
+    @UiHandler("simulatorAnchor")
+    public void scrollToSimulator(ClickEvent e) {
+        scrollToView(SolutionsNavigationTabs.SailingSimulator);
+        handleClickEventWithLocalNavigation(e, sailingSimulatorNavigation);
+    }
 
-        setCta(solution5ReadMore, cc.getSolutions5ReadMore(Optional.empty()), cc.getSolutions5ReadMoreLink());
-        return true;
+    @UiHandler("sailingAnalyticsDetailsAnchor")
+    public void sailingAnalyticsDetailsClicked(ClickEvent e) {
+        handleClickEventWithPlaceController(e, sailingAnalyticsDetailsNavigation);
     }
-    private boolean populate6(ClientConfiguration cc) {
-        String head = cc.getSolutions6Headline(Optional.empty());
-        String title = cc.getSolutions6Title(Optional.empty());
-        if (!has(head) || !has(title)) {
-            hide(solution6Div);
-            return false;
-        }
-        solution6Anchor.setText(head);
-        solution6Title.setInnerText(title);
-        setOrHide(solution6P, cc.getContentSolutions6(Optional.empty()));
-        setCta(solution6ReadMore, cc.getSolutions6ReadMore(Optional.empty()), cc.getSolutions6ReadMoreLink());
-        return true;
+
+    @UiHandler("simulatorAppDetailsAnchor")
+    public void simulatorAppDetailsAnchorClicked(ClickEvent e) {
+        handleClickEventWithPlaceController(e, simulatorAppDetailsNavigation);
     }
-    private static boolean has(String s) {
-        return Util.hasLength(s);
-    }
-    private static void hide(DivElement el) {
-        el.getStyle().setDisplay(Display.NONE);
-    }
-    private static void setBackgroundSafe(DivElement el, String url) {
-        if (has(url)) {
-            el.getStyle().setBackgroundImage("url('" + url + "')");
+
+    private void scrollToView(SolutionsNavigationTabs navigationTab) {
+        final int actualScrollLeft = Window.getScrollLeft();
+        if (navigationTab == null) {
+            inSailingDiv.scrollIntoView();
+            Window.scrollTo(actualScrollLeft, 0);
         } else {
-            el.getStyle().clearBackgroundImage();
+            switch (navigationTab) {
+            case BuoyPingerApp:
+                Window.scrollTo(actualScrollLeft, buoyPingerDiv.getAbsoluteTop());
+                break;
+            case InSightApp:
+                Window.scrollTo(actualScrollLeft, inSightDiv.getAbsoluteTop());
+                break;
+            case SapInSailing:
+                Window.scrollTo(actualScrollLeft, 0);
+                break;
+            case SailingAnalytics:
+                Window.scrollTo(actualScrollLeft, sailingAnalyticsDiv.getAbsoluteTop());
+                break;
+            case RaceManagerApp:
+                Window.scrollTo(actualScrollLeft, raceDiv.getAbsoluteTop());
+                break;
+            case SailingSimulator:
+                Window.scrollTo(actualScrollLeft, simulatorDiv.getAbsoluteTop());
+                break;
+            }
         }
     }
-    private static void setBadgeLinkOrHide(Widget w, final String href) {
-        if (w == null) return;
-        if (has(href)) {
-            w.setVisible(true);
-            // Avoid multiple handlers if this ever re-runs:
-            w.getElement().setPropertyString("data-href", href);
-            w.addDomHandler(new ClickHandler() {
-                @Override public void onClick(ClickEvent event) {
-                    Window.Location.assign(href);
-                }
-            }, ClickEvent.getType());
-            w.getElement().setAttribute("role", "link");
-            w.getElement().getStyle().setProperty("cursor", "pointer");
-        } else {
-            w.setVisible(false);
-        }
+    
+    private void handleClickEventWithLocalNavigation(ClickEvent e, PlaceNavigation<?> placeNavigation) {
+        if (HYPERLINK_IMPL.handleAsClick((Event) e.getNativeEvent())) {
+            // don't use the placecontroller for navigation here as we want to avoid a page reload
+            History.newItem(placeNavigation.getHistoryUrl(), false);
+            e.preventDefault();
+         }
     }
-
-    private static void setOrHide(ParagraphElement p, String text) {
-        if (has(text)) {
-            p.setInnerText(text);
-            p.getStyle().clearDisplay();
-        } else {
-            p.getStyle().setDisplay(com.google.gwt.dom.client.Style.Display.NONE);
-        }
+    
+    private void handleClickEventWithPlaceController(ClickEvent e, PlaceNavigation<?> placeNavigation) {
+        if (HYPERLINK_IMPL.handleAsClick((Event) e.getNativeEvent())) {
+            placesNavigator.goToPlace(placeNavigation);
+            e.preventDefault();
+         }
     }
-    private static void setListItems(UListElement ul, String... items) {
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        if (items != null)
-            for (String it : items)
-                if (has(it)) {
-                    sb.append("<li>").append(escape(it)).append("</li>");
-                    count++;
-                }
-        if (count > 0) {
-            ul.setInnerHTML(sb.toString());
-            ul.getStyle().clearDisplay();
-        } else {
-            ul.getStyle().setDisplay(com.google.gwt.dom.client.Style.Display.NONE);
-        }
+    public void setInSailingContentHtml(SafeHtml html) {
+        inSailingContentDiv.setInnerHTML(html.asString());
     }
-    private static void setLinkOrHide(Anchor a, String href) {
-        if (a == null)
-            return;
-        if (has(href)) {
-            a.setHref(href);
-            a.setVisible(true);
-        } else {
-            a.setHref("#");
-            a.setVisible(false);
-        }
+    
+    public void clearInSailingContent() {
+        inSailingContentDiv.setInnerHTML("");
     }
-    private static void setCta(Anchor a, String text, String href) {
-        if (a == null)
-            return;
-        if (has(text) && has(href)) {
-            a.setText(text);
-            a.setHref(href);
-            a.setVisible(true);
-        } else {
-            a.setVisible(false);
-            a.setHref("#");
-            a.setText("");
-        }
-    }
-    private static native String escape(String s) /*-{
-    		return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }-*/;
-    public static boolean isAnySectionConfigured(ClientConfiguration cc) {
-        return has(cc.getSolutions1Headline(Optional.empty())) && has(cc.getSolutions1Title(Optional.empty()))
-                || has(cc.getSolutions2Headline(Optional.empty())) && has(cc.getSolutions2Title(Optional.empty()))
-                || has(cc.getSolutions3Headline(Optional.empty())) && has(cc.getSolutions3Title(Optional.empty()))
-                || has(cc.getSolutions4Headline(Optional.empty())) && has(cc.getSolutions4Title(Optional.empty()))
-                || has(cc.getSolutions5Headline(Optional.empty())) && has(cc.getSolutions5Title(Optional.empty()))
-                || has(cc.getSolutions6Headline(Optional.empty())) && has(cc.getSolutions6Title(Optional.empty()));
-    }
-}    
+}

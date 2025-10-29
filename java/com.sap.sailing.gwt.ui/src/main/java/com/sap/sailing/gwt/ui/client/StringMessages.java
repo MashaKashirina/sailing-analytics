@@ -2524,4 +2524,26 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String exportTWAHistogramToCsv();
     String exportWindSpeedHistogramToCsv();
     String optionalBearerTokenForWindImport();
+    String solutionsISHeadline(String brandName);
+    String solutionsAnalyticsHeadline(String brandName);
+    String solutionsRaceHeadline(String brandName);
+    String solutionsInSightHeadline(String brandName);
+    String solutionsBuoyPingerHeadline(String brandName);
+    String solutionsSimulatorHeadline();
+    String inSailing(String brandName);
+    String sailingAnalyticsTitle(String brandName);
+    String contentSailingAnalytics1(String brandName);
+    String contentSailingAnalytics2(String brandName);
+    String sailingRaceManager(String brandName);
+    String contentSailingRaceManager(String brandName);
+    String sailingRaceManagerReadMore();
+    String sailInSight(String brandName);
+    String contentSailInSight(String brandName);
+    String sailInSightReadMore();
+    String sailingBuoyPinger(String brandName);
+    String contentSailingBuoyPinger(String brandName);
+    String sailingBuoyPingerReadMore();
+    String strategySimulator();
+    String contentStrategySimulator();
+    String strategySimulatorReadMore();
 }
