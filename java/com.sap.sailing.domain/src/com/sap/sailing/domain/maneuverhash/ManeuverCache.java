@@ -1,6 +1,7 @@
-package com.sap.sse.util;
+package com.sap.sailing.domain.maneuverhash;
 
 
+import com.sap.sse.util.SmartFutureCache;
 import com.sap.sse.util.SmartFutureCache.UpdateInterval;
 
 public interface ManeuverCache<K, V, U extends UpdateInterval<U>>{

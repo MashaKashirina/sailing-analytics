@@ -70,7 +70,7 @@ public class ManeuverRaceFingerprintConversionTest extends OnlineTracTracBasedTe
         //List<Competitor> competetors = trackedRace1.getCompetitor(null);
         final Map<Competitor, List<Maneuver>> maneuvers = new HashMap<>();
         for (Competitor competitor : getRace().getCompetitors()) {
-            List<Maneuver> maneuversForCompetitor = (List<Maneuver>) trackedRace1.getManeuvers(competitor, false);
+            List<Maneuver> maneuversForCompetitor = (List<Maneuver>) trackedRace1.getManeuvers(competitor, true);
             maneuvers.put(competitor,maneuversForCompetitor);
         }
         //final Map<Competitor, List<Maneuver>> maneuvers = trackedRace1.getManeuvers(null, false);

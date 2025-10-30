@@ -1011,6 +1011,7 @@ Replicator {
     
     @Override
     public ManeuverRaceFingerprint getManeuverRaceFingerprint(RaceIdentifier raceIdentifier) {
+        logger.log(Level.INFO, "Getting Maneuver fingerprint");
         return maneuverRaceFingerprints.get(raceIdentifier);
     }
     
@@ -3096,6 +3097,7 @@ Replicator {
         TrackedRace trackedRace = getExistingTrackedRace(regatta, race);
         if (trackedRace != null) {
             removeStoredMarkPassings(trackedRace.getRaceIdentifier());
+            removeStoredManeuvers(trackedRace.getRaceIdentifier());
             TrackedRegatta trackedRegatta = getTrackedRegatta(regatta);
             final boolean isTrackedRacesBecameEmpty;
             if (trackedRegatta != null) {

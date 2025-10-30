@@ -77,7 +77,7 @@ import com.sap.sse.util.impl.KnowsExecutorAndTracingGetImpl;
  * @author Axel Uhl (D043530)
  * 
  */
-public class SmartFutureCache<K, V, U extends UpdateInterval<U>> implements ManeuverCache<K, V, U> {
+public class SmartFutureCache<K, V, U extends UpdateInterval<U>>  {
     private static final Logger logger = Logger.getLogger(SmartFutureCache.class.getName());
     
     /**
@@ -413,7 +413,6 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> implements Mane
         }
     }
     
-    @Override
     public void suspend() {
         logger.finest("suspending cache "+nameForLocks);
         synchronized (ongoingRecalculations) {
@@ -421,7 +420,6 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> implements Mane
         }
     }
     
-    @Override
     public void resume() {
         synchronized (ongoingRecalculations) {
             suspended = false;
@@ -459,7 +457,6 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> implements Mane
      * If the running task has a different setting for the caller's waiting for the task, the task will be canceled
      * (which may or may not work), and a new task with the joined update interval is scheduled.
      */
-    @Override
     public void triggerUpdate(final K key, U updateInterval) {
         // establish and maintain the following invariant: after lock on ongoingRecalculations is released,
         // no Future contained in it is in cancelled state
@@ -675,7 +672,6 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> implements Mane
      * ongoing, the result of that ongoing re-calculation is returned. When {@link #remove(Object)} has been called for the {@code key} and
      * no update has finished computing since then, this method will also return {@code null} in case {@code waitForLatest} is {@code false}.
      */
-    @Override
     public V get(final K key, boolean waitForLatest) {
         final V value;
         final Future<V> future;
