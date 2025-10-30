@@ -1,14 +1,12 @@
 package com.sap.sse.gwt.server;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,9 +15,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.google.gwt.user.client.rpc.SerializationException;
-import com.google.gwt.user.server.rpc.RPC;
 import com.google.gwt.user.server.rpc.SerializationPolicy;
-import com.google.gwt.user.server.rpc.TeeWriter;
 import com.sap.sse.common.CacheableRPCResult;
 
 /**
@@ -31,7 +27,7 @@ public class ResultCachingProxiedRemoteServiceServlet extends DelegatingProxiedR
     
     private static final long serialVersionUID = -4245484615349695611L;
     
-    private ConcurrentMap<CacheKey, String> resultCache = new ConcurrentHashMap<>();
+    private Map<CacheKey, String> resultCache = new ConcurrentHashMap<>();
     
     /**
      * Holds the weak references to {@link CacheableRPCResult} objects that have been garbage-collected
@@ -88,57 +84,25 @@ public class ResultCachingProxiedRemoteServiceServlet extends DelegatingProxiedR
     @Override
     protected String encodeResponseForSuccess(Method serviceMethod, SerializationPolicy serializationPolicy, int flags,
             Object result) throws SerializationException {
-        final String resultPayload;
         purgeCache();
         if (result instanceof CacheableRPCResult) {
             final CacheableRPCResult cacheableResult = (CacheableRPCResult) result;
             try {
                 callCount.incrementAndGet();
-                final boolean[] written = new boolean[1];
-                final CacheKey cacheKey = new CacheKey(serializationPolicy, cacheableResult, dereferencedObjectsQueue);
-                final String cachedPayload = resultCache.computeIfPresent(cacheKey, (k, v)->{
-                   try {
-                       // append the cached payload to the writer
-                       RPC.getResponseWriter().append(v);
-                       RPC.finishResponse();
-                       written[0] = true;
-                       return v;
-                   } catch (IOException e) {
-                       throw new RuntimeException(e);
-                   }
-                });
-                if (written[0]) {
-                    resultPayload = cachedPayload;
-                } else {
-                    // the payload was not found in the cache; compute it and as a side effect write it to the response writer
-                    resultPayload = resultCache.compute(cacheKey,
-                        (key, oldValue) -> {
+                return resultCache.computeIfAbsent(new CacheKey(serializationPolicy, cacheableResult, dereferencedObjectsQueue),
+                        key -> {
                             recalcCount.incrementAndGet();
                             try {
-                                // need to ensure the response writer has a valid StringWriter attached
-                                // so we can get a hold of the payload afterwards
-                                final StringWriter copyOfOutput;
-                                final TeeWriter<StringWriter> teeWriter = RPC.getResponseWriter();
-                                if (teeWriter.getOtherWriter() != null) {
-                                    copyOfOutput = teeWriter.getOtherWriter();
-                                } else {
-                                    copyOfOutput = new StringWriter();
-                                    teeWriter.setOtherWriter(copyOfOutput);
-                                }
-                                super.encodeResponseForSuccess(serviceMethod, serializationPolicy, flags, result);
-                                return copyOfOutput.toString();
+                                return super.encodeResponseForSuccess(serviceMethod, serializationPolicy, flags, result);
                             } catch (SerializationException serializationException) {
                                 throw new TemporaryWrapperException(serializationException);
                             }
                         });
-                }
             } catch (TemporaryWrapperException e) {
                 throw e.serializationException;
             }
-        } else {
-            resultPayload = super.encodeResponseForSuccess(serviceMethod, serializationPolicy, flags, result);
         }
-        return resultPayload;
+        return super.encodeResponseForSuccess(serviceMethod, serializationPolicy, flags, result);
     }
     
     /**
