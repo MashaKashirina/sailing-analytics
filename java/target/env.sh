@@ -88,7 +88,7 @@ JAVA_BINARY="$JAVA_HOME/bin/java"
 JAVA_VERSION_OUTPUT=$("$JAVA_BINARY" -version 2>&1)
 JAVA_VERSION=$(echo "$JAVA_VERSION_OUTPUT" | sed 's/^.* version "\(.*\)\.\(.*\)\..*".*$/\1.\2/; 1q')
 export JAVA_11_LOGGING_ARGS="-Xlog:gc+ergo*=trace:file=logs/gc_ergo.log:time:filecount=10,filesize=100000000 -Xlog:gc*:file=logs/gc.log:time:filecount=10,filesize=100000000"
-export JAVA_11_ARGS="-agentlib:jdwp=transport=dt_socket,address=0.0.0.0:8000,suspend=n,server=y -Dosgi.java.profile=file://`pwd`/JavaSE-11.profile --add-modules=ALL-SYSTEM -Djavax.xml.bind.JAXBContextFactory=com.sun.xml.bind.v2.ContextFactory -XX:ThreadPriorityPolicy=1 -XX:+UnlockExperimentalVMOptions ${JAVA_11_LOGGING_ARGS}"
+export JAVA_11_ARGS="-agentlib:jdwp=transport=dt_socket,address=0.0.0.0:8000,suspend=n,server=y -Dosgi.java.profile=file://`pwd`/JavaSE-11.profile --add-modules=ALL-SYSTEM -Djavax.xml.bind.JAXBContextFactory=com.sun.xml.bind.v2.ContextFactory -XX:ThreadPriorityPolicy=1 -XX:+UnlockExperimentalVMOptions ${JAVA_11_LOGGING_ARGS} -XX:+UseCompactObjectHeaders"
 export JAVA_8_LOGGING_ARGS="-XX:+PrintAdaptiveSizePolicy -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -Xloggc:logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
 echo JAVA_VERSION detected: $JAVA_VERSION >&2
 JAVA_MAJOR_VERSION=$( echo "${JAVA_VERSION}" | sed -e 's/^\([0-9]*\)\..*$/\1/' )
