@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.SpanElement;
 import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -27,7 +28,8 @@ import com.sap.sse.gwt.shared.ClientConfiguration;
  */
 public class Footer extends Composite {
     private static FooterPanelUiBinder uiBinder = GWT.create(FooterPanelUiBinder.class);
-    ClientConfiguration cfg = ClientConfiguration.getInstance();
+    
+    private ClientConfiguration cfg = ClientConfiguration.getInstance();
 
     interface FooterPanelUiBinder extends UiBinder<Widget, Footer> {
     }
@@ -39,7 +41,8 @@ public class Footer extends Composite {
     @UiField AnchorElement imprintAnchorLink;
     @UiField AnchorElement desktopUi;
     @UiField AnchorElement jobsAnchor;
-    @UiField AnchorElement privacyAnchorLink;
+    @UiField AnchorElement privacyAnchor;
+    @UiField SpanElement pipe;
 
     public Footer() {
         FooterResources.INSTANCE.css().ensureInjected();
@@ -54,17 +57,21 @@ public class Footer extends Composite {
                 }
             }
         });
-        if (!cfg.isBrandingActive()) {
+        if (!ClientConfiguration.getInstance().isBrandingActive()) {
             copyrightDiv.getStyle().setDisplay(NONE);
             languageSelector.setLabelText(StringMessages.INSTANCE.whitelabelFooterLanguage());
             supportAnchor.getStyle().setDisplay(Display.NONE);
             whatsNewLinkUi.getElement().getStyle().setDisplay(Display.NONE);
             imprintAnchorLink.getStyle().setDisplay(Display.NONE);
             jobsAnchor.getStyle().setDisplay(Display.NONE);
-            privacyAnchorLink.getStyle().setDisplay(NONE);
+            privacyAnchor.getStyle().setDisplay(Display.NONE);
         } else {
+            pipe.setInnerText("|");
+            if (!hideIfBlank(copyrightDiv, cfg.getFooterCopyright())) {
+                copyrightDiv.setInnerText(cfg.getFooterCopyright());
+            }
             languageSelector.setLabelText(cfg.getBrandTitle(Optional.empty()) + " " + StringMessages.INSTANCE.whitelabelFooterLanguage());
-            setHrefOrHide(privacyAnchorLink, cfg.getFooterPrivacyLink());
+            setHrefOrHide(privacyAnchor, cfg.getFooterPrivacyLink());
             setHrefOrHide(jobsAnchor, cfg.getFooterJobsLink());
             setHrefOrHide(supportAnchor, cfg.getFooterSupportLink());
             setHrefOrHide(imprintAnchorLink, cfg.getFooterLegalLink());
@@ -80,21 +87,19 @@ public class Footer extends Composite {
     }
     
     private static boolean hideIfBlank(DivElement el, String text) {
-        final boolean result;
         if (!Util.hasLength(text)) {
             el.getStyle().setDisplay(Display.NONE);
-            result = true;
-        } else {
-            result = false;
+            return true;
         }
-        return result;
+        return false;
     }
     
     private static void setHrefOrHide(AnchorElement el, String url) {
         if (!Util.hasLength(url)) {
-            el.getStyle().setDisplay(Display.NONE);
+          el.getStyle().setDisplay(Display.NONE);
         } else {
-            el.setHref(url);
+          el.setHref(url);
         }
     }
+    
 }

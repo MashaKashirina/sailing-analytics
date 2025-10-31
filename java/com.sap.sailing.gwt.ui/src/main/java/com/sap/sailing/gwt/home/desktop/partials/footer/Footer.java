@@ -1,5 +1,6 @@
 package com.sap.sailing.gwt.home.desktop.partials.footer;
 
+import static com.google.gwt.dom.client.Style.Display.NONE;
 import static com.sap.sse.gwt.shared.DebugConstants.DEBUG_ID_ATTRIBUTE;
 
 import java.util.Optional;
@@ -25,6 +26,7 @@ import com.sap.sse.gwt.shared.DebugConstants;
 
 public class Footer extends Composite {
     private static FooterPanelUiBinder uiBinder = GWT.create(FooterPanelUiBinder.class);
+    private ClientConfiguration cfg = ClientConfiguration.getInstance();
 
     interface FooterPanelUiBinder extends UiBinder<Widget, Footer> {
     }
@@ -36,7 +38,7 @@ public class Footer extends Composite {
     @UiField AnchorElement imprintAnchorLink;
     @UiField AnchorElement privacyAnchorLink;
     @UiField AnchorElement mobileUi;
-    @UiField AnchorElement sapJobsAnchor;
+    @UiField AnchorElement jobsAnchor;
 
     public Footer(EventBus eventBus) {
         FooterResources.INSTANCE.css().ensureInjected();
@@ -53,19 +55,18 @@ public class Footer extends Composite {
                 }
             }
         });
-        ClientConfiguration cfg = ClientConfiguration.getInstance();
-        if (!cfg.isBrandingActive()) {
-            copyrightDiv.getStyle().setDisplay(Display.NONE);
+        if (!ClientConfiguration.getInstance().isBrandingActive()) {
+            copyrightDiv.getStyle().setDisplay(NONE);
             languageSelector.setLabelText(StringMessages.INSTANCE.whitelabelFooterLanguage());
             supportAnchor.getStyle().setDisplay(Display.NONE);
             whatsNewAnchor.getStyle().setDisplay(Display.NONE);
             imprintAnchorLink.getStyle().setDisplay(Display.NONE);
             privacyAnchorLink.getStyle().setDisplay(Display.NONE);
-            sapJobsAnchor.getStyle().setDisplay(Display.NONE);
+            jobsAnchor.getStyle().setDisplay(Display.NONE);
         } else {
             hideIfBlank(copyrightDiv, cfg.getFooterCopyright());
             setHrefOrHide(privacyAnchorLink, cfg.getFooterPrivacyLink());
-            setHrefOrHide(sapJobsAnchor, cfg.getFooterJobsLink());
+            setHrefOrHide(jobsAnchor, cfg.getFooterJobsLink());
             setHrefOrHide(supportAnchor, cfg.getFooterSupportLink());
             setHrefOrHide(whatsNewAnchor, cfg.getFooterWhatsNewLink());
             setHrefOrHide(imprintAnchorLink, cfg.getFooterLegalLink());
@@ -80,20 +81,23 @@ public class Footer extends Composite {
         imprintAnchorLink.setAttribute(DEBUG_ID_ATTRIBUTE, "imprintAnchorLink");
         privacyAnchorLink.setAttribute(DEBUG_ID_ATTRIBUTE, "privacyAnchorLink");
         languageSelector.getElement().setAttribute(DEBUG_ID_ATTRIBUTE, "languageSelector");
-        sapJobsAnchor.setAttribute(DEBUG_ID_ATTRIBUTE, "sapJobsAnchor");
     }
+    
     private static boolean hideIfBlank(DivElement el, String text) {
+        boolean flag = false;
         if (!Util.hasLength(text)) {
             el.getStyle().setDisplay(Display.NONE);
-            return true;
+            flag = true;
         }
-        return false;
+        return flag;
     }
+    
     private static void setHrefOrHide(AnchorElement el, String url) {
         if (!Util.hasLength(url)) {
           el.getStyle().setDisplay(Display.NONE);
-        } else {
+        } else if (!url.equals("nothing")) {
           el.setHref(url);
         }
     }
+    
 }
