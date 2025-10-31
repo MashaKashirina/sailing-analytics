@@ -2160,7 +2160,7 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String serverIsPublicButTenantIsNotAndCouldBeChanged();
     String copyMembersAndRoles();
     String invalidSecret();
-    String warningSailInsightVersion();
+    String warningSailInsightVersion(String brandName);
     String invalidState();
     String doYouReallyWantToRemoveDeviceConfiguration(String name);
     String errorFetchingSimulationData(String message);
