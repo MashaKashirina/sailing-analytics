@@ -420,8 +420,8 @@
           <artifactId>tycho-compiler-plugin</artifactId>
           <configuration>
             <!-- TODO validate that 1.8 is OK also in the SAP-internal Android build -->
-            <source>17</source>
-            <target>17</target>
+            <source>25</source>
+            <target>25</target>
           </configuration>
         </plugin>
       </plugins>
@@ -573,7 +573,7 @@
       <configuration>
         <toolchains>
           <jdk>
-            <version>17</version>
+            <version>25</version>
           </jdk>
         </toolchains>
       </configuration>
@@ -598,7 +598,7 @@
           </artifact>
         </target>
         <executionEnvironment>
-          JavaSE-17
+          JavaSE-25
         </executionEnvironment>
         <environments>
           <environment>
