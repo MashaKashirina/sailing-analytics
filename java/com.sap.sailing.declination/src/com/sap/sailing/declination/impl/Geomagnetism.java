@@ -1,5 +1,8 @@
 package com.sap.sailing.declination.impl;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+
 /*      License Statement from the NOAA
 * The WMM source code is in the public domain and not licensed or
 * under copyright. The information and software may be used freely
@@ -25,27 +28,26 @@ import java.util.GregorianCalendar;
  * </p>
  */
 class Geomagnetism {
-
-    /** Initialise the instance without calculations */
-    Geomagnetism() {
+    /**
+     * Initialise the instance without calculations
+     */
+    Geomagnetism(BufferedReader r) throws IOException {
         // Initialize constants
         maxord = MAX_DEG;
         sp[0] = 0;
         cp[0] = snorm[0] = pp[0] = 1;
         dp[0][0] = 0;
-
         c[0][0] = 0;
         cd[0][0] = 0;
-
-        epoch = Double.parseDouble(WMM_COF[0].trim().split("\\s+")[0]);
-
+        final String headerLine = r.readLine();
+        epoch = Double.parseDouble(headerLine.trim().split("\\s+")[0]);
         String[] tokens;
-
         double gnm, hnm, dgnm, dhnm;
-        for (int i = 1, m, n; i < WMM_COF.length; i++) {
-            tokens = WMM_COF[i].trim().split("\\s+");
-            n = Integer.parseInt(tokens[0]);
-            m = Integer.parseInt(tokens[1]);
+        String line;
+        while (!(line=r.readLine()).startsWith("999999")) {
+            tokens = line.trim().split("\\s+");
+            final int n = Integer.parseInt(tokens[0]);
+            final int m = Integer.parseInt(tokens[1]);
             gnm = Double.parseDouble(tokens[2]);
             hnm = Double.parseDouble(tokens[3]);
             dgnm = Double.parseDouble(tokens[4]);
@@ -86,51 +88,6 @@ class Geomagnetism {
     }
 
     /**
-     * Initialise the instance and calculate for given location, altitude and date
-     * 
-     * @param longitude
-     *            Longitude in decimal degrees
-     * @param latitude
-     *            Latitude in decimal degrees
-     * @param altitude
-     *            Altitude in metres (with respect to WGS-1984 ellipsoid)
-     * @param calendar
-     *            Calendar for date of calculation
-     */
-    Geomagnetism(double longitude, double latitude, double altitude, GregorianCalendar calendar) {
-        this();
-        calculate(longitude, latitude, altitude, calendar);
-    }
-
-    /**
-     * Initialise the instance and calculate for given location, altitude and current date
-     * 
-     * @param longitude
-     *            Longitude in decimal degrees
-     * @param latitude
-     *            Latitude in decimal degrees
-     * @param altitude
-     *            Altitude in metres (with respect to WGS-1984 ellipsoid)
-     */
-    Geomagnetism(double longitude, double latitude, double altitude) {
-        this();
-        calculate(longitude, latitude, altitude);
-    }
-
-    /**
-     * Initialise the instance and calculate for given location, zero altitude and current date
-     * 
-     * @param longitude
-     *            Longitude in decimal degrees
-     * @param latitude
-     *            Latitude in decimal degrees
-     */
-    Geomagnetism(double longitude, double latitude) {
-        this();
-        calculate(longitude, latitude);
-    }
-
-    /**
      * Calculate for given location, altitude and date
      * 
      * @param longitude
@@ -151,10 +108,8 @@ class Geomagnetism {
                 dt = yearFraction - epoch, srlon = Math.sin(rlon), srlat = Math.sin(rlat), crlon = Math.cos(rlon),
                 crlat = Math.cos(rlat), srlat2 = srlat * srlat, crlat2 = crlat * crlat, a2 = WGS84_A * WGS84_A,
                 b2 = WGS84_B * WGS84_B, c2 = a2 - b2, a4 = a2 * a2, b4 = b2 * b2, c4 = a4 - b4;
-
         sp[1] = srlon;
         cp[1] = crlon;
-
         // Convert from geodetic coords. to spherical coords.
         if (altitudeKm != oalt || latitude != olat) {
             double q = Math.sqrt(a2 - c2 * srlat2), q1 = altitudeKm * q,
@@ -174,11 +129,9 @@ class Geomagnetism {
             }
         }
         double aor = IAU66_RADIUS / r, ar = aor * aor, br = 0, bt = 0, bp = 0, bpp = 0, par, parp, temp1, temp2;
-
         for (int n = 1; n <= maxord; n++) {
             ar = ar * aor;
             for (int m = 0, d3 = 1, d4 = (n + m + d3) / d3; d4 > 0; d4--, m += d3) {
-
                 // Compute unnormalized associated legendre polynomials and derivatives via recursion relations
                 if (altitudeKm != oalt || latitude != olat) {
                     if (n == m) {
@@ -190,23 +143,23 @@ class Geomagnetism {
                         dp[m][n] = ct * dp[m][n - 1] - st * snorm[n - 1 + m * 13];
                     }
                     if (n > 1 && n != m) {
-                        if (m > n - 2)
+                        if (m > n - 2) {
                             snorm[n - 2 + m * 13] = 0;
-                        if (m > n - 2)
+                        }
+                        if (m > n - 2) {
                             dp[m][n - 2] = 0;
+                        }
                         snorm[n + m * 13] = ct * snorm[n - 1 + m * 13] - k[m][n] * snorm[n - 2 + m * 13];
                         dp[m][n] = ct * dp[m][n - 1] - st * snorm[n - 1 + m * 13] - k[m][n] * dp[m][n - 2];
                     }
                 }
-
                 // Time adjust the gauss coefficients
                 if (yearFraction != otime) {
                     tc[m][n] = c[m][n] + dt * cd[m][n];
-
-                    if (m != 0)
+                    if (m != 0) {
                         tc[n][m - 1] = c[n][m - 1] + dt * cd[n][m - 1];
+                    }
                 }
-
                 // Accumulate terms of the spherical harmonic expansions
                 par = ar * snorm[n + m * 13];
                 if (m == 0) {
@@ -216,28 +169,26 @@ class Geomagnetism {
                     temp1 = tc[m][n] * cp[m] + tc[n][m - 1] * sp[m];
                     temp2 = tc[m][n] * sp[m] - tc[n][m - 1] * cp[m];
                 }
-
                 bt = bt - ar * temp1 * dp[m][n];
                 bp += (fm[m] * temp2 * par);
                 br += (fn[n] * temp1 * par);
-
                 // Special case: north/south geographic poles
                 if (st == 0 && m == 1) {
-                    if (n == 1)
+                    if (n == 1) {
                         pp[n] = pp[n - 1];
-                    else
+                    } else {
                         pp[n] = ct * pp[n - 1] - k[m][n] * pp[n - 2];
+                    }
                     parp = ar * pp[n];
                     bpp += (fm[m] * temp2 * parp);
                 }
             }
         }
-
-        if (st == 0)
+        if (st == 0) {
             bp = bpp;
-        else
+        } else {
             bp /= st;
-
+        }
         // Rotate magnetic vector components from spherical to geodetic coordinates
         // bx must be the east-west field component
         // by must be the north-south field component
@@ -245,14 +196,12 @@ class Geomagnetism {
         bx = -bt * ca - br * sa;
         by = bp;
         bz = bt * sa - br * ca;
-
         // Compute declination (dec), inclination (dip) and total intensity (ti)
         bh = Math.sqrt((bx * bx) + (by * by));
         intensity = Math.sqrt((bh * bh) + (bz * bz));
         // Calculate the declination.
         declination = Math.toDegrees(Math.atan2(by, bx));
         inclination = Math.toDegrees(Math.atan2(bz, bh));
-
         otime = yearFraction;
         oalt = altitudeKm;
         olat = latitude;
@@ -320,57 +269,6 @@ class Geomagnetism {
         return by;
     }
 
-    /**
-     * The input string array which contains each line of input for the wmm.cof input file. The columns in this file are
-     * as follows: n, m, gnm, hnm, dgnm, dhnm
-     */
-    private final static String[] WMM_COF = { "    2020.0            WMM-2020        12/10/2019",
-            "  1  0  -29404.5       0.0        6.7        0.0", "  1  1   -1450.7    4652.9        7.7      -25.1",
-            "  2  0   -2500.0       0.0      -11.5        0.0", "  2  1    2982.0   -2991.6       -7.1      -30.2",
-            "  2  2    1676.8    -734.8       -2.2      -23.9", "  3  0    1363.9       0.0        2.8        0.0",
-            "  3  1   -2381.0     -82.2       -6.2        5.7", "  3  2    1236.2     241.8        3.4       -1.0",
-            "  3  3     525.7    -542.9      -12.2        1.1", "  4  0     903.1       0.0       -1.1        0.0",
-            "  4  1     809.4     282.0       -1.6        0.2", "  4  2      86.2    -158.4       -6.0        6.9",
-            "  4  3    -309.4     199.8        5.4        3.7", "  4  4      47.9    -350.1       -5.5       -5.6",
-            "  5  0    -234.4       0.0       -0.3        0.0", "  5  1     363.1      47.7        0.6        0.1",
-            "  5  2     187.8     208.4       -0.7        2.5", "  5  3    -140.7    -121.3        0.1       -0.9",
-            "  5  4    -151.2      32.2        1.2        3.0", "  5  5      13.7      99.1        1.0        0.5",
-            "  6  0      65.9       0.0       -0.6        0.0", "  6  1      65.6     -19.1       -0.4        0.1",
-            "  6  2      73.0      25.0        0.5       -1.8", "  6  3    -121.5      52.7        1.4       -1.4",
-            "  6  4     -36.2     -64.4       -1.4        0.9", "  6  5      13.5       9.0       -0.0        0.1",
-            "  6  6     -64.7      68.1        0.8        1.0", "  7  0      80.6       0.0       -0.1        0.0",
-            "  7  1     -76.8     -51.4       -0.3        0.5", "  7  2      -8.3     -16.8       -0.1        0.6",
-            "  7  3      56.5       2.3        0.7       -0.7", "  7  4      15.8      23.5        0.2       -0.2",
-            "  7  5       6.4      -2.2       -0.5       -1.2", "  7  6      -7.2     -27.2       -0.8        0.2",
-            "  7  7       9.8      -1.9        1.0        0.3", "  8  0      23.6       0.0       -0.1        0.0",
-            "  8  1       9.8       8.4        0.1       -0.3", "  8  2     -17.5     -15.3       -0.1        0.7",
-            "  8  3      -0.4      12.8        0.5       -0.2", "  8  4     -21.1     -11.8       -0.1        0.5",
-            "  8  5      15.3      14.9        0.4       -0.3", "  8  6      13.7       3.6        0.5       -0.5",
-            "  8  7     -16.5      -6.9        0.0        0.4", "  8  8      -0.3       2.8        0.4        0.1",
-            "  9  0       5.0       0.0       -0.1        0.0", "  9  1       8.2     -23.3       -0.2       -0.3",
-            "  9  2       2.9      11.1       -0.0        0.2", "  9  3      -1.4       9.8        0.4       -0.4",
-            "  9  4      -1.1      -5.1       -0.3        0.4", "  9  5     -13.3      -6.2       -0.0        0.1",
-            "  9  6       1.1       7.8        0.3       -0.0", "  9  7       8.9       0.4       -0.0       -0.2",
-            "  9  8      -9.3      -1.5       -0.0        0.5", "  9  9     -11.9       9.7       -0.4        0.2",
-            " 10  0      -1.9       0.0        0.0        0.0", " 10  1      -6.2       3.4       -0.0       -0.0",
-            " 10  2      -0.1      -0.2       -0.0        0.1", " 10  3       1.7       3.5        0.2       -0.3",
-            " 10  4      -0.9       4.8       -0.1        0.1", " 10  5       0.6      -8.6       -0.2       -0.2",
-            " 10  6      -0.9      -0.1       -0.0        0.1", " 10  7       1.9      -4.2       -0.1       -0.0",
-            " 10  8       1.4      -3.4       -0.2       -0.1", " 10  9      -2.4      -0.1       -0.1        0.2",
-            " 10 10      -3.9      -8.8       -0.0       -0.0", " 11  0       3.0       0.0       -0.0        0.0",
-            " 11  1      -1.4      -0.0       -0.1       -0.0", " 11  2      -2.5       2.6       -0.0        0.1",
-            " 11  3       2.4      -0.5        0.0        0.0", " 11  4      -0.9      -0.4       -0.0        0.2",
-            " 11  5       0.3       0.6       -0.1       -0.0", " 11  6      -0.7      -0.2        0.0        0.0",
-            " 11  7      -0.1      -1.7       -0.0        0.1", " 11  8       1.4      -1.6       -0.1       -0.0",
-            " 11  9      -0.6      -3.0       -0.1       -0.1", " 11 10       0.2      -2.0       -0.1        0.0",
-            " 11 11       3.1      -2.6       -0.1       -0.0", " 12  0      -2.0       0.0        0.0        0.0",
-            " 12  1      -0.1      -1.2       -0.0       -0.0", " 12  2       0.5       0.5       -0.0        0.0",
-            " 12  3       1.3       1.3        0.0       -0.1", " 12  4      -1.2      -1.8       -0.0        0.1",
-            " 12  5       0.7       0.1       -0.0       -0.0", " 12  6       0.3       0.7        0.0        0.0",
-            " 12  7       0.5      -0.1       -0.0       -0.0", " 12  8      -0.2       0.6        0.0        0.1",
-            " 12  9      -0.5       0.2       -0.0       -0.0", " 12 10       0.1      -0.9       -0.0       -0.0",
-            " 12 11      -1.1      -0.0       -0.0        0.0", " 12 12      -0.3       0.5       -0.1       -0.1" };
-
     /** Mean radius of IAU-66 ellipsoid, in km */
     private static final double IAU66_RADIUS = 6371.2;
 
@@ -408,10 +306,10 @@ class Geomagnetism {
     private int maxord;
 
     /** The Gauss coefficients of main geomagnetic model (nt) */
-    private double c[][] = new double[13][13];
+    private double c[][] = new double[300][300];
 
     /** The Gauss coefficients of secular geomagnetic model (nt/yr) */
-    private double cd[][] = new double[13][13];
+    private double cd[][] = new double[300][300];
 
     /** The time adjusted geomagnetic gauss coefficients (nt) */
     private double tc[][] = new double[13][13];
