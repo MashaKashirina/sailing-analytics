@@ -81,11 +81,9 @@ public class ClientConfiguration implements BrandingConfiguration {
     private String sailingAnalyticsReadMoreText;
     private String sailingAnalyticsSailing;
     private String footerCopyright;
-    private String footerLegalLink;
     private String footerPrivacyLink;
     private String footerJobsLink;
     private String footerSupportLink;
-    private String footerWhatsNewLink;
     private String sportsOn;
     private String followSports;
     private String facebookLink;
@@ -120,11 +118,9 @@ public class ClientConfiguration implements BrandingConfiguration {
             sailingAnalyticsReadMoreText = dataJso.getSailingAnalyticsReadMoreText();
             sailingAnalyticsSailing = dataJso.getSailingAnalyticsSailing();
             footerCopyright = dataJso.getFooterCopyright();
-            footerLegalLink = dataJso.getFooterLegalLink();
             footerPrivacyLink = dataJso.getFooterPrivacyLink();
             footerJobsLink = dataJso.getFooterJobsLink();
             footerSupportLink = dataJso.getFooterSupportLink();
-            footerWhatsNewLink = dataJso.getFooterWhatsNewLink();
             sportsOn = dataJso.getSportsOn();
             followSports = dataJso.getFollowSports();
             xLink = dataJso.getxLink();
@@ -221,9 +217,6 @@ public class ClientConfiguration implements BrandingConfiguration {
     public String getFooterCopyright() {
         return footerCopyright;
     }
-    public String getFooterLegalLink() {
-        return footerLegalLink;
-    }
     public String getFooterPrivacyLink() {
         return footerPrivacyLink;
     }
@@ -232,9 +225,6 @@ public class ClientConfiguration implements BrandingConfiguration {
     }
     public String getFooterSupportLink() {
         return footerSupportLink;
-    }
-    public String getFooterWhatsNewLink() {
-        return footerWhatsNewLink;
     }
     public String getSportsOn(Optional<String> locale) {
         return sportsOn;

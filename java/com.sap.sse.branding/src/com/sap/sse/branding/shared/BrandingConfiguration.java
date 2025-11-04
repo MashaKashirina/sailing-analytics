@@ -37,17 +37,13 @@ public interface BrandingConfiguration {
     String getSailingAnalyticsSailing(Optional<String> locale);
     
     String getFooterCopyright();
-    
-    String getFooterLegalLink();
-    
+        
     String getFooterPrivacyLink();
     
     String getFooterJobsLink();
     
     String getFooterSupportLink();
-    
-    String getFooterWhatsNewLink();
-    
+        
     String getSportsOn(Optional<String> locale);
     
     String getFollowSports(Optional<String> locale);

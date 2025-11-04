@@ -105,11 +105,6 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     }
 
     @Override
-    public String getFooterLegalLink() {
-        return "/gwt/Home.html#/imprint/:";
-    }
-
-    @Override
     public String getFooterPrivacyLink() {
         return "https://www.sap.com/about/legal/privacy.html?campaigncode=CRM-XH21-OSP-Sailing";
     }
@@ -122,11 +117,6 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     @Override
     public String getFooterSupportLink() {
         return "https://support.sapsailing.com";
-    }
-
-    @Override
-    public String getFooterWhatsNewLink() {
-        return "/gwt/Home.html#WhatsNewPlace:navigationTab=SailingAnalytics";
     }
 
     @Override

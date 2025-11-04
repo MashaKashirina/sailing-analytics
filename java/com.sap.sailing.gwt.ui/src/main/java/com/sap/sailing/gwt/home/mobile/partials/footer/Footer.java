@@ -9,14 +9,18 @@ import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.SpanElement;
 import com.google.gwt.dom.client.Style.Display;
+import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
+import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace;
+import com.sap.sailing.gwt.home.mobile.app.MobilePlacesNavigator;
 import com.sap.sailing.gwt.home.shared.SwitchingEntryPoint;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sse.common.Util;
@@ -43,10 +47,14 @@ public class Footer extends Composite {
     @UiField AnchorElement jobsAnchor;
     @UiField AnchorElement privacyAnchor;
     @UiField SpanElement pipe;
+    
+    private final MobilePlacesNavigator placeNavigator;
 
-    public Footer() {
+    public Footer(MobilePlacesNavigator placeNavigator) {
+        this.placeNavigator = placeNavigator;
         FooterResources.INSTANCE.css().ensureInjected();
         initWidget(uiBinder.createAndBindUi(this));
+        placeNavigator.getImprintNavigation().configureAnchorElement(imprintAnchorLink);
         DOM.sinkEvents(desktopUi, Event.ONCLICK);
         DOM.setEventListener(desktopUi, new EventListener() {
             @Override
@@ -62,7 +70,6 @@ public class Footer extends Composite {
             languageSelector.setLabelText(StringMessages.INSTANCE.whitelabelFooterLanguage());
             supportAnchor.getStyle().setDisplay(Display.NONE);
             whatsNewLinkUi.getElement().getStyle().setDisplay(Display.NONE);
-            imprintAnchorLink.getStyle().setDisplay(Display.NONE);
             jobsAnchor.getStyle().setDisplay(Display.NONE);
             privacyAnchor.getStyle().setDisplay(Display.NONE);
         } else {
@@ -74,16 +81,15 @@ public class Footer extends Composite {
             setHrefOrHide(privacyAnchor, cfg.getFooterPrivacyLink());
             setHrefOrHide(jobsAnchor, cfg.getFooterJobsLink());
             setHrefOrHide(supportAnchor, cfg.getFooterSupportLink());
-            setHrefOrHide(imprintAnchorLink, cfg.getFooterLegalLink());
-            if (!Util.hasLength(cfg.getFooterWhatsNewLink())) {
-                whatsNewLinkUi.getElement().getStyle().setDisplay(Display.NONE);
-            } else {
-                whatsNewLinkUi.setHref(cfg.getFooterWhatsNewLink());
-            }
             if (!hideIfBlank(copyrightDiv, cfg.getFooterCopyright())) {
                 copyrightDiv.setInnerText(cfg.getFooterCopyright());
             }
         }
+    }
+    
+    @UiHandler("whatsNewLinkUi")
+    void onWhatsNew(ClickEvent e) {
+        placeNavigator.getWhatsNewNavigation(WhatsNewPlace.WhatsNewNavigationTabs.SailingAnalytics).goToPlace();
     }
     
     private static boolean hideIfBlank(DivElement el, String text) {

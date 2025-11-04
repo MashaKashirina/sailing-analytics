@@ -79,9 +79,6 @@ public class ClientConfigurationContextDataJSO extends JavaScriptObject {
     public final native String getFooterCopyright() /*-{
         return this.footerCopyright;
     }-*/;
-    public final native String getFooterLegalLink() /*-{
-        return this.footerLegalLink;
-    }-*/;
     public final native String getFooterPrivacyLink() /*-{
         return this.footerPrivacyLink;
     }-*/;
@@ -90,9 +87,6 @@ public class ClientConfigurationContextDataJSO extends JavaScriptObject {
     }-*/;
     public final native String getFooterSupportLink() /*-{
         return this.footerSupportLink;
-    }-*/;
-    public final native String getFooterWhatsNewLink() /*-{
-        return this.footerWhatsNewLink;
     }-*/;
     public final native String getSportsOn() /*-{
         return this.sportsOn;

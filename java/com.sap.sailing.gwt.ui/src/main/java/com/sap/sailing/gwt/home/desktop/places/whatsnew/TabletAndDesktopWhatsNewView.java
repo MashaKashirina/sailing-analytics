@@ -22,6 +22,8 @@ import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace.WhatsNewNa
 import com.sap.sailing.gwt.home.shared.app.PlaceNavigation;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sse.gwt.shared.ClientConfiguration;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.NodeList;
 
 public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewView {
     private static SailingAnalyticsPageViewUiBinder uiBinder = GWT.create(SailingAnalyticsPageViewUiBinder.class);
@@ -63,6 +65,13 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
         raceCommitteeAppNotes.setHTML(WhatsNewResources.INSTANCE.getRaceCommitteeAppNotesHtml().getText());
         inSightAppNotes.setHTML(WhatsNewResources.INSTANCE.getInSightAppNotesHtml().getText());
         buoyPingerAppNotes.setHTML(WhatsNewResources.INSTANCE.getBuoyPingerAppNotesHtml().getText());
+        if (ClientConfiguration.getInstance().isBrandingActive()) {
+            setBrandedHeadlineInWidget(raceCommitteeAppNotes, "h4", "What's New - {0} Sailing Race Manager");
+            setBrandedHeadlineInWidget(sailingAnalyticsNotes, "h4", "What's New - {0} Sailing Analytics");
+            setBrandedHeadlineInWidget(inSightAppNotes, "h4", "What's New - Sail Insight powered by {0}");
+            setBrandedHeadlineInWidget(buoyPingerAppNotes, "h4", "What's New - {0} Sailing Buoy Pinger");
+
+        }
         // set notes navigation
         sailingAnalyticNotesNavigation = placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingAnalytics); 
         sailingSimulatorNoteNavigation = placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingSimulator); 
@@ -158,4 +167,17 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
          }
     }
 
+    private void setBrandedHeadlineInWidget(HTML contentWidget, String tagName, String templateWithBrandPlaceholder) {
+        String brandName = ClientConfiguration.getInstance().getBrandTitle(Optional.empty());
+        Element container = contentWidget.getElement();
+        NodeList<Element> elements = container.getElementsByTagName(tagName);
+        if (elements == null || elements.getLength() == 0) {
+            return;
+        }
+        Element target = elements.getItem(0);
+        String text = templateWithBrandPlaceholder.replace("{0}", brandName);
+        target.setInnerText(text);
+    }
+
+    
 }

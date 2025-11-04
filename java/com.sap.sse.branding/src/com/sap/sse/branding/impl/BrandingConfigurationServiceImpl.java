@@ -130,12 +130,10 @@ public class BrandingConfigurationServiceImpl implements BrandingConfigurationSe
         map.put(BrandingConfigurationProperty.FOOTER_PRIVACY_LINK, brandingConfiguration == null ? "" : brandingConfiguration.getFooterPrivacyLink());
         map.put(BrandingConfigurationProperty.FOOTER_JOBS_LINK, brandingConfiguration == null ? "" : brandingConfiguration.getFooterJobsLink());
         map.put(BrandingConfigurationProperty.FOOTER_SUPPORT_LINK, brandingConfiguration == null ? "" : brandingConfiguration.getFooterSupportLink());
-        map.put(BrandingConfigurationProperty.FOOTER_WHATS_NEW_LINK, brandingConfiguration == null ? "" : brandingConfiguration.getFooterWhatsNewLink());
         map.put(BrandingConfigurationProperty.MORE_LOGIN_INFORMATION_SIMULATOR_URL, brandingConfiguration == null ? "" : brandingConfiguration.getMoreLoginInformationSimulatorURL());
         map.put(BrandingConfigurationProperty.MORE_LOGIN_INFORMATION_SAILOR_PROFILES_URL, brandingConfiguration == null ? "" : brandingConfiguration.getMoreLoginInformationSailorProfilesURL());
         map.put(BrandingConfigurationProperty.MORE_LOGIN_INFORMATION_SETTINGS_URL, brandingConfiguration == null ? "" : brandingConfiguration.getMoreLoginInformationSettingsURL());
         map.put(BrandingConfigurationProperty.MORE_LOGIN_INFORMATION_NOTIFICATIONS_URL, brandingConfiguration == null ? "" : brandingConfiguration.getMoreLoginInformationNotificationsURL());
-        map.put(BrandingConfigurationProperty.FOOTER_LEGAL_LINK, brandingConfiguration == null ? "" : brandingConfiguration.getFooterLegalLink());
         map.put(BrandingConfigurationProperty.SAILING_ANALYTICS_READ_MORE_TEXT, brandingConfiguration == null ? "" : brandingConfiguration.getSailingAnalyticsReadMoreText(locale));
         map.put(BrandingConfigurationProperty.SPORTS_ON, brandingConfiguration == null ? "" : brandingConfiguration.getSportsOn(locale));
         map.put(BrandingConfigurationProperty.FOLLOW_SPORTS, brandingConfiguration == null ? "" : brandingConfiguration.getFollowSports(locale));

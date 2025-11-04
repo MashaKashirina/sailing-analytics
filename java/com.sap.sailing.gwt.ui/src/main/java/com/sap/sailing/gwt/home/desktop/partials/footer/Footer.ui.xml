@@ -5,6 +5,7 @@
   <ui:with field="i18n" type="com.sap.sailing.gwt.ui.client.StringMessages" />
   <ui:with field="res" type="com.sap.sailing.gwt.common.client.SharedResources" />
   <ui:with field="local_res" type="com.sap.sailing.gwt.home.desktop.partials.footer.FooterResources" />
+  <ui:with field="releaseNotesNavigation" type="com.sap.sailing.gwt.home.shared.app.PlaceNavigation" />
   <g:HTMLPanel tag="footer" addStyleNames="{local_res.css.dfooter}">
     <!-- Website footer-->
       <div class="{res.mediaCss.grid} {local_res.css.dfooter_row}">
@@ -23,7 +24,7 @@
             <a ui:field="supportAnchor"  class="{local_res.css.dfooter_item} {local_res.css.dfooter_link}">
               <ui:text from='{i18n.footerSupport}' />
             </a>
-            <a ui:field="whatsNewAnchor" class="{local_res.css.dfooter_item} {local_res.css.dfooter_link}">
+            <a ui:field="whatsNewAnchor" href="{releaseNotesNavigation.getSafeTargetUrl}" class="{local_res.css.dfooter_item} {local_res.css.dfooter_link}">
               <ui:text from='{i18n.whatsNew}' />
             </a>
             <a ui:field="mobileUi" title="{i18n.mobile}" href=""
