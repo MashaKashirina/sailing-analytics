@@ -51,7 +51,6 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
     private final PlaceNavigation<WhatsNewPlace> raceCommitteeAppNotesNavigation; 
     private final PlaceNavigation<WhatsNewPlace> inSightAppNotesNavigation;
     private final PlaceNavigation<WhatsNewPlace> buoyPingerAppNotesNavigation;
-
     private final List<Anchor> links;
     private final List<HTML> contentWidgets;
     
@@ -70,7 +69,6 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
             setBrandedHeadlineInWidget(sailingAnalyticsNotes, "h4", "What's New - {0} Sailing Analytics");
             setBrandedHeadlineInWidget(inSightAppNotes, "h4", "What's New - Sail Insight powered by {0}");
             setBrandedHeadlineInWidget(buoyPingerAppNotes, "h4", "What's New - {0} Sailing Buoy Pinger");
-
         }
         // set notes navigation
         sailingAnalyticNotesNavigation = placesNavigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingAnalytics); 
@@ -178,6 +176,4 @@ public class TabletAndDesktopWhatsNewView extends Composite implements WhatsNewV
         String text = templateWithBrandPlaceholder.replace("{0}", brandName);
         target.setInnerText(text);
     }
-
-    
 }

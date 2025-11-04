@@ -13,6 +13,12 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     private String greyTransparentLogoURL;
     private final ResourceBundleStringMessages sailingServerStringMessages;
     private static final String STRING_MESSAGES_BASE_NAME = "stringmessages/SAPBrandingStringMessages";
+    
+    /**
+     * The following path consists of the "Web-ContextPath" from the bundle's MANIFEST.MF, followed by the
+     * images folder name and hence constitutes the URL path to which a "/" and the image file name has to
+     * be appended to obtain a URL path to an image.
+     */
     private static final String IMAGES_ROOT = "/sap-branding/images";
 
     public SAPBrandingConfiguration() {

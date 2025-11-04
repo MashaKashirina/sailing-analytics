@@ -6130,6 +6130,7 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
                     }
                 }
             } catch (InterruptedException e) {
+                logger.warning("Waiting for branding configuration service got interrupted. Continuing without brand affiliation message.");
             }
         }
         return result;

@@ -49,10 +49,8 @@ public class Footer extends Composite {
     public Footer(final DesktopPlacesNavigator navigator, EventBus eventBus) {
         FooterResources.INSTANCE.css().ensureInjected();
         releaseNotesNavigation = navigator.getWhatsNewNavigation(WhatsNewNavigationTabs.SailingAnalytics);
-
         initWidget(uiBinder.createAndBindUi(this));
         navigator.getImprintNavigation().configureAnchorElement(imprintAnchorLink);
-        
         DOM.sinkEvents(mobileUi, Event.ONCLICK);
         DOM.setEventListener(mobileUi, new EventListener() {
             @Override
@@ -67,7 +65,6 @@ public class Footer extends Composite {
             copyrightDiv.getStyle().setDisplay(NONE);
             languageSelector.setLabelText(StringMessages.INSTANCE.whitelabelFooterLanguage());
             supportAnchor.getStyle().setDisplay(Display.NONE);
-            whatsNewAnchor.getStyle().setDisplay(Display.NONE);
             privacyAnchorLink.getStyle().setDisplay(Display.NONE);
             jobsAnchor.getStyle().setDisplay(Display.NONE);
         } else {
