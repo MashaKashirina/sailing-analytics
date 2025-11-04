@@ -26,13 +26,13 @@ import com.sap.sse.gwt.shared.DebugConstants;
  *   <li>Optional widget to show on the right side of the header</li>
  * </ul>
  */
-public class SAPHeader extends Composite {
+public class BrandedSailingHeader extends Composite {
     private static final StringMessages stringMessages = GWT.create(StringMessages.class);
     private static final String LOGO_URL = stringMessages.sapAnalyticsURL();
     
-    private static SAPHeaderUiBinder uiBinder = GWT.create(SAPHeaderUiBinder.class);
+    private static SailingHeaderUiBinder uiBinder = GWT.create(SailingHeaderUiBinder.class);
 
-    interface SAPHeaderUiBinder extends UiBinder<Widget, SAPHeader> {
+    interface SailingHeaderUiBinder extends UiBinder<Widget, BrandedSailingHeader> {
     }
 
     @UiField
@@ -48,8 +48,8 @@ public class SAPHeader extends Composite {
     @UiField
     AnchorElement logoAnchor;
 
-    public SAPHeader(String applicationName, String applicationBaseUrl) {
-        SAPHeaderResources.INSTANCE.css().ensureInjected();
+    public BrandedSailingHeader(String applicationName, String applicationBaseUrl) {
+        BrandedHeaderResources.INSTANCE.css().ensureInjected();
         initWidget(uiBinder.createAndBindUi(this));
         applicationNameAnchor.setInnerText(applicationName != null ? applicationName : "&nbsp;");
         logoAnchor.setHref(LOGO_URL);

@@ -11,7 +11,7 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.sap.sailing.gwt.common.authentication.FixedSailingAuthentication;
-import com.sap.sailing.gwt.common.authentication.SAPSailingHeaderWithAuthentication;
+import com.sap.sailing.gwt.common.authentication.SailingHeaderWithAuthentication;
 import com.sap.sailing.gwt.settings.client.spectator.SpectatorContextDefinition;
 import com.sap.sailing.gwt.settings.client.spectator.SpectatorSettings;
 import com.sap.sailing.gwt.ui.client.AbstractSailingReadEntryPoint;
@@ -72,7 +72,7 @@ public class SpectatorEntryPoint extends AbstractSailingReadEntryPoint {
         if (!embedded) {
             String title = groupNameParam != null ? groupNameParam : getStringMessages().overview();
             Window.setTitle(title);
-            SAPSailingHeaderWithAuthentication header = getHeader(title);
+            SailingHeaderWithAuthentication header = getHeader(title);
             RootPanel.get().add(header);
         } else {
             RootPanel.getBodyElement().getStyle().setPadding(0, Unit.PX);
@@ -80,8 +80,8 @@ public class SpectatorEntryPoint extends AbstractSailingReadEntryPoint {
         }
     }
 
-    private SAPSailingHeaderWithAuthentication getHeader(String title) {
-        SAPSailingHeaderWithAuthentication header = new SAPSailingHeaderWithAuthentication(title);
+    private SailingHeaderWithAuthentication getHeader(String title) {
+        SailingHeaderWithAuthentication header = new SailingHeaderWithAuthentication(title);
         PaywallResolver paywallResolver = new PaywallResolverImpl(getUserService(), getSubscriptionServiceFactory());
         new FixedSailingAuthentication(getUserService(), paywallResolver, header.getAuthenticationMenuView());
         header.getElement().getStyle().setPosition(Position.FIXED);

@@ -13,10 +13,15 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     private String greyTransparentLogoURL;
     private final ResourceBundleStringMessages sailingServerStringMessages;
     private static final String STRING_MESSAGES_BASE_NAME = "stringmessages/SAPBrandingStringMessages";
+    private static final String IMAGES_ROOT = "/sap-branding/images";
 
     public SAPBrandingConfiguration() {
         sailingServerStringMessages = ResourceBundleStringMessages.create(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(),
                 StandardCharsets.UTF_8.name());
+    }
+    
+    private static String image(String fileName) {
+        return IMAGES_ROOT + "/" + fileName;
     }
 
     @Override
@@ -41,47 +46,47 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     
     @Override
     public String getSolutionsInSailingImageURL() {
-        return "/sap-branding/images/solutions-sap-in-sailing.jpg";
+        return image("solutions-sap-in-sailing.jpg");
     }
 
     @Override
     public String getSoutionsInSailingTrimmedImageURL() {
-        return "/sap-branding/images/solutions-sap-trimmed.png";
+        return image("solutions-sap-trimmed.png");
     }
 
     @Override
     public String getSailingRaceManagerAppImageURL() {
-        return "/sap-branding/images/solutions-sap-sailing-race-manager.png";
+        return image("solutions-sap-sailing-race-manager.png");
     }
 
     @Override
     public String getSailingRaceManagerAppTrimmedImageURL() {
-        return "/sap-branding/images/solutions-race.png";
+        return image("solutions-race.png");
     }
 
     @Override
     public String getSailInSightAppImageURL() {
-        return "/sap-branding/images/solutions-sap-sailing-insight.png";
+        return image("solutions-sap-sailing-insight.png");
     }
     
     @Override
     public String getSailingSimulatorImageURL() {
-        return "/sap-branding/images/solutions-simulator.png";
+        return image("solutions-simulator.png");
     }
 
     @Override
     public String getSailingSimulatorTrimmedImageURL() {
-        return "/sap-branding/images/solutions-simulator-trimmed.png";
+        return image("solutions-simulator-trimmed.png");
     }
 
     @Override
     public String getBuoyPingerAppImageURL() {
-        return "/sap-branding/images/solutions-sap-sailing-buoy-pinger.png";
+        return image("solutions-sap-sailing-buoy-pinger.png");
     }
 
     @Override
     public String getSailingAnalyticsImageURL() {
-        return "/sap-branding/images/solutions-sap.png";
+        return image("solutions-sap.png");
     }
 
     @Override
@@ -160,22 +165,22 @@ public class SAPBrandingConfiguration implements BrandingConfiguration {
     
     @Override
     public String getMoreLoginInformationNotificationsURL() {
-        return "/sap-branding/images/notifications.png";
+        return image("notifications.png");
     }
     
     @Override
     public String getMoreLoginInformationSettingsURL() {
-        return "/sap-branding/images/settings.png";
+        return image("settings.png");
     }
     
     @Override
     public String getMoreLoginInformationSailorProfilesURL() {
-        return " /sap-branding/images/sailorprofiles.png";
+        return image("sailorprofiles.png");
     }
     
     @Override
     public String getMoreLoginInformationSimulatorURL() {
-        return "/sap-branding/images/simulator.png";
+        return image("simulator.png");
     }
     @Override
     public String getInSailingContent(Optional<String> locale) {

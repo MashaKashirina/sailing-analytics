@@ -5,10 +5,10 @@ import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.ImageResource;
 
-public interface SAPHeaderResources extends ClientBundle {
-    public static final SAPHeaderResources INSTANCE = GWT.create(SAPHeaderResources.class);
+public interface BrandedHeaderResources extends ClientBundle {
+    public static final BrandedHeaderResources INSTANCE = GWT.create(BrandedHeaderResources.class);
 
-    @Source("SAPHeader.gss")
+    @Source("BrandedSailingHeader.gss")
     LocalCss css();
 
     public interface LocalCss extends CssResource {
