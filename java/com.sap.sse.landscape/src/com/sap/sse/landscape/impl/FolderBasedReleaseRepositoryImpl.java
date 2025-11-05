@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -39,7 +40,12 @@ public class FolderBasedReleaseRepositoryImpl extends AbstractReleaseRepository 
         return repositoryBase;
     }
 
-    protected Iterable<Release> getAvailableReleases() {
+    @Override
+    public Iterator<Release> iterator() {
+        return getAvailableReleases().iterator();
+    }
+
+    private Iterable<Release> getAvailableReleases() {
         final List<Release> result = new LinkedList<>();
         try {
             final URLConnection connection = HttpUrlConnectionHelper.redirectConnection(new URL(getRepositoryBase()));
