@@ -18,5 +18,4 @@ public class ResetUserLockOperation implements SecurityOperation<Void> {
         toState.internalResetUserTimedLock(username);
         return null;
     }
-
 }

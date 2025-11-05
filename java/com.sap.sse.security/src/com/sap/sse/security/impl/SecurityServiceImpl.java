@@ -3547,14 +3547,14 @@ implements ReplicableSecurityService, ClearStateTestSupport {
 
     @Override
     public void internalReleaseUserCreationLockOnIp(String ip) {
-        if(clientIPBasedTimedLocksForUserCreation.containsKey(ip)) {
+        if (clientIPBasedTimedLocksForUserCreation.containsKey(ip)) {
             clientIPBasedTimedLocksForUserCreation.remove(ip);
         }
     }
 
     @Override
     public void internalReleaseBearerTokenLockOnIp(String ip) {
-        if(clientIPBasedTimedLocksForBearerTokenAuthentication.containsKey(ip)) {
+        if (clientIPBasedTimedLocksForBearerTokenAuthentication.containsKey(ip)) {
             clientIPBasedTimedLocksForBearerTokenAuthentication.remove(ip);
         }
     }
