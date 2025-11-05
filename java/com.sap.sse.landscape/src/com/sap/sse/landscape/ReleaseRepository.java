@@ -13,7 +13,7 @@ public interface ReleaseRepository extends Iterable<Release> {
      *         repository, or {@code null} otherwise
      */
     default Release getLatestMasterRelease() {
-        return getLatestRelease(getMasterReleaseNamePrefix());
+        return getLatestRelease(getMainReleaseNamePrefix());
     }
     
     /**
@@ -28,5 +28,5 @@ public interface ReleaseRepository extends Iterable<Release> {
 
     String getRepositoryBase();
 
-    String getMasterReleaseNamePrefix();
+    String getMainReleaseNamePrefix();
 }

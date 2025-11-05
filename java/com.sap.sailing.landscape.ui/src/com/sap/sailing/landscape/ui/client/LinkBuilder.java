@@ -128,7 +128,8 @@ public class LinkBuilder implements Builder<LinkBuilder, SafeHtml> {
     }
 
     private String getReleaseNotesLink(final String version) {
-        return "https://releases.sapsailing.com/" + version + "/release-notes.txt";
+        // TODO bug6173: can we figure this out from the ReleaseRepository, asking a Release specified by "version"? See Release.getReleaseNotesURL()
+        return "https://github.com/SAP/sailing-analytics/releases/download/" + version + "/release-notes.txt";
     }
 
     /**
