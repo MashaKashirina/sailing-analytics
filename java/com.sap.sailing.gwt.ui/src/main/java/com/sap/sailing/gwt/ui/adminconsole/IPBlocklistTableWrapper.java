@@ -10,12 +10,12 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
-import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.Widget;
 import com.sap.sailing.gwt.ui.client.SailingServiceWriteAsync;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sse.common.TimedLock;
@@ -24,21 +24,18 @@ import com.sap.sse.gwt.client.celltable.EntityIdentityComparator;
 import com.sap.sse.gwt.client.celltable.RefreshableSelectionModel;
 import com.sap.sse.gwt.client.panels.LabeledAbstractFilterablePanel;
 import com.sap.sse.security.shared.AdminRole;
-import com.sap.sse.security.shared.HasPermissions;
-import com.sap.sse.security.shared.HasPermissions.DefaultActions;
 import com.sap.sse.security.shared.ServerAdminRole;
-import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.dto.RoleWithSecurityDTO;
 import com.sap.sse.security.shared.dto.UserDTO;
+import com.sap.sse.security.shared.impl.SecuredSecurityTypes.ServerActions;
 import com.sap.sse.security.ui.client.UserService;
-import com.sap.sse.security.ui.client.component.AccessControlledButtonPanel;
 import com.sap.sse.security.ui.client.component.SelectedElementsCountingButton;
 
 abstract class IPBlocklistTableWrapper
         extends TableWrapper<IpToTimedLockDTO, RefreshableSelectionModel<IpToTimedLockDTO>> {
     private final UserService userService;
     private final LabeledAbstractFilterablePanel<IpToTimedLockDTO> filterField;
-    private final HasPermissions securedDomainType;
+    private final ServerActions unlockAction;
     private final String errorMessageOnDataFailureString;
 
     protected abstract void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback);
@@ -46,7 +43,7 @@ abstract class IPBlocklistTableWrapper
     protected abstract void unlockIP(String ip, AsyncCallback<Void> asyncCallback);
 
     public IPBlocklistTableWrapper(final SailingServiceWriteAsync sailingServiceWrite, final UserService userService,
-            final HasPermissions securedDomainType, final String errorMessageOnDataFailureString,
+            final ServerActions unlockAction, final String errorMessageOnDataFailureString,
             final StringMessages stringMessages, final ErrorReporter errorReporter) {
         super(sailingServiceWrite, stringMessages, errorReporter, true, true,
                 new EntityIdentityComparator<IpToTimedLockDTO>() {
@@ -60,7 +57,7 @@ abstract class IPBlocklistTableWrapper
                         return t.ip.hashCode();
                     }
                 });
-        this.securedDomainType = securedDomainType;
+        this.unlockAction = unlockAction;
         this.userService = userService;
         this.errorMessageOnDataFailureString = errorMessageOnDataFailureString;
         this.filterField = composeFilterField();
@@ -90,7 +87,7 @@ abstract class IPBlocklistTableWrapper
         final Iterable<RoleWithSecurityDTO> roles = user.getRoles();
         boolean isAdmin = false;
         boolean isServerAdmin = false;
-        boolean isDeleteActionPermittedOnDomain = false;
+        final boolean hasUnlockPermission = userService.hasServerPermission(unlockAction);
         for (RoleWithSecurityDTO role : roles) {
             isAdmin = role.getName().equals(AdminRole.getInstance().getName());
             if (isAdmin) {
@@ -101,22 +98,14 @@ abstract class IPBlocklistTableWrapper
                 break;
             }
         }
-        final Iterable<WildcardPermission> permissions = user.getPermissions();
-        for (WildcardPermission permission : permissions) {
-            isDeleteActionPermittedOnDomain = permission.toString()
-                    .equals(securedDomainType.getStringPermission(DefaultActions.DELETE));
-            if (isDeleteActionPermittedOnDomain) {
-                break;
-            }
-        }
-        return isAdmin || isServerAdmin || isDeleteActionPermittedOnDomain;
+        return isAdmin || isServerAdmin || hasUnlockPermission;
     }
 
-    private AccessControlledButtonPanel composeButtonPanel() {
-        final AccessControlledButtonPanel buttonPanel = new AccessControlledButtonPanel(userService, securedDomainType);
-        final Button refreshbutton = buttonPanel.addAction(getStringMessages().refresh(), () -> true, new Command() {
+    private Widget composeButtonPanel() {
+        final HorizontalPanel buttonPanel = new HorizontalPanel();
+        final Button refreshbutton = new Button(getStringMessages().refresh(), new ClickHandler() {
             @Override
-            public void execute() {
+            public void onClick(ClickEvent event) {
                 loadDataAndPopulateTable();
             }
         });
@@ -142,7 +131,7 @@ abstract class IPBlocklistTableWrapper
                         }
                     });
             unlockButton.ensureDebugId("unlockButton");
-            buttonPanel.insertWidgetAtPosition(unlockButton, 1);
+            buttonPanel.insert(unlockButton, 1);
         }
         return buttonPanel;
     }

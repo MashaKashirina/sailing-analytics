@@ -1,9 +1,11 @@
 package com.sap.sailing.gwt.ui.adminconsole;
 
-import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Named;
+import com.sap.sse.common.TimedLock;
 
 public class IpToTimedLockDTO implements Named {
+    private static final long serialVersionUID = 7877190394556881643L;
+    
     public final String ip;
     public final TimedLock timedLock;
 

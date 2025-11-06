@@ -75,6 +75,12 @@ public class SecuredSecurityTypes extends HasPermissionsImpl {
         CONFIGURE_LOCAL_SERVER,
         CONFIGURE_REMOTE_INSTANCES,
         CREATE_OBJECT,
+        
+        GET_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
+        GET_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE,
+
+        UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
+        UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE,
 
         /**
          * This permission is used to check READ-permission on different things. For that the object type to determine
@@ -112,11 +118,13 @@ public class SecuredSecurityTypes extends HasPermissionsImpl {
         CONFIGURE_CORS_FILTER
         ;
 
-        private static final Action[] ALL_ACTIONS = new Action[] { CONFIGURE_FILE_STORAGE, CONFIGURE_LOCAL_SERVER,
+        private static final Action[] ALL_ACTIONS = new Action[] { GET_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
+                GET_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE, UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
+                UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE, CONFIGURE_FILE_STORAGE, CONFIGURE_LOCAL_SERVER,
                 CONFIGURE_REMOTE_INSTANCES, CREATE_OBJECT, CAN_IMPORT_MASTERDATA, CAN_EXPORT_MASTERDATA, DATA_MINING,
                 REPLICATE, START_REPLICATION, READ_REPLICATOR, THREADS, CONFIGURE_AI_AGENT, CONFIGURE_CORS_FILTER,
-                DefaultActions.CHANGE_OWNERSHIP, DefaultActions.CHANGE_ACL, DefaultActions.CREATE, DefaultActions.DELETE,
-                DefaultActions.READ, DefaultActions.UPDATE };
+                DefaultActions.CHANGE_OWNERSHIP, DefaultActions.CHANGE_ACL, DefaultActions.CREATE,
+                DefaultActions.DELETE, DefaultActions.READ, DefaultActions.UPDATE };
     }
 
     /**

@@ -25,7 +25,6 @@ import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.sap.sailing.domain.common.security.SecuredDomainType;
 import com.sap.sailing.gwt.ui.adminconsole.places.AdminConsoleView.Presenter;
 import com.sap.sailing.gwt.ui.adminconsole.places.advanced.UserGroupManagementPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.advanced.UserManagementPlace;
@@ -42,8 +41,8 @@ import com.sap.sse.gwt.client.IconResources;
 import com.sap.sse.gwt.client.Notification;
 import com.sap.sse.gwt.client.Notification.NotificationType;
 import com.sap.sse.gwt.client.ServerInfoDTO;
-import com.sap.sse.gwt.client.controls.listedit.StringListEditorComposite;
 import com.sap.sse.gwt.client.controls.listedit.GenericStringListEditorComposite.ExpandedUi;
+import com.sap.sse.gwt.client.controls.listedit.StringListEditorComposite;
 import com.sap.sse.security.shared.HasPermissions;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
 import com.sap.sse.security.shared.dto.OwnershipDTO;
@@ -149,10 +148,11 @@ public class LocalServerManagementPanel extends SimplePanel {
     }
 
     private Widget createBearerTokenAbusePanel() {
-        final ServerDataCaptionPanel panel = new ServerDataCaptionPanel(stringMessages.ipsLockedForBearerTokenAbuse(), 3);
+        final ServerDataCaptionPanel panel = new ServerDataCaptionPanel(stringMessages.ipsLockedForBearerTokenAbuse(),
+                3);
         panel.ensureDebugId("bearerTokenAbusePanel");
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
-                SecuredDomainType.IP_BLOCKLIST_FOR_BEARER_TOKEN_ABUSE,
+                ServerActions.UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE,
                 stringMessages.unableToLoadIpsBlockedForBearerTokenAbuse(), stringMessages, errorReporter) {
             @Override
             protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {
@@ -169,10 +169,11 @@ public class LocalServerManagementPanel extends SimplePanel {
     }
 
     private Widget createUserCreationAbusePanel() {
-        final ServerDataCaptionPanel panel = new ServerDataCaptionPanel(stringMessages.ipsLockedForUserCreationAbuse(), 3);
+        final ServerDataCaptionPanel panel = new ServerDataCaptionPanel(stringMessages.ipsLockedForUserCreationAbuse(),
+                3);
         panel.ensureDebugId("userCreationAbusePanel");
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
-                SecuredDomainType.IP_BLOCKLIST_FOR_USER_CREATION_ABUSE,
+                ServerActions.UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
                 stringMessages.unableToLoadIpsBlockedForUserCreationAbuse(), stringMessages, errorReporter) {
             @Override
             protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {

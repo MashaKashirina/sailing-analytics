@@ -78,6 +78,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
+
 import com.sap.sailing.aiagent.interfaces.AIAgent;
 import com.sap.sailing.competitorimport.CompetitorProvider;
 import com.sap.sailing.domain.abstractlog.AbstractLog;
@@ -508,7 +509,6 @@ import com.sap.sse.security.shared.HasPermissions.DefaultActions;
 import com.sap.sse.security.shared.RoleDefinition;
 import com.sap.sse.security.shared.ServerAdminRole;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
-import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.dto.SecuredDTO;
 import com.sap.sse.security.shared.dto.StrippedUserGroupDTO;
 import com.sap.sse.security.shared.impl.AccessControlList;
@@ -6135,15 +6135,9 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
             }
         };
         if (!isAuthorized) {
-            for (WildcardPermission permission : user.getPermissions()) {
-                final boolean hasPermission = permission.toString()
-                        .equals(SecuredDomainType.IP_BLOCKLIST_FOR_USER_CREATION_ABUSE
-                                .getStringPermission(DefaultActions.READ));
-                if (hasPermission) {
-                    isAuthorized = true;
-                    break;
-                }
-            }
+            // throws UnauthorizedException if fails
+            securityService.checkCurrentUserServerPermission(ServerActions.GET_IPS_BLOCKED_FOR_USER_CREATION_ABUSE);
+            isAuthorized = true;
         }
         if (isAuthorized) {
             return securityService.getClientIPBasedTimedLocksForUserCreation();
@@ -6168,15 +6162,9 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
             }
         };
         if (!isAuthorized) {
-            for (WildcardPermission permission : user.getPermissions()) {
-                final boolean hasPermission = permission.toString()
-                        .equals(SecuredDomainType.IP_BLOCKLIST_FOR_BEARER_TOKEN_ABUSE
-                                .getStringPermission(DefaultActions.READ));
-                if (hasPermission) {
-                    isAuthorized = true;
-                    break;
-                }
-            }
+            // throws UnauthorizedException if fails
+            securityService.checkCurrentUserServerPermission(ServerActions.GET_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE);
+            isAuthorized = true;
         }
         if (isAuthorized) {
             return securityService.getClientIPBasedTimedLocksForBearerTokenAbuse();

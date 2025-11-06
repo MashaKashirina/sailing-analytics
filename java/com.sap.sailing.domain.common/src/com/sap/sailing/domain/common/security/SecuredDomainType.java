@@ -52,12 +52,6 @@ public class SecuredDomainType extends HasPermissionsImpl {
     public static final HasPermissions TRACKED_RACE = new SecuredDomainType("TRACKED_RACE",
             TrackedRaceActions.ALL_ACTIONS);
     
-    public static final HasPermissions IP_BLOCKLIST_FOR_BEARER_TOKEN_ABUSE = new SecuredDomainType(
-            "IP_BLOCKLIST_FOR_BEARER_TOKEN_ABUSE", DefaultActions.READ, DefaultActions.DELETE);
-
-    public static final HasPermissions IP_BLOCKLIST_FOR_USER_CREATION_ABUSE = new SecuredDomainType(
-            "IP_BLOCKLIST_FOR_USER_CREATION_ABUSE", DefaultActions.READ, DefaultActions.DELETE);
-    
     public static enum EventActions implements Action {
         UPLOAD_MEDIA
     }

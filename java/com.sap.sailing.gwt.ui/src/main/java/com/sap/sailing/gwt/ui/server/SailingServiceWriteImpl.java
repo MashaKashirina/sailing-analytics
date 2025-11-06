@@ -394,18 +394,17 @@ import com.sap.sse.gwt.shared.filestorage.FileStorageServiceDTO;
 import com.sap.sse.gwt.shared.filestorage.FileStorageServicePropertyErrorsDTO;
 import com.sap.sse.security.Action;
 import com.sap.sse.security.SecurityService;
-import com.sap.sse.security.shared.HasPermissions.DefaultActions;
 import com.sap.sse.security.shared.AdminRole;
+import com.sap.sse.security.shared.HasPermissions.DefaultActions;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.RoleDefinition;
 import com.sap.sse.security.shared.ServerAdminRole;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
-import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.impl.Ownership;
 import com.sap.sse.security.shared.impl.Role;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
-import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes.ServerActions;
+import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.security.shared.impl.UserGroup;
 import com.sap.sse.security.ui.server.SecurityDTOUtil;
 import com.sap.sse.security.ui.shared.SuccessInfo;
@@ -4218,15 +4217,9 @@ public class SailingServiceWriteImpl extends SailingServiceImpl implements Saili
             }
         };
         if (!isAuthorized) {
-            for (WildcardPermission permission : user.getPermissions()) {
-                final boolean hasPermission = permission.toString()
-                        .equals(SecuredDomainType.IP_BLOCKLIST_FOR_USER_CREATION_ABUSE
-                                .getStringPermission(DefaultActions.READ));
-                if (hasPermission) {
-                    isAuthorized = true;
-                    break;
-                }
-            }
+            // throws UnauthorizedException if fails
+            securityService.checkCurrentUserServerPermission(ServerActions.UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE);
+            isAuthorized = true;
         }
         if (isAuthorized) {
             securityService.releaseUserCreationLockOnIp(ip);
@@ -4251,15 +4244,9 @@ public class SailingServiceWriteImpl extends SailingServiceImpl implements Saili
             }
         };
         if (!isAuthorized) {
-            for (WildcardPermission permission : user.getPermissions()) {
-                final boolean hasPermission = permission.toString()
-                        .equals(SecuredDomainType.IP_BLOCKLIST_FOR_BEARER_TOKEN_ABUSE
-                                .getStringPermission(DefaultActions.READ));
-                if (hasPermission) {
-                    isAuthorized = true;
-                    break;
-                }
-            }
+            // throws UnauthorizedException if fails
+            securityService.checkCurrentUserServerPermission(ServerActions.UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE);
+            isAuthorized = true;
         }
         if (isAuthorized) {
             securityService.releaseBearerTokenLockOnIp(ip);
