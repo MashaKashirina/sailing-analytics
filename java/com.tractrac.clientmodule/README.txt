@@ -16,6 +16,29 @@ It contains also some files:
  - Manifest.txt -> manifest used to create the test.jar file
 
 ********************************************
+        TracAPI 5.0.2
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 11/11/2025
+
+ 1) Bugs
+
+ - The Java HTTP client’s automatic redirection did not preserve authentication headers. We now handle HTTP redirects
+ manually to ensure that the headers are retained during redirection. (Reported by Axel Uhl, 10/11/2025)
+
+********************************************
+        TracAPI 5.0.1
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 29/10/2025
+
+ 1) Bugs
+
+ - The library was not compatible with Java 8 (Reported by Axel Uhl, 28/10/2025)
+
+********************************************
         TracAPI 5.0.0
 ********************************************
 This is the final version. It adds authentication to the backend and it is not compatible with versions 4.x.x.
