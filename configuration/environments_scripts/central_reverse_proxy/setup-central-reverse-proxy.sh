@@ -35,7 +35,7 @@ terminationCheck() {
 }
 if [[ "$#" -ne 4 ]]; then
     echo "4 arguments required. Please check comment description for further details."
-    echo "Example usage: setup-central-reverse-proxy.sh 1.2.3.4 0OcJ1938QE5it875kjlQe7HnzQ6740jsnMEVzowjZrs= 18.170.25.225 /home/sailing/code"
+    echo "Example usage: setup-central-reverse-proxy.sh 1.2.3.4 0OcJ1938QE5it875kjlQe7HnzQ6740jsnMEVzowjZrs= 54.229.94.254 /home/wiki/gitwiki"
     exit 2
 fi
 echo "Make sure the instance is in the same AZ as the existing reverse proxy, so the volumes can be switched over."
