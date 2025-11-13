@@ -35,6 +35,7 @@ import com.sap.sse.security.interfaces.Credential;
 import com.sap.sse.security.shared.AccessControlListAnnotation;
 import com.sap.sse.security.shared.HasPermissions;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
+import com.sap.sse.security.shared.IPAddress;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
 import com.sap.sse.security.shared.UnauthorizedException;
@@ -418,16 +419,34 @@ public class UserManagementServiceImpl extends RemoteServiceServlet implements U
     @Override
     public HashMap<String, TimedLock> getClientIPBasedTimedLocksForUserCreation() throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        // throws UnauthorizedException if fails
-        securityService.checkCurrentUserServerPermission(ServerActions.GET_IPS_BLOCKED_FOR_USER_CREATION_ABUSE);
-        return securityService.getClientIPBasedTimedLocksForUserCreation();
+        final HashMap<String, TimedLock> ipToLockMap = securityService.getClientIPBasedTimedLocksForUserCreation();
+        // remove from Map, those where permission == FALSE
+        ipToLockMap.entrySet().forEach(ipToLockPair -> {
+            final String ip = ipToLockPair.getKey();
+            final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+                    .getPermissionForObject(DefaultActions.READ, new IPAddress(ip));
+            final boolean isPermitted = SecurityUtils.getSubject().isPermitted(userReadPermissionOnIp.toString());
+            if (!isPermitted) {
+                ipToLockMap.remove(ip);
+            }
+        });
+        return ipToLockMap;
     }
 
     @Override
     public HashMap<String, TimedLock> getClientIPBasedTimedLocksForBearerTokenAbuse() throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        // throws UnauthorizedException if fails
-        securityService.checkCurrentUserServerPermission(ServerActions.GET_IPS_BLOCKED_FOR_USER_CREATION_ABUSE);
-        return securityService.getClientIPBasedTimedLocksForBearerTokenAbuse();
+        final HashMap<String, TimedLock> ipToLockMap = securityService.getClientIPBasedTimedLocksForBearerTokenAbuse();
+        // remove from Map, those where permission == FALSE
+        ipToLockMap.entrySet().forEach(ipToLockPair -> {
+            final String ip = ipToLockPair.getKey();
+            final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+                    .getPermissionForObject(DefaultActions.READ, new IPAddress(ip));
+            final boolean isPermitted = SecurityUtils.getSubject().isPermitted(userReadPermissionOnIp.toString());
+            if (!isPermitted) {
+                ipToLockMap.remove(ip);
+            }
+        });
+        return ipToLockMap;
     }
 }

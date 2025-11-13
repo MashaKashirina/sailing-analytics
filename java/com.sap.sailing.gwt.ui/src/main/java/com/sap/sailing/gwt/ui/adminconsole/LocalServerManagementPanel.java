@@ -152,7 +152,6 @@ public class LocalServerManagementPanel extends SimplePanel {
                 3);
         panel.ensureDebugId("bearerTokenAbusePanel");
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
-                ServerActions.UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE,
                 stringMessages.unableToLoadIpsBlockedForBearerTokenAbuse(), stringMessages, errorReporter) {
             @Override
             protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {
@@ -173,7 +172,6 @@ public class LocalServerManagementPanel extends SimplePanel {
                 3);
         panel.ensureDebugId("userCreationAbusePanel");
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
-                ServerActions.UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE,
                 stringMessages.unableToLoadIpsBlockedForUserCreationAbuse(), stringMessages, errorReporter) {
             @Override
             protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {

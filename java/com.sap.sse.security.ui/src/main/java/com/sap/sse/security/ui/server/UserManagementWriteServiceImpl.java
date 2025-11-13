@@ -23,6 +23,7 @@ import com.sap.sse.common.media.TakedownNoticeRequestContext;
 import com.sap.sse.security.Action;
 import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
+import com.sap.sse.security.shared.IPAddress;
 import com.sap.sse.security.shared.PermissionChecker;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.RoleDefinition;
@@ -745,16 +746,20 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
     @Override
     public void releaseUserCreationLockOnIp(String ip) throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        // throws if permission not granted
-        securityService.checkCurrentUserServerPermission(ServerActions.UNLOCK_IPS_BLOCKED_FOR_USER_CREATION_ABUSE);
+        final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+                .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
+        // throws exception if not permitted
+        SecurityUtils.getSubject().checkPermission(userReadPermissionOnIp.toString());
         securityService.releaseUserCreationLockOnIp(ip);
     }
 
     @Override
     public void releaseBearerTokenLockOnIp(String ip) throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        // throws UnauthorizedException if fails
-        securityService.checkCurrentUserServerPermission(ServerActions.UNLOCK_IPS_BLOCKED_FOR_BEARER_TOKEN_ABUSE);
+        final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+                .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
+        // throws exception if not permitted
+        SecurityUtils.getSubject().checkPermission(userReadPermissionOnIp.toString());
         securityService.releaseBearerTokenLockOnIp(ip);
     }
 }

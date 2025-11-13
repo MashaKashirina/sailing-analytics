@@ -23,11 +23,9 @@ import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.celltable.EntityIdentityComparator;
 import com.sap.sse.gwt.client.celltable.RefreshableSelectionModel;
 import com.sap.sse.gwt.client.panels.LabeledAbstractFilterablePanel;
-import com.sap.sse.security.shared.AdminRole;
-import com.sap.sse.security.shared.ServerAdminRole;
-import com.sap.sse.security.shared.dto.RoleWithSecurityDTO;
-import com.sap.sse.security.shared.dto.UserDTO;
-import com.sap.sse.security.shared.impl.SecuredSecurityTypes.ServerActions;
+import com.sap.sse.security.shared.HasPermissions.DefaultActions;
+import com.sap.sse.security.shared.WildcardPermission;
+import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
 import com.sap.sse.security.ui.client.UserService;
 import com.sap.sse.security.ui.client.component.SelectedElementsCountingButton;
 
@@ -35,7 +33,6 @@ abstract class IPBlocklistTableWrapper
         extends TableWrapper<IpToTimedLockDTO, RefreshableSelectionModel<IpToTimedLockDTO>> {
     private final UserService userService;
     private final LabeledAbstractFilterablePanel<IpToTimedLockDTO> filterField;
-    private final ServerActions unlockAction;
     private final String errorMessageOnDataFailureString;
 
     protected abstract void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback);
@@ -43,8 +40,8 @@ abstract class IPBlocklistTableWrapper
     protected abstract void unlockIP(String ip, AsyncCallback<Void> asyncCallback);
 
     public IPBlocklistTableWrapper(final SailingServiceWriteAsync sailingServiceWrite, final UserService userService,
-            final ServerActions unlockAction, final String errorMessageOnDataFailureString,
-            final StringMessages stringMessages, final ErrorReporter errorReporter) {
+            final String errorMessageOnDataFailureString, final StringMessages stringMessages,
+            final ErrorReporter errorReporter) {
         super(sailingServiceWrite, stringMessages, errorReporter, true, true,
                 new EntityIdentityComparator<IpToTimedLockDTO>() {
                     @Override
@@ -57,7 +54,6 @@ abstract class IPBlocklistTableWrapper
                         return t.ip.hashCode();
                     }
                 });
-        this.unlockAction = unlockAction;
         this.userService = userService;
         this.errorMessageOnDataFailureString = errorMessageOnDataFailureString;
         this.filterField = composeFilterField();
@@ -81,26 +77,6 @@ abstract class IPBlocklistTableWrapper
         mainPanel.setSpacing(5);
     }
 
-    // admin, server admin and those with the permission can all unlock
-    private boolean canUnlock() {
-        final UserDTO user = userService.getCurrentUser();
-        final Iterable<RoleWithSecurityDTO> roles = user.getRoles();
-        boolean isAdmin = false;
-        boolean isServerAdmin = false;
-        final boolean hasUnlockPermission = userService.hasServerPermission(unlockAction);
-        for (RoleWithSecurityDTO role : roles) {
-            isAdmin = role.getName().equals(AdminRole.getInstance().getName());
-            if (isAdmin) {
-                break;
-            }
-            isServerAdmin = role.getName().equals(ServerAdminRole.getInstance().getName());
-            if (isServerAdmin) {
-                break;
-            }
-        }
-        return isAdmin || isServerAdmin || hasUnlockPermission;
-    }
-
     private Widget composeButtonPanel() {
         final HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.setSpacing(5);
@@ -112,30 +88,40 @@ abstract class IPBlocklistTableWrapper
         });
         refreshButton.ensureDebugId("refreshButton");
         buttonPanel.add(refreshButton);
-        if (canUnlock()) {
-            final Button unlockButton = new SelectedElementsCountingButton<IpToTimedLockDTO>(
-                    getStringMessages().unlock(), getSelectionModel(), new ClickHandler() {
-                        @Override
-                        public void onClick(ClickEvent event) {
-                            for (IpToTimedLockDTO e : getSelectionModel().getSelectedSet()) {
-                                unlockIP(e.ip, new AsyncCallback<Void>() {
-                                    @Override
-                                    public void onFailure(Throwable caught) {
-                                        errorReporter.reportError(errorMessageOnDataFailureString);
-                                    }
-
-                                    @Override
-                                    public void onSuccess(Void result) {
-                                        filterField.remove(e);
-                                    }
-                                });
-                            }
-                        }
-                    });
+        if (hasUnlockPermission()) {
+            final Button unlockButton = composeUnlockButton();
             unlockButton.ensureDebugId("unlockButton");
             buttonPanel.add(unlockButton);
         }
         return buttonPanel;
+    }
+
+    private boolean hasUnlockPermission() {
+        final WildcardPermission unlockIpPermission = SecuredSecurityTypes.LOCKED_IP
+                .getPermission(DefaultActions.DELETE);
+        return userService.hasPermission(unlockIpPermission, userService.getServerInfo().getOwnership());
+    }
+
+    private SelectedElementsCountingButton<IpToTimedLockDTO> composeUnlockButton() {
+        return new SelectedElementsCountingButton<IpToTimedLockDTO>(getStringMessages().unlock(), getSelectionModel(),
+                new ClickHandler() {
+                    @Override
+                    public void onClick(ClickEvent event) {
+                        for (IpToTimedLockDTO e : getSelectionModel().getSelectedSet()) {
+                            unlockIP(e.ip, new AsyncCallback<Void>() {
+                                @Override
+                                public void onFailure(Throwable caught) {
+                                    errorReporter.reportError(errorMessageOnDataFailureString);
+                                }
+
+                                @Override
+                                public void onSuccess(Void result) {
+                                    filterField.remove(e);
+                                }
+                            });
+                        }
+                    }
+                });
     }
 
     private void loadDataAndPopulateTable() {
