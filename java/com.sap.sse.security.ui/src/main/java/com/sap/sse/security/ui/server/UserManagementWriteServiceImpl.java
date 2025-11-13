@@ -746,20 +746,20 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
     @Override
     public void releaseUserCreationLockOnIp(String ip) throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+        final WildcardPermission deletePermission = SecuredSecurityTypes.LOCKED_IP
                 .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
         // throws exception if not permitted
-        SecurityUtils.getSubject().checkPermission(userReadPermissionOnIp.toString());
+        SecurityUtils.getSubject().checkPermission(deletePermission.toString());
         securityService.releaseUserCreationLockOnIp(ip);
     }
 
     @Override
     public void releaseBearerTokenLockOnIp(String ip) throws UnauthorizedException {
         final SecurityService securityService = getSecurityService();
-        final WildcardPermission userReadPermissionOnIp = SecuredSecurityTypes.LOCKED_IP
+        final WildcardPermission deletePermission = SecuredSecurityTypes.LOCKED_IP
                 .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
         // throws exception if not permitted
-        SecurityUtils.getSubject().checkPermission(userReadPermissionOnIp.toString());
+        SecurityUtils.getSubject().checkPermission(deletePermission.toString());
         securityService.releaseBearerTokenLockOnIp(ip);
     }
 }

@@ -15,6 +15,7 @@ import com.sap.sailing.selenium.api.event.SecurityApi;
 import com.sap.sailing.selenium.core.SeleniumTestCase;
 import com.sap.sailing.selenium.pages.adminconsole.AdminConsolePage;
 import com.sap.sailing.selenium.pages.adminconsole.advanced.IpBlocklistPanelPO;
+import com.sap.sailing.selenium.pages.adminconsole.advanced.LocalServerPO;
 import com.sap.sailing.selenium.test.AbstractSeleniumTest;
 
 public class TestIpLocking extends AbstractSeleniumTest {
@@ -28,12 +29,15 @@ public class TestIpLocking extends AbstractSeleniumTest {
     @SeleniumTestCase
     public void testUnlockingForBearerTokenAbuser() throws InterruptedException {
         final AdminConsolePage adminConsole = AdminConsolePage.goToPage(getWebDriver(), getContextRoot());
-        final IpBlocklistPanelPO tablePO = adminConsole.goToLocalServerPanel().getBearerTokenAbusePO();
-        attemptBearerTokenAbuse(5);
+        final LocalServerPO localServerPanel = adminConsole.goToLocalServerPanel();
+        IpBlocklistPanelPO tablePO = localServerPanel.getBearerTokenAbusePO();
+        attemptBearerTokenAbuse(4);
         tablePO.refresh();
         final String ip = "127.0.0.1";
         assertTrue(tablePO.isIpInTable(ip));
         tablePO.unblockIP(ip);
+        // reference was getting stale otherwise
+        tablePO = localServerPanel.getBearerTokenAbusePO();
         assertFalse(tablePO.isIpInTable(ip));
         attemptValidBearerTokenUse();
     }
@@ -73,12 +77,15 @@ public class TestIpLocking extends AbstractSeleniumTest {
     @SeleniumTestCase
     public void testUnlockingForUserCreationAbuser() throws InterruptedException {
         final AdminConsolePage adminConsole = AdminConsolePage.goToPage(getWebDriver(), getContextRoot());
-        final IpBlocklistPanelPO tablePO = adminConsole.goToLocalServerPanel().getUserCreationAbusePO();
+        final LocalServerPO localServerPanel = adminConsole.goToLocalServerPanel();
+        IpBlocklistPanelPO tablePO = localServerPanel.getUserCreationAbusePO();
         spamUserCreation(4);
         tablePO.refresh();
         final String ip = "127.0.0.1";
         assertTrue(tablePO.isIpInTable(ip));
         tablePO.unblockIP(ip);
+        // reference was getting stale otherwise
+        tablePO = localServerPanel.getUserCreationAbusePO();
         assertFalse(tablePO.isIpInTable(ip));
         attemptValidBearerTokenUse();
     }
