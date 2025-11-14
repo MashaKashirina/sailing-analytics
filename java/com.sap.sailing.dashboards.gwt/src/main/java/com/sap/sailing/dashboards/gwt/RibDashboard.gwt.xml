@@ -10,7 +10,6 @@
 	<!-- <inherits name="com.sap.sailing.gwt.ui.EmulatedJRE" /> -->
 	<inherits name="com.sap.sse.gwt.SSESharedGWT" />
 	<inherits name="com.sap.sse.gwt.AdminConsole" />
-    <inherits name="com.sap.sailing.gwt.ui.AdminConsole" />
     <inherits name="com.sap.sse.SSECommon" />
     <inherits name="com.sap.sse.landscape.common.SSELandscapeCommon"/>
     <inherits name="com.sap.sse.landscape.aws.common.SSELandscapeAWSCommon" />
@@ -47,7 +46,7 @@
         <inherits name="com.sap.sailing.ExpeditionConnectorCommon" />
   
     <!-- module containing locale configuration -->
-    <inherits name='com.sap.sailing.gwt.common.SailingLocalesSinglePermutation' />
+    <inherits name='com.sap.sailing.gwt.common.SailingLocalesAllPermutations' />
 	<inherits name="com.sap.sailing.gwt.ui.NoUI" />
 
 	<!-- Specify the app entry point class. -->
