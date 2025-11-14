@@ -67,8 +67,7 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
     private final WindStore windStore;
     private final DynamicRaceDefinitionSet raceDefinitionSetToUpdate;
     private final URI tracTracUpdateURI;
-    private final String tracTracUsername;
-    private final String tracTracPassword;
+    private final String tracTracApiToken;
     private final IRace tractracRace;
     private final IControlRouteChangeListener listener;
     private final boolean useInternalMarkPassingAlgorithm;
@@ -82,7 +81,7 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
     public RaceCourseReceiver(DomainFactory domainFactory, DynamicTrackedRegatta trackedRegatta, IEvent tractracEvent,
             IRace tractracRace, WindStore windStore, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
             long delayToLiveInMillis, long millisecondsOverWhichToAverageWind, Simulator simulator,
-            URI updateURI, String tracTracUsername, String tracTracPassword,
+            URI updateURI, String tracTracApiToken,
             IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber, boolean useInternalMarkPassingAlgorithm,
             RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
             RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
@@ -102,8 +101,7 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
         }
         this.raceDefinitionSetToUpdate = raceDefinitionSetToUpdate;
         this.tracTracUpdateURI = updateURI;
-        this.tracTracUsername = tracTracUsername;
-        this.tracTracPassword = tracTracPassword;
+        this.tracTracApiToken = tracTracApiToken;
         this.useInternalMarkPassingAlgorithm = useInternalMarkPassingAlgorithm;
         listener = new IControlRouteChangeListener() {
             @Override
@@ -181,7 +179,7 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
                     getTrackedRegatta(), tractracRace.getId(), tractracRace.getName(),
                     getTrackedRegatta().getRegatta().getBoatClass(), competitorAndBoats, course, sidelines, windStore, delayToLiveInMillis,
                     millisecondsOverWhichToAverageWind, raceDefinitionSetToUpdate, tracTracUpdateURI,
-                    getTracTracEvent().getId(), tracTracUsername, tracTracPassword, useInternalMarkPassingAlgorithm, raceLogResolver, tr->updateRaceTimes(tractracRace, tr), tractracRace,
+                    getTracTracEvent().getId(), tracTracApiToken, useInternalMarkPassingAlgorithm, raceLogResolver, tr->updateRaceTimes(tractracRace, tr), tractracRace,
                     raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
             addAllMarksFromCourseArea(trackedRace);
             if (getSimulator() != null) {
@@ -271,8 +269,8 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
         if (runAfterCreatingTrackedRace != null) {
             runAfterCreatingTrackedRace.accept(trackedRace);
         }
-        getDomainFactory().addTracTracUpdateHandlers(tracTracUpdateURI, getTracTracEvent().getId(), tracTracUsername,
-                tracTracPassword, race, trackedRace, tractracRace);
+        getDomainFactory().addTracTracUpdateHandlers(tracTracUpdateURI, getTracTracEvent().getId(),
+                tracTracApiToken, race, trackedRace, tractracRace);
         return trackedRace;
     }
 
