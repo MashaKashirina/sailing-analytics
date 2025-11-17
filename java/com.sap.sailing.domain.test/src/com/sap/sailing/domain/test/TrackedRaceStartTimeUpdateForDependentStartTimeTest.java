@@ -57,7 +57,6 @@ public class TrackedRaceStartTimeUpdateForDependentStartTimeTest extends TrackBa
             @Override
             public List<Triple<Leaderboard, RaceColumn, Fleet>> getColumnsWithRaceLogForTrackedRace(
                     RegattaAndRaceIdentifier trackedRaceIdentifier) {
-                // TODO Auto-generated method stub
                 return null;
             }
         };

@@ -52,7 +52,7 @@ public class YellowBrickRaceTrackingConnectivityParams extends AbstractRaceTrack
             ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
         return new YellowBrickRaceTrackerImpl(this, /* regatta */ null, trackedRegattaRegistry, windStore,
                 raceLogResolver, leaderboardGroupResolver, timeoutInMilliseconds, raceTrackingHandler, raceLogStore,
-                regattaLogStore, baseDomainFactory, yellowBrickTrackingAdapter);
+                regattaLogStore, baseDomainFactory, yellowBrickTrackingAdapter, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class YellowBrickRaceTrackingConnectivityParams extends AbstractRaceTrack
         return new YellowBrickRaceTrackerImpl(this, regatta, trackedRegattaRegistry,
                 windStore, raceLogResolver,
                 leaderboardGroupResolver, timeoutInMilliseconds, raceTrackingHandler, raceLogStore, regattaLogStore,
-                baseDomainFactory, yellowBrickTrackingAdapter);
+                baseDomainFactory, yellowBrickTrackingAdapter, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
     }
 
     @Override
