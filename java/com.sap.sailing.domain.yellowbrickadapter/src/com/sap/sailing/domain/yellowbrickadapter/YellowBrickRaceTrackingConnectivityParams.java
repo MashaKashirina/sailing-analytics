@@ -47,7 +47,9 @@ public class YellowBrickRaceTrackingConnectivityParams extends AbstractRaceTrack
     @Override
     public RaceTracker createRaceTracker(TrackedRegattaRegistry trackedRegattaRegistry, WindStore windStore,
             RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
-            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
+            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
         return new YellowBrickRaceTrackerImpl(this, /* regatta */ null, trackedRegattaRegistry, windStore,
                 raceLogResolver, leaderboardGroupResolver, timeoutInMilliseconds, raceTrackingHandler, raceLogStore,
                 regattaLogStore, baseDomainFactory, yellowBrickTrackingAdapter);
@@ -57,8 +59,11 @@ public class YellowBrickRaceTrackingConnectivityParams extends AbstractRaceTrack
     public RaceTracker createRaceTracker(Regatta regatta, TrackedRegattaRegistry trackedRegattaRegistry,
             WindStore windStore, RaceLogAndTrackedRaceResolver raceLogResolver,
             LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
-        return new YellowBrickRaceTrackerImpl(this, regatta, trackedRegattaRegistry, windStore, raceLogResolver,
+            RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
+        return new YellowBrickRaceTrackerImpl(this, regatta, trackedRegattaRegistry,
+                windStore, raceLogResolver,
                 leaderboardGroupResolver, timeoutInMilliseconds, raceTrackingHandler, raceLogStore, regattaLogStore,
                 baseDomainFactory, yellowBrickTrackingAdapter);
     }
