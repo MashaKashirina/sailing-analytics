@@ -32,7 +32,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -147,13 +146,13 @@ import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.ranking.OneDesignRankingMetric;
 import com.sap.sailing.domain.ranking.RankingMetric;
 import com.sap.sailing.domain.ranking.RankingMetric.RankingInfo;
+import com.sap.sailing.domain.ranking.RankingMetricConstructor;
 import com.sap.sailing.domain.shared.tracking.AddResult;
 import com.sap.sailing.domain.shared.tracking.LineDetails;
 import com.sap.sailing.domain.shared.tracking.Track;
 import com.sap.sailing.domain.shared.tracking.TrackingConnectorInfo;
 import com.sap.sailing.domain.shared.tracking.impl.LineDetailsImpl;
 import com.sap.sailing.domain.shared.tracking.impl.TimedComparator;
-import com.sap.sailing.domain.ranking.RankingMetricConstructor;
 import com.sap.sailing.domain.tracking.BravoFixTrack;
 import com.sap.sailing.domain.tracking.DynamicSensorFixTrack;
 import com.sap.sailing.domain.tracking.GPSFixTrack;
@@ -3112,36 +3111,33 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
     }
     
     public void waitForAllRaceLogsAttached() {
-        final  CountDownLatch latchForRaceLogs = new CountDownLatch(1); // Alternatives possible
-        final  Iterable<Triple<Leaderboard, RaceColumn, Fleet>> ecpextedLinks = TrackedRaceImpl.this.getRaceLogResolver()
-                .getColumnsWithRaceLogForTrackedRace(getRaceIdentifier()); //Namen 
-        final int numberOfExpectedRaceLogs = Util.size(ecpextedLinks);
-
-         AbstractRaceChangeListener raceLogAttachedListener = new AbstractRaceChangeListener() {
-             
-             @Override
-             public void raceLogAttached(RaceLog raceLog) {
-                 int numberOfAttachedRaceLogs = Util.size(getAttachedRaceLogs());
-                 if(numberOfAttachedRaceLogs >=numberOfExpectedRaceLogs) {
-                     latchForRaceLogs.countDown();
-                 }
-             }
-         };
-
+        final Object latchForRaceLogs = new Object();
+        final Iterable<Triple<Leaderboard, RaceColumn, Fleet>> expectedLinks = TrackedRaceImpl.this.getRaceLogResolver()
+                .getColumnsWithRaceLogForTrackedRace(getRaceIdentifier());
+        final int numberOfExpectedRaceLogs = Util.size(expectedLinks);
+        final AbstractRaceChangeListener raceLogAttachedListener = new AbstractRaceChangeListener() {
+            @Override
+            public void raceLogAttached(RaceLog raceLog) {
+                int numberOfAttachedRaceLogs = Util.size(getAttachedRaceLogs());
+                synchronized (latchForRaceLogs) {
+                    if (numberOfAttachedRaceLogs >= numberOfExpectedRaceLogs) {
+                        latchForRaceLogs.notifyAll();
+                    }
+                }
+            }
+        };
         this.addListener(raceLogAttachedListener);
-       
         final int numberOfAttachedRaceLogs = Util.size(getAttachedRaceLogs());
-        
         try {
-            if (numberOfAttachedRaceLogs < numberOfExpectedRaceLogs) {
-                latchForRaceLogs.await();
-            }    
+            synchronized (latchForRaceLogs) {
+                while (numberOfAttachedRaceLogs < numberOfExpectedRaceLogs) {
+                    latchForRaceLogs.wait();
+                }
+            }
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            //Logging hinzufügen
-            e.printStackTrace();
+            logger.warning("Interrupted: "+e.getMessage());
         } finally {
-                removeListener(raceLogAttachedListener);
+            removeListener(raceLogAttachedListener);
         }
     }
 
@@ -3222,7 +3218,6 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
             attachedRaceLogs.put(raceLog.getId(), raceLog);
             notifyAll();
             invalidateStartTime();
-           
         }
         notifyListenersWhenAttachingRaceLog(raceLog);
     }
