@@ -346,8 +346,6 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
      */
     public transient ManeuverCache<Competitor, List<Maneuver>, EmptyUpdateInterval> maneuverCache;
     
-    private transient ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry;
-
     /**
      * The values of this map are used by the {@link #approximate(Competitor, Distance, TimePoint, TimePoint)} method and
      * maintain state to accelerate the {@link #approximate(Competitor, Distance, TimePoint, TimePoint)} method, also in
@@ -797,7 +795,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         competitorRankingsLocks = createCompetitorRankingsLockMap();
         directionFromStartToNextMarkCache = new ConcurrentHashMap<>();
         maneuverDetectorPerCompetitorCache = createManeuverDetectorCache();
-        maneuverCache = createManeuverCache(maneuverRaceFingerprintRegistry);
+        maneuverCache = createManeuverCache(/* maneuverRaceFingerprintRegistry==null will let this replica recompute the maneuvers */ null);
         logger.info("Deserialized race " + getRace().getName());
     }
     
