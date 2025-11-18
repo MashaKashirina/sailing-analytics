@@ -20,7 +20,7 @@ public class ManeuverFromSmartFutureCache implements ManeuverCache<Competitor, L
     private final SmartFutureCache<Competitor, List<Maneuver>, EmptyUpdateInterval> smartFutureCache;
     
     public ManeuverFromSmartFutureCache(DynamicTrackedRaceImpl race) {
-        this.smartFutureCache=  new  SmartFutureCache<Competitor, List<Maneuver>, EmptyUpdateInterval>(
+        this.smartFutureCache = new SmartFutureCache<Competitor, List<Maneuver>, EmptyUpdateInterval>(
               new AbstractCacheUpdater<Competitor, List<Maneuver>, EmptyUpdateInterval>() {
                   @Override
                   public List<Maneuver> computeCacheUpdate(Competitor competitor, EmptyUpdateInterval updateInterval)
