@@ -20,7 +20,7 @@ public class ManeuversFromDatabase implements ManeuverCache<Competitor, List<Man
 
     boolean suspended;
     private static final Logger logger = Logger.getLogger(ManeuversFromDatabase.class.getName());
-    Map<Competitor, List<Maneuver>> maneuvers;
+    private final Map<Competitor, List<Maneuver>> maneuvers;
 
     public void resume() {
         logger.log(Level.WARNING, "Method should never be called");
