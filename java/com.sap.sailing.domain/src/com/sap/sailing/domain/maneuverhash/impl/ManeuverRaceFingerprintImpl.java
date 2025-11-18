@@ -55,25 +55,25 @@ public class ManeuverRaceFingerprintImpl extends MarkPassingRaceFingerprintImpl 
     }
 
     private int calculateWindHash(TrackedRace trackedRace) {
-        Set<WindSource> windSoures = trackedRace.getWindSources();
+        final Set<WindSource> windSoures = trackedRace.getWindSources();
         int res = 0;
-        Set<WindSource> windSouresToExclude = trackedRace.getWindSourcesToExclude();
-        for(WindSource w : windSoures) {
-            if(w.getType().isObserved() && !windSouresToExclude.contains(w)) {
+        final Set<WindSource> windSouresToExclude = trackedRace.getWindSourcesToExclude();
+        for (WindSource w : windSoures) {
+            if (w.getType().isObserved() && !windSouresToExclude.contains(w)) {
                 WindTrack windTrack = trackedRace.getOrCreateWindTrack(w);
                 windTrack.lockForRead();
                 try {
-                    int k = w.getId().hashCode();
+                    int k = w.getId() == null ? 0 : w.getId().hashCode();
                     int v = 0;
-                    for(Wind wf : trackedRace.getOrCreateWindTrack(w).getFixes()) {
-                         v =   v + (int) ( wf.getPosition().getLatDeg() + wf.getPosition().getLngDeg() + wf.getKilometersPerHour());
+                    for (Wind wf : trackedRace.getOrCreateWindTrack(w).getFixes()) {
+                        v = v + (int) (wf.getPosition().getLatDeg() + wf.getPosition().getLngDeg()
+                                + wf.getKilometersPerHour());
                     }
                     res = res ^ k;
-                    res = res ^ v; 
+                    res = res ^ v;
                 } finally {
                     windTrack.unlockAfterRead();
                 }
-
             }
         }
         return res;
