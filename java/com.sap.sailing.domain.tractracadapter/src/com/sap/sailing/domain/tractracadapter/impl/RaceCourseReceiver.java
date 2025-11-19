@@ -80,12 +80,15 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
     
     public RaceCourseReceiver(DomainFactory domainFactory, DynamicTrackedRegatta trackedRegatta, IEvent tractracEvent,
             IRace tractracRace, WindStore windStore, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
-            long delayToLiveInMillis, long millisecondsOverWhichToAverageWind, Simulator simulator,
-            URI updateURI, String tracTracApiToken,
-            IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber, boolean useInternalMarkPassingAlgorithm,
-            RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
-        super(domainFactory, tractracEvent, trackedRegatta, simulator, eventSubscriber, raceSubscriber, timeoutInMilliseconds);
+            long delayToLiveInMillis, long millisecondsOverWhichToAverageWind, Simulator simulator, URI updateURI,
+            String tracTracApiToken, IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber,
+            boolean useInternalMarkPassingAlgorithm, RaceLogAndTrackedRaceResolver raceLogResolver,
+            LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
+            RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
+        super(domainFactory, tractracEvent, trackedRegatta, simulator, eventSubscriber,
+                raceSubscriber, timeoutInMilliseconds);
         this.tractracRace = tractracRace;
         this.raceLogResolver = raceLogResolver;
         this.markPassingRaceFingerprintRegistry = markPassingRaceFingerprintRegistry;
@@ -265,7 +268,7 @@ public class RaceCourseReceiver extends AbstractReceiverWithQueue<IControlRoute,
                 /* ThreadLocalTransporter not needed because the RaceTracker is not active on a replica */ Optional
                         .empty(),
                 new TrackingConnectorInfoImpl(TracTracAdapter.NAME, TracTracAdapter.DEFAULT_URL,
-                        webUrlString), markPassingRaceFingerprintRegistry,  /* maneuverRaceFingerprintRegistry */ null);
+                        webUrlString), markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
         if (runAfterCreatingTrackedRace != null) {
             runAfterCreatingTrackedRace.accept(trackedRace);
         }

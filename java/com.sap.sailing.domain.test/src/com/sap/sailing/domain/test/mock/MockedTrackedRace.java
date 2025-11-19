@@ -691,12 +691,13 @@ public class MockedTrackedRace implements DynamicTrackedRace {
 
             @Override
             public DynamicTrackedRace createTrackedRace(RaceDefinition raceDefinition, Iterable<Sideline> sidelines,
-                    WindStore windStore, long delayToLiveInMillis,
-                    long millisecondsOverWhichToAverageWind, long millisecondsOverWhichToAverageSpeed,
-                    DynamicRaceDefinitionSet raceDefinitionSetToUpdate, boolean useMarkPassingcalculator,
-                    RaceLogAndTrackedRaceResolver raceLogResolver,
+                    WindStore windStore, long delayToLiveInMillis, long millisecondsOverWhichToAverageWind,
+                    long millisecondsOverWhichToAverageSpeed, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
+                    boolean useMarkPassingcalculator, RaceLogAndTrackedRaceResolver raceLogResolver,
                     Optional<ThreadLocalTransporter> threadLocalTransporter,
-                    TrackingConnectorInfo trackingConnectorInfo, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry ) {
+                    TrackingConnectorInfo trackingConnectorInfo,
+                    MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+                    ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
                 return null;
             }
 
@@ -1416,9 +1417,5 @@ public class MockedTrackedRace implements DynamicTrackedRace {
     public Double getPercentTargetBoatSpeed(Competitor competitor, TimePoint timePoint,
             WindLegTypeAndLegBearingAndORCPerformanceCurveCache cache) {
         return null;
-    }
-
-    @Override
-    public void updateManeuvers(Competitor competitor, Iterable<Maneuver> maneuvers) {
     }
 }

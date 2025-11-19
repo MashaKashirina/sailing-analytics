@@ -244,10 +244,10 @@ import com.sap.sailing.domain.leaderboard.impl.RegattaLeaderboardWithOtherTieBre
 import com.sap.sailing.domain.leaderboard.impl.ThresholdBasedResultDiscardingRuleImpl;
 import com.sap.sailing.domain.leaderboard.meta.LeaderboardGroupMetaLeaderboard;
 import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprint;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintFactory;
 import com.sap.sailing.domain.maneuverhash.MarkPassingProxy;
-import com.sap.sailing.domain.maneuverhash.impl.ManeuverRaceFingerprintImpl;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprint;
-import com.sap.sailing.domain.markpassinghash.impl.MarkPassingRaceFingerprintImpl;
+import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintFactory;
 import com.sap.sailing.domain.persistence.DomainObjectFactory;
 import com.sap.sailing.domain.persistence.FieldNames;
 import com.sap.sailing.domain.persistence.MongoRaceLogStoreFactory;
@@ -3253,7 +3253,7 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
         try {
             final JSONObject json = Helpers.toJSONObjectSafe(
                     new JSONParser().parse(((Document) currentDocument.get(FieldNames.MARK_PASSINGS_FINGERPRINT.name())).toJson()));
-            fingerprint = new MarkPassingRaceFingerprintImpl(json);
+            fingerprint = MarkPassingRaceFingerprintFactory.INSTANCE.fromJson(json);
         } catch (JsonDeserializationException | ParseException e) {
             logger.log(Level.WARNING, "Problem de-serializing mark passings from document; ignoring", e);
             fingerprint = null;
@@ -3293,15 +3293,13 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
         return new Pair<>(waypoint, markPassing);
     }
     
-    // Methods for ManeuverFingerprint -  not finished
-    
     private Pair<RaceIdentifier, ManeuverRaceFingerprint> loadManeuversFingerprint(final Document currentDocument) {
         final RaceIdentifier raceIdentifier = loadRaceIdentifier(currentDocument);
         ManeuverRaceFingerprint fingerprint;
         try {
             final JSONObject json = Helpers.toJSONObjectSafe(
                     new JSONParser().parse(((Document) currentDocument.get(FieldNames.MANEUVER_FINGERPRINT.name())).toJson()));
-            fingerprint = new ManeuverRaceFingerprintImpl(json);
+            fingerprint = ManeuverRaceFingerprintFactory.INSTANCE.fromJson(json);
         } catch (JsonDeserializationException | ParseException e) {
             logger.log(Level.WARNING, "Problem de-serializing maneuvers from document; ignoring", e);
             fingerprint = null;
@@ -3309,10 +3307,9 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
         return new Pair<>(raceIdentifier, fingerprint);
     }
     
-    
     @Override
     public Map<RaceIdentifier, ManeuverRaceFingerprint> loadFingerprintsForManeuverHashes() {
-        final MongoCollection<Document> maneuversCollection = database.getCollection(CollectionNames.MANEUVER.name());
+        final MongoCollection<Document> maneuversCollection = database.getCollection(CollectionNames.MANEUVERS.name());
         maneuversCollection.createIndex(new Document()
                 .append(FieldNames.EVENT_NAME.name(), 1)
                 .append(FieldNames.RACE_NAME.name(), 1),
@@ -3334,20 +3331,20 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
     public Map<Competitor, List<Maneuver>> loadManeuvers(TrackedRace trackedRace, Course course) {
         final Map<Competitor, List<Maneuver>> result;
         final Document query = new Document();
-        RaceIdentifier raceIdentifier = trackedRace.getRaceIdentifier();
+        final RaceIdentifier raceIdentifier = trackedRace.getRaceIdentifier();
         addRaceIdentifierToQuery(query, raceIdentifier);
-        final MongoCollection<Document> maneuversCollection = database.getCollection(CollectionNames.MANEUVER.name());
+        final MongoCollection<Document> maneuversCollection = database.getCollection(CollectionNames.MANEUVERS.name());
         final Document doc = maneuversCollection.find(query).first();
         if (doc != null) {
             result = new HashMap<>();
-            final List<Document> maneuversDoc = doc.getList(FieldNames.MANEUVER.name(), Document.class);
+            final List<Document> maneuversDoc = doc.getList(FieldNames.MANEUVERS.name(), Document.class);
             for (final Document maneuversForOneCompetitorDoc : maneuversDoc) {
                 final Serializable competitorId = maneuversForOneCompetitorDoc.get(FieldNames.COMPETITOR_ID.name(), Serializable.class);
                 final Competitor competitor = baseDomainFactory.getExistingCompetitorById(competitorId);
-                for (final Document maneuvers: maneuversForOneCompetitorDoc.getList(FieldNames.MANEUVER.name(), Document.class)) {
-                    final Maneuver maneuver = loadManeuver(competitor, maneuvers, course, trackedRace);
+                for (final Document maneuverDoc : maneuversForOneCompetitorDoc.getList(FieldNames.MANEUVERS.name(), Document.class)) {
+                    final Maneuver maneuver = loadManeuver(competitor, maneuverDoc, course, trackedRace);
                     result.computeIfAbsent(competitor, c -> new ArrayList<>()).add(maneuver);     
-                    }
+                }
             }
         } else {
             result = null;
@@ -3355,74 +3352,75 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
         return result;
     }
     
-    private Maneuver loadManeuver(Competitor competitor, Document maneuvers, Course course, TrackedRace trackedRace) {
-        //final int waypointIndex = maneuvers.getInteger(FieldNames.MANEUVER.name());
-        //final Waypoint waypoint = Util.get(course.getWaypoints(), waypointIndex);
-        //final TimePoint timePoint = TimePoint.of(maneuvers.getLong(FieldNames.TIME_AS_MILLIS.name()));
-        final TimePoint timePoint = TimePoint.of( maneuvers.getLong(FieldNames.TIMEPOINT.name()));
-        final double maxTurningRateInDegreesPerSecond = maneuvers.getDouble(FieldNames.MAX_TURNING_RATE_IN_DEGREE_PER_SECOUND.name());
-        final String typeName =  maneuvers.getString(FieldNames.TYPE.name());
+    private Maneuver loadManeuver(Competitor competitor, Document maneuverDoc, Course course, TrackedRace trackedRace) {
+        final TimePoint timePoint = TimePoint.of( maneuverDoc.getLong(FieldNames.TIMEPOINT.name()));
+        final double maxTurningRateInDegreesPerSecond = maneuverDoc.getDouble(FieldNames.MAX_TURNING_RATE_IN_DEGREE_PER_SECOUND.name());
+        final String typeName =  maneuverDoc.getString(FieldNames.TYPE.name());
         final ManeuverType type = ManeuverType.valueOf(typeName);
-        final String newTackName =  maneuvers.getString(FieldNames.TACK.name());
+        final String newTackName =  maneuverDoc.getString(FieldNames.TACK.name());
         final Tack newTack = Tack.valueOf(newTackName);
-        final int waypointIndex = maneuvers.getInteger(FieldNames.INDEX_OF_PASSED_WAYPOINT.name());
-        final double positionLatRad = maneuvers.getDouble(FieldNames.POSITION_LAT_RAD.name());
-        final double positionLngRad = maneuvers.getDouble(FieldNames.POSITION_LNG_RAD.name());
+        final int waypointIndex = maneuverDoc.getInteger(FieldNames.INDEX_OF_PASSED_WAYPOINT.name());
+        final double positionLatRad = maneuverDoc.getDouble(FieldNames.POSITION_LAT_RAD.name());
+        final double positionLngRad = maneuverDoc.getDouble(FieldNames.POSITION_LNG_RAD.name());
         final Position position = new RadianPosition(positionLatRad, positionLngRad);
-        final ManeuverCurveBoundaries mainCurveBoundaries = loadManeuverCurveBoundaries((Document) maneuvers.get(FieldNames.MAIN_CURVE_BOUNDARIES.name()));
-        final ManeuverCurveBoundaries maneuverCurveWithStableSpeedAndCourseBoundaries = loadManeuverCurveBoundaries((Document) maneuvers.get(FieldNames.MANEUVER_CURVE_WITH_STABLE_SPEED_AND_COURSE_BOUNDERIES.name())); 
-        final ManeuverLoss maneuverLoss = loadManeuverLoss((Document) maneuvers.get(FieldNames.MANEUVER_LOSS.name()));
-        MarkPassingProxy markPassingProxy = new MarkPassingProxy(timePoint,  waypointIndex, competitor.getId(), trackedRace );// wie kommt man auf das Race?
+        final ManeuverCurveBoundaries mainCurveBoundaries = loadManeuverCurveBoundaries((Document) maneuverDoc.get(FieldNames.MAIN_CURVE_BOUNDARIES.name()));
+        final ManeuverCurveBoundaries maneuverCurveWithStableSpeedAndCourseBoundaries = loadManeuverCurveBoundaries((Document) maneuverDoc.get(FieldNames.MANEUVER_CURVE_WITH_STABLE_SPEED_AND_COURSE_BOUNDERIES.name())); 
+        final ManeuverLoss maneuverLoss = loadManeuverLoss((Document) maneuverDoc.get(FieldNames.MANEUVER_LOSS.name()));
+        final MarkPassing markPassing;
         if (waypointIndex == -1) {
-            final Maneuver maneuver = new ManeuverWithMainCurveBoundariesImpl(type, newTack, position, timePoint, mainCurveBoundaries, maneuverCurveWithStableSpeedAndCourseBoundaries,
-                    maxTurningRateInDegreesPerSecond, null, maneuverLoss);
-            return maneuver;
+            markPassing = null;
+        } else {
+            markPassing = new MarkPassingProxy(timePoint, waypointIndex, competitor.getId(), trackedRace);
         }
-        MarkPassing markpassing = new MarkPassingImpl(timePoint, markPassingProxy.getWaypoint(), competitor);
-        final Maneuver maneuver = new ManeuverWithMainCurveBoundariesImpl(type, newTack, position, timePoint, mainCurveBoundaries, maneuverCurveWithStableSpeedAndCourseBoundaries,
-                maxTurningRateInDegreesPerSecond, markpassing, maneuverLoss);
-        return maneuver;
+        return new ManeuverWithMainCurveBoundariesImpl(type, newTack, position, timePoint, mainCurveBoundaries,
+                maneuverCurveWithStableSpeedAndCourseBoundaries, maxTurningRateInDegreesPerSecond, markPassing,
+                maneuverLoss);
     }
 
     private ManeuverLoss loadManeuverLoss(Document document) {
-        if(document == null)
-            return null;
-        final Double distanceDouble = document.getDouble(FieldNames.DISTANCE_SAILED_POMA.name());
-        final Distance distance = new MeterDistance(distanceDouble);
-        final Distance distanceIfNorManeuvering = new MeterDistance(document.getDouble(FieldNames.DISTANCE_SAILED_INMPOMA.name()));
-        final double startPositionLatRad = document.getDouble(FieldNames.START_POSITION_LAT_RAD.name());
-        final double startPositionLngRad = document.getDouble(FieldNames.START_POSITION_LNG_RAD.name());
-        final Position startPosition = new RadianPosition(startPositionLatRad, startPositionLngRad);
-        final double endPositionLatRad = document.getDouble(FieldNames.END_POSITION_LAT_RAD.name());
-        final double endPositionLngRad = document.getDouble(FieldNames.END_POSITION_LNG_RAD.name());
-        final Position endPosition = new RadianPosition(endPositionLatRad, endPositionLngRad);
-        final Duration duration = Duration.ofMillis(document.getLong(FieldNames.DURATION.name()));
-        final Double SpeedWithBearingBeforeDegrees =  document.getDouble(FieldNames.SPEED_WITH_BEARING_BEFORE_DEGREES.name());
-        final Double SpeedWithBearingBeforeSpeed = document.getDouble(FieldNames.SPEED_WITH_BEARING_BEFORE_SPEED.name());
-        final Bearing bearingBefore = new DegreeBearingImpl(SpeedWithBearingBeforeDegrees);
-        final SpeedWithBearing SpeedWithBearingBefore = new KnotSpeedWithBearingImpl(SpeedWithBearingBeforeSpeed, bearingBefore);
-        final Bearing middeManeuverAngle = new DegreeBearingImpl(document.getDouble(FieldNames.DEGREE_BEARING.name()));
-        
-        return new ManeuverLoss(distance, distanceIfNorManeuvering, startPosition, endPosition, duration, SpeedWithBearingBefore, middeManeuverAngle);
+        final ManeuverLoss maneuverLoss;
+        if (document != null) {
+            final Double distanceDouble = document.getDouble(FieldNames.MANEUVER_DISTANCE_SAILED_POMA.name());
+            final Distance distance = new MeterDistance(distanceDouble);
+            final Distance distanceIfNorManeuvering = new MeterDistance(document.getDouble(FieldNames.MANEUVER_DISTANCE_SAILED_INMPOMA.name()));
+            final double startPositionLatRad = document.getDouble(FieldNames.MANEUVER_START_POSITION_LAT_RAD.name());
+            final double startPositionLngRad = document.getDouble(FieldNames.MANEUVER_START_POSITION_LNG_RAD.name());
+            final Position startPosition = new RadianPosition(startPositionLatRad, startPositionLngRad);
+            final double endPositionLatRad = document.getDouble(FieldNames.MANEUVER_END_POSITION_LAT_RAD.name());
+            final double endPositionLngRad = document.getDouble(FieldNames.MANEUVER_END_POSITION_LNG_RAD.name());
+            final Position endPosition = new RadianPosition(endPositionLatRad, endPositionLngRad);
+            final Duration duration = Duration.ofMillis(document.getLong(FieldNames.MANEUVER_LOSS_DURATION.name()));
+            final Double SpeedWithBearingBeforeDegrees =  document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_BEFORE_DEGREES.name());
+            final Double SpeedWithBearingBeforeSpeed = document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_BEFORE_SPEED.name());
+            final Bearing bearingBefore = new DegreeBearingImpl(SpeedWithBearingBeforeDegrees);
+            final SpeedWithBearing SpeedWithBearingBefore = new KnotSpeedWithBearingImpl(SpeedWithBearingBeforeSpeed, bearingBefore);
+            final Bearing middeManeuverAngle = new DegreeBearingImpl(document.getDouble(FieldNames.MIDDLE_MAEUVER_ANGLE.name()));
+            maneuverLoss = new ManeuverLoss(distance, distanceIfNorManeuvering, startPosition, endPosition, duration, SpeedWithBearingBefore, middeManeuverAngle);
+        } else {
+            maneuverLoss = null;
+        }
+        return maneuverLoss;
     }
 
-    private ManeuverCurveBoundaries loadManeuverCurveBoundaries(Document maneuvers) {
-        final TimePoint timePointBefore = TimePoint.of( maneuvers.getLong(FieldNames.TIMEPOINT_BEFORE.name()));
-        final TimePoint timePointAfter = TimePoint.of( maneuvers.getLong(FieldNames.TIMEPOINT_AFTER.name()));
-        final Double SpeedWithBearingBeforeDegrees =  maneuvers.getDouble(FieldNames.SPEED_WITH_BEARING_BEFORE_DEGREES.name());
-        final Double SpeedWithBearingBeforeSpeed = maneuvers.getDouble(FieldNames.SPEED_WITH_BEARING_BEFORE_SPEED.name());
+    private ManeuverCurveBoundaries loadManeuverCurveBoundaries(Document document) {
+        final TimePoint timePointBefore = TimePoint.of(document.getLong(FieldNames.MANEUVER_TIMEPOINT_BEFORE.name()));
+        final TimePoint timePointAfter = TimePoint.of(document.getLong(FieldNames.MANEUVER_TIMEPOINT_AFTER.name()));
+        final Double SpeedWithBearingBeforeDegrees = document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_BEFORE_DEGREES.name());
+        final Double SpeedWithBearingBeforeSpeed = document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_BEFORE_SPEED.name());
         final Bearing bearingBefore = new DegreeBearingImpl(SpeedWithBearingBeforeDegrees);
         final SpeedWithBearing SpeedWithBearingBefore = new KnotSpeedWithBearingImpl(SpeedWithBearingBeforeSpeed, bearingBefore);
-        final Double SpeedWithBearingAfterDegrees =  maneuvers.getDouble(FieldNames.SPEED_WITH_BEARING_AFTER_DEGREES.name());
-        final Double SpeedWithBearingAfterSpeed = maneuvers.getDouble(FieldNames.SPEED_WITH_BEARING_AFTER_SPEED.name());
+        final Double SpeedWithBearingAfterDegrees = document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_AFTER_DEGREES.name());
+        final Double SpeedWithBearingAfterSpeed = document.getDouble(FieldNames.MANEUVER_SPEED_WITH_BEARING_AFTER_SPEED.name());
         final Bearing bearingAfter = new DegreeBearingImpl(SpeedWithBearingAfterSpeed);
         final SpeedWithBearing SpeedWithBearingAfter = new KnotSpeedWithBearingImpl(SpeedWithBearingAfterDegrees, bearingAfter);
-        final double directionChangeInDegrees =  maneuvers.getDouble(FieldNames.DIRECTION_CHANGE_IN_DEGREES.name());
-        final double lowestSpeedDouble =  maneuvers.getDouble(FieldNames.LOWEST_SPEED.name());
+        final double directionChangeInDegrees = document.getDouble(FieldNames.MANEUVER_DIRECTION_CHANGE_IN_DEGREES.name());
+        final double lowestSpeedDouble = document.getDouble(FieldNames.MANEUVER_LOWEST_SPEED.name());
         final Speed lowestSpeed = new KnotSpeedImpl(lowestSpeedDouble);
-        final double highestSpeedDouble =  maneuvers.getDouble(FieldNames.HIGHEST_SPEED.name());
+        final double highestSpeedDouble = document.getDouble(FieldNames.MANEUVER_HIGHEST_SPEED.name());
         final Speed highestSpeed = new KnotSpeedImpl(highestSpeedDouble);
-        ManeuverCurveBoundaries maneuverCurveBoundaries = new ManeuverCurveBoundariesImpl(timePointBefore, timePointAfter, SpeedWithBearingBefore, SpeedWithBearingAfter, directionChangeInDegrees, lowestSpeed, highestSpeed );
+        ManeuverCurveBoundaries maneuverCurveBoundaries = new ManeuverCurveBoundariesImpl(timePointBefore,
+                timePointAfter, SpeedWithBearingBefore, SpeedWithBearingAfter, directionChangeInDegrees, lowestSpeed,
+                highestSpeed);
         return maneuverCurveBoundaries;
     }
 }
