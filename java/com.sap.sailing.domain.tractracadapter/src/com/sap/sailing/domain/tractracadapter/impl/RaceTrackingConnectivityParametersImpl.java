@@ -132,8 +132,10 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
     @Override
     public RaceTracker createRaceTracker(TrackedRegattaRegistry trackedRegattaRegistry, WindStore windStore,
             RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
-            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws URISyntaxException,
-            CreateModelException, SubscriberInitializationException, IOException, InterruptedException, TimeOutException {
+            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry)
+            throws URISyntaxException, CreateModelException, SubscriberInitializationException, IOException, InterruptedException, TimeOutException {
         RaceTracker tracker = domainFactory.createRaceTracker(raceLogStore, regattaLogStore, windStore,
                 trackedRegattaRegistry, raceLogResolver, leaderboardGroupResolver, this, timeoutInMilliseconds,
                 raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
@@ -142,8 +144,11 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
 
     @Override
     public RaceTracker createRaceTracker(Regatta regatta, TrackedRegattaRegistry trackedRegattaRegistry,
-            WindStore windStore, RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
-            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
+            WindStore windStore, RaceLogAndTrackedRaceResolver raceLogResolver,
+            LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
+            RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
         RaceTracker tracker = domainFactory.createRaceTracker(regatta, raceLogStore, regattaLogStore, windStore,
                 trackedRegattaRegistry, raceLogResolver, leaderboardGroupResolver, this, timeoutInMilliseconds,
                 raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
