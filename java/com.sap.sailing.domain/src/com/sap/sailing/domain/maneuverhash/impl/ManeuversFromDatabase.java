@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sap.sailing.domain.base.Competitor;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.maneuverhash.SerializableManeuverCache;
 import com.sap.sailing.domain.tracking.Maneuver;
 import com.sap.sailing.domain.tracking.TrackedRace;
@@ -28,9 +29,14 @@ public class ManeuversFromDatabase implements SerializableManeuverCache {
         this.maneuvers = maneuvers;
     }
     
+    @Override
+    public boolean canBeUpdated() {
+        return false;
+    }
+
     public void resume() {
         logger.log(Level.WARNING, "Method should never be called");
-        // TODO bug5959: another case where we should revert to a SmartFutureCache?
+        throw new IllegalStateException("Method should never be called");
     }
 
     public void suspend() {
@@ -43,7 +49,12 @@ public class ManeuversFromDatabase implements SerializableManeuverCache {
 
     @Override
     public void triggerUpdate(Competitor key) {
-      logger.log(Level.WARNING, "If Fingerprint matches, no Update should be triggered");
-      // TODO change to smartFutureCache in Delegate
+        logger.log(Level.WARNING, "Method should never be called");
+                throw new IllegalStateException("If Fingerprint matches, no Update should be triggered");
+    }
+
+    @Override
+    public void setManeuverRaceFingerprintRegistry(ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
+        // no-op; nothing to set here
     }
 }

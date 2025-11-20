@@ -13,4 +13,6 @@ public interface ManeuverCache {
     void suspend();
 
     void triggerUpdate(Competitor key);
+    
+    boolean canBeUpdated();
 }

@@ -30,7 +30,7 @@ public class ManeuverCacheDelegate implements SerializableManeuverCache {
         super();
         this.race = race;
         this.maneuverRaceFingerprintRegistry = maneuverRaceFingerprintRegistry;
-        this.cacheToUse = new ManeuversFromSmartFutureCache((DynamicTrackedRaceImpl) race);
+        this.cacheToUse = createUpdatableManeuverCache();
     }    
     
     private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
@@ -75,6 +75,9 @@ public class ManeuverCacheDelegate implements SerializableManeuverCache {
         } else {
             new Thread(()->{
                 logger.info("Maneuver fingerprints do not match for race "+race.getRaceIdentifier()+"; NOT loading from DB");
+                if (!cacheToUse.canBeUpdated()) {
+                    cacheToUse = createUpdatableManeuverCache();
+                }
                 cacheToUse.resume();
                 if (maneuverRaceFingerprintRegistry != null) {
                     // wait for maneuvers to be computed by the default cache implementation (SmartFutureCache),
@@ -102,6 +105,18 @@ public class ManeuverCacheDelegate implements SerializableManeuverCache {
 
     @Override
     public void triggerUpdate(Competitor competitor) {
+        if (!cacheToUse.canBeUpdated()) {
+            cacheToUse = createUpdatableManeuverCache();
+        }
         cacheToUse.triggerUpdate(competitor);
+    }
+
+    private ManeuverCache createUpdatableManeuverCache() {
+        return new ManeuversFromSmartFutureCache((DynamicTrackedRaceImpl) race);
+    }
+
+    @Override
+    public boolean canBeUpdated() {
+        return true;
     }
 }

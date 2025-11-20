@@ -46,6 +46,11 @@ public class ManeuversFromSmartFutureCache implements ManeuverCache {
     }   
     
     @Override
+    public boolean canBeUpdated() {
+        return true;
+    }
+
+    @Override
     public void resume() {
         smartFutureCache.resume();
     }
