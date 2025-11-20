@@ -9,4 +9,6 @@ public interface SerializableManeuverCache extends ManeuverCache, Serializable {
      * been wired correctly and have access to the {@link ManeuverRaceFingerprintRegistry}.
      */
     void setManeuverRaceFingerprintRegistry(ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry);
+
+    void ensureFilled();
 }

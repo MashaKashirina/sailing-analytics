@@ -44,6 +44,15 @@ public class ManeuverCacheDelegate implements SerializableManeuverCache {
     }
     
     @Override
+    public void ensureFilled() {
+        if (cacheToUse.canBeUpdated()) {
+            for (final Competitor competitor : race.getShuffledCompetitors()) {
+                cacheToUse.triggerUpdate(competitor);
+            }
+        }
+    }
+
+    @Override
     public void setManeuverRaceFingerprintRegistry(ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
         this.maneuverRaceFingerprintRegistry = maneuverRaceFingerprintRegistry;
     }

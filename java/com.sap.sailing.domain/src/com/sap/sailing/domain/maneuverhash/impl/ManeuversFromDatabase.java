@@ -57,4 +57,9 @@ public class ManeuversFromDatabase implements SerializableManeuverCache {
     public void setManeuverRaceFingerprintRegistry(ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
         // no-op; nothing to set here
     }
+
+    @Override
+    public void ensureFilled() {
+        // no-op; a read-only cache of this type is always filled as good as it can
+    }
 }
