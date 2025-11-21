@@ -2,9 +2,7 @@ package com.sap.sailing.gwt.ui.adminconsole;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -18,7 +16,6 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
 import com.sap.sailing.gwt.ui.client.SailingServiceWriteAsync;
 import com.sap.sailing.gwt.ui.client.StringMessages;
-import com.sap.sse.common.TimedLock;
 import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.celltable.EntityIdentityComparator;
 import com.sap.sse.gwt.client.celltable.RefreshableSelectionModel;
@@ -28,6 +25,7 @@ import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
 import com.sap.sse.security.ui.client.UserService;
 import com.sap.sse.security.ui.client.component.SelectedElementsCountingButton;
+import com.sap.sse.security.ui.shared.IpToTimedLockDTO;
 
 abstract class IPBlocklistTableWrapper
         extends TableWrapper<IpToTimedLockDTO, RefreshableSelectionModel<IpToTimedLockDTO>> {
@@ -35,7 +33,7 @@ abstract class IPBlocklistTableWrapper
     private final LabeledAbstractFilterablePanel<IpToTimedLockDTO> filterField;
     private final String errorMessageOnDataFailureString;
 
-    protected abstract void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback);
+    protected abstract void fetchData(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback);
 
     protected abstract void unlockIP(String ip, AsyncCallback<Void> asyncCallback);
 
@@ -46,12 +44,12 @@ abstract class IPBlocklistTableWrapper
                 new EntityIdentityComparator<IpToTimedLockDTO>() {
                     @Override
                     public boolean representSameEntity(IpToTimedLockDTO dto1, IpToTimedLockDTO dto2) {
-                        return dto1.ip.equals(dto2.ip);
+                        return dto1.getIp().equals(dto2.getIp());
                     }
 
                     @Override
                     public int hashCode(IpToTimedLockDTO t) {
-                        return t.ip.hashCode();
+                        return t.getIp().hashCode();
                     }
                 });
         this.userService = userService;
@@ -108,7 +106,7 @@ abstract class IPBlocklistTableWrapper
                     @Override
                     public void onClick(ClickEvent event) {
                         for (IpToTimedLockDTO e : getSelectionModel().getSelectedSet()) {
-                            unlockIP(e.ip, new AsyncCallback<Void>() {
+                            unlockIP(e.getIp(), new AsyncCallback<Void>() {
                                 @Override
                                 public void onFailure(Throwable caught) {
                                     errorReporter.reportError(errorMessageOnDataFailureString);
@@ -125,23 +123,17 @@ abstract class IPBlocklistTableWrapper
     }
 
     private void loadDataAndPopulateTable() {
-        final AsyncCallback<HashMap<String, TimedLock>> dataInitializationCallback = new AsyncCallback<HashMap<String, TimedLock>>() {
+        final AsyncCallback<ArrayList<IpToTimedLockDTO>> dataInitializationCallback = new AsyncCallback<ArrayList<IpToTimedLockDTO>>() {
             @Override
             public void onFailure(Throwable caught) {
                 errorReporter.reportError(errorMessageOnDataFailureString);
             }
 
             @Override
-            public void onSuccess(HashMap<String, TimedLock> result) {
+            public void onSuccess(ArrayList<IpToTimedLockDTO> result) {
                 filterField.clear();
                 clear();
-                final ArrayList<IpToTimedLockDTO> iterable = new ArrayList<IpToTimedLockDTO>();
-                for (Entry<String, TimedLock> e : result.entrySet()) {
-                    if (e.getValue().isLocked()) {
-                        iterable.add(new IpToTimedLockDTO(e.getKey(), e.getValue()));
-                    }
-                }
-                filterField.addAll(iterable);
+                filterField.addAll(result);
             }
         };
         fetchData(dataInitializationCallback);
@@ -149,11 +141,11 @@ abstract class IPBlocklistTableWrapper
 
     private void configureDataColumns() {
         final ListHandler<IpToTimedLockDTO> columnListHandler = getColumnSortHandler();
-        addColumn(record -> record.ip, getStringMessages().ipAddress());
+        addColumn(record -> record.getIp(), getStringMessages().ipAddress());
         final Comparator<IpToTimedLockDTO> expiryComparator = (o1, o2) -> {
-            return o1.timedLock.getLockedUntil().compareTo(o2.timedLock.getLockedUntil());
+            return o1.getTimedLock().getLockedUntil().compareTo(o2.getTimedLock().getLockedUntil());
         };
-        addColumn(record -> record.timedLock.getLockedUntil().toString(), getStringMessages().lockedUntil(),
+        addColumn(record -> record.getTimedLock().getLockedUntil().toString(), getStringMessages().lockedUntil(),
                 expiryComparator);
         table.addColumnSortHandler(columnListHandler);
     }
@@ -165,7 +157,7 @@ abstract class IPBlocklistTableWrapper
             @Override
             public Iterable<String> getSearchableStrings(IpToTimedLockDTO dto) {
                 final List<String> string = new ArrayList<String>();
-                string.add(dto.ip);
+                string.add(dto.getIp());
                 return string;
             }
 

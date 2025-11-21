@@ -2,12 +2,10 @@ package com.sap.sse.security.ui.client;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.gwt.client.ServerInfoDTO;
@@ -24,6 +22,7 @@ import com.sap.sse.security.shared.dto.StrippedUserGroupDTO;
 import com.sap.sse.security.shared.dto.UserDTO;
 import com.sap.sse.security.shared.dto.UserGroupDTO;
 import com.sap.sse.security.ui.oauth.client.CredentialDTO;
+import com.sap.sse.security.ui.shared.IpToTimedLockDTO;
 import com.sap.sse.security.ui.shared.SecurityServiceSharingDTO;
 import com.sap.sse.security.ui.shared.SuccessInfo;
 
@@ -110,7 +109,7 @@ public interface UserManagementServiceAsync {
     
     void getBrandingConfigurationId(AsyncCallback<String> callback);
 
-    void getClientIPBasedTimedLocksForUserCreation(AsyncCallback<HashMap<String,TimedLock>> callback);
+    void getClientIPBasedTimedLocksForUserCreation(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback);
     
-    void getClientIPBasedTimedLocksForBearerTokenAbuse(AsyncCallback<HashMap<String,TimedLock>> callback);
+    void getClientIPBasedTimedLocksForBearerTokenAbuse(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback);
 }

@@ -1,12 +1,12 @@
-package com.sap.sailing.gwt.ui.adminconsole;
+package com.sap.sse.security.ui.shared;
 
 import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Named;
 
 public class IpToTimedLockDTO implements Named {
     private static final long serialVersionUID = 7877190394556881643L;
-    public final String ip;
-    public final TimedLock timedLock;
+    private final String ip;
+    private final TimedLock timedLock;
 
     public IpToTimedLockDTO(final String ip, final TimedLock timedLock) {
         this.ip = ip;
@@ -16,5 +16,13 @@ public class IpToTimedLockDTO implements Named {
     @Override
     public String getName() {
         return "IpToTimedLockDTO";
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public TimedLock getTimedLock() {
+        return timedLock;
     }
 }

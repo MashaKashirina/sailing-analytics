@@ -5,7 +5,6 @@ import static com.sap.sse.security.shared.HasPermissions.DefaultActions.CHANGE_O
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -31,7 +30,6 @@ import com.sap.sailing.gwt.ui.adminconsole.places.advanced.UserManagementPlace;
 import com.sap.sailing.gwt.ui.client.SailingServiceWriteAsync;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sailing.gwt.ui.shared.ServerConfigurationDTO;
-import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.http.HttpHeaderUtil;
@@ -54,6 +52,7 @@ import com.sap.sse.security.ui.client.UserStatusEventHandler;
 import com.sap.sse.security.ui.client.component.AccessControlledButtonPanel;
 import com.sap.sse.security.ui.client.component.EditOwnershipDialog;
 import com.sap.sse.security.ui.client.component.editacl.EditACLDialog;
+import com.sap.sse.security.ui.shared.IpToTimedLockDTO;
 
 public class LocalServerManagementPanel extends SimplePanel {
     private final SailingServiceWriteAsync sailingService;
@@ -168,7 +167,7 @@ public class LocalServerManagementPanel extends SimplePanel {
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
                 stringMessages.unableToLoadIpsBlockedForBearerTokenAbuse(), stringMessages, errorReporter) {
             @Override
-            protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {
+            protected void fetchData(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback) {
                 userService.getUserManagementService().getClientIPBasedTimedLocksForBearerTokenAbuse(callback);
             }
 
@@ -188,7 +187,7 @@ public class LocalServerManagementPanel extends SimplePanel {
         final IPBlocklistTableWrapper table = new IPBlocklistTableWrapper(sailingService, userService,
                 stringMessages.unableToLoadIpsBlockedForUserCreationAbuse(), stringMessages, errorReporter) {
             @Override
-            protected void fetchData(AsyncCallback<HashMap<String, TimedLock>> callback) {
+            protected void fetchData(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback) {
                 userService.getUserManagementService().getClientIPBasedTimedLocksForUserCreation(callback);
             }
 
