@@ -15,8 +15,7 @@ import com.sap.sse.util.SmartFutureCache;
 import com.sap.sse.util.SmartFutureCache.AbstractCacheUpdater;
 import com.sap.sse.util.SmartFutureCache.EmptyUpdateInterval;
 
-public class ManeuversFromSmartFutureCache implements ManeuverCache<Competitor, List<Maneuver>, EmptyUpdateInterval> {
-    
+public class ManeuversFromSmartFutureCache implements ManeuverCache {
     private final SmartFutureCache<Competitor, List<Maneuver>, EmptyUpdateInterval> smartFutureCache;
     
     public ManeuversFromSmartFutureCache(DynamicTrackedRaceImpl race) {
@@ -47,6 +46,11 @@ public class ManeuversFromSmartFutureCache implements ManeuverCache<Competitor, 
     }   
     
     @Override
+    public boolean canBeUpdated() {
+        return true;
+    }
+
+    @Override
     public void resume() {
         smartFutureCache.resume();
     }
@@ -62,7 +66,7 @@ public class ManeuversFromSmartFutureCache implements ManeuverCache<Competitor, 
     }
 
     @Override
-    public void triggerUpdate(Competitor key, EmptyUpdateInterval updateInterval) {
-        smartFutureCache.triggerUpdate(key, updateInterval);
+    public void triggerUpdate(Competitor key) {
+        smartFutureCache.triggerUpdate(key, /* updateInterval */ null);
     }
 }

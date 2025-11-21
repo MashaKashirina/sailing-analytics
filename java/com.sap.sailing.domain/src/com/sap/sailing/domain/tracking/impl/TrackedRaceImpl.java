@@ -135,8 +135,8 @@ import com.sap.sailing.domain.maneuverdetection.IncrementalManeuverDetector;
 import com.sap.sailing.domain.maneuverdetection.ManeuverDetector;
 import com.sap.sailing.domain.maneuverdetection.ShortTimeAfterLastHitCache;
 import com.sap.sailing.domain.maneuverdetection.impl.IncrementalManeuverDetectorImpl;
-import com.sap.sailing.domain.maneuverhash.ManeuverCache;
 import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
+import com.sap.sailing.domain.maneuverhash.SerializableManeuverCache;
 import com.sap.sailing.domain.maneuverhash.impl.ManeuverCacheDelegate;
 import com.sap.sailing.domain.markpassingcalculation.MarkPassingCalculator;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
@@ -196,7 +196,6 @@ import com.sap.sse.concurrent.NamedReentrantReadWriteLock;
 import com.sap.sse.shared.util.impl.ApproximateTime;
 import com.sap.sse.shared.util.impl.ArrayListNavigableSet;
 import com.sap.sse.util.IdentityWrapper;
-import com.sap.sse.util.SmartFutureCache.EmptyUpdateInterval;
 import com.sap.sse.util.impl.FutureTaskWithTracingGet;
 
 import difflib.DiffUtils;
@@ -344,7 +343,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
      * computed. Clients wanting to know maneuvers for the competitor outside of this time interval need to (re-)compute
      * them.
      */
-    public transient ManeuverCache<Competitor, List<Maneuver>, EmptyUpdateInterval> maneuverCache;
+    private final SerializableManeuverCache maneuverCache;
     
     /**
      * The values of this map are used by the {@link #approximate(Competitor, Distance, TimePoint, TimePoint)} method and
@@ -795,7 +794,6 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         competitorRankingsLocks = createCompetitorRankingsLockMap();
         directionFromStartToNextMarkCache = new ConcurrentHashMap<>();
         maneuverDetectorPerCompetitorCache = createManeuverDetectorCache();
-        maneuverCache = createManeuverCache(/* maneuverRaceFingerprintRegistry==null will let this replica recompute the maneuvers */ null);
         logger.info("Deserialized race " + getRace().getName());
     }
     
@@ -811,7 +809,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         } catch (PatchFailedException e) {
             throw new RuntimeException(e);
         } // a bit unclean: this also tries to work on the DynamicTrackedRaceImpl which isn't fully initialized yet; see also bug6039
-        triggerManeuverCacheRecalculationForAllCompetitors();  // a bit unclean: this also tries to work on the DynamicTrackedRaceImpl which isn't fully initialized yet; see also bug6039
+        ensureManeuverCacheIsFilledForAllCompetitors();  // a bit unclean: this also tries to work on the DynamicTrackedRaceImpl which isn't fully initialized yet; see also bug6039
     }
 
     /**
@@ -2867,27 +2865,34 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
     public Iterable<GPSFixMoving> approximate(Competitor competitor, Distance maxDistance, TimePoint from, TimePoint to) {
         return maneuverApproximators.get(competitor).approximate(from, to);
     }
+    
+    private void ensureManeuverCacheIsFilledForAllCompetitors() {
+        maneuverCache.ensureFilled();
+    }
 
     protected void triggerManeuverCacheRecalculationForAllCompetitors() {
         if (cachesSuspended) {
             triggerManeuverCacheInvalidationForAllCompetitors = true;
         } else {
-            final List<Competitor> shuffledCompetitors = new ArrayList<>();
-            for (Competitor competitor : (getRace().getCompetitors())) {
-                shuffledCompetitors.add(competitor);
-            }
-            Collections.shuffle(shuffledCompetitors);
-            for (Competitor competitor : shuffledCompetitors) {
+            for (Competitor competitor : getShuffledCompetitors()) {
                 triggerManeuverCacheRecalculation(competitor);
             }
         }
+    }
+
+    public List<Competitor> getShuffledCompetitors() {
+        final List<Competitor> shuffledCompetitors = new ArrayList<>();
+        for (Competitor competitor : (getRace().getCompetitors())) {
+            shuffledCompetitors.add(competitor);
+        }
+        return shuffledCompetitors;
     }
 
     public void triggerManeuverCacheRecalculation(final Competitor competitor) {
         if (cachesSuspended) {
             triggerManeuverCacheInvalidationForAllCompetitors = true;
         } else {
-            maneuverCache.triggerUpdate(competitor, /* updateInterval */null);
+            maneuverCache.triggerUpdate(competitor);
         }
     }
 
@@ -4085,8 +4090,8 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
 
     @Override
     public void setWindEstimation(IncrementalWindEstimation windEstimation) {
-        IncrementalWindEstimation previousWindEstimation = this.windEstimation;
-        if (previousWindEstimation != windEstimation) {
+        final IncrementalWindEstimation previousWindEstimation = this.windEstimation;
+        if (previousWindEstimation != windEstimation) { // bug5959 comment #15: if maneuvers were sent during initial load of RacingEventService and they were based on the IncrementalWindEstimation just received through initial load of WindEstimationFactoryService, don't re-compute those maneuvers!
             updateManeuversAndWindWithNewWindEstimation(windEstimation, previousWindEstimation);
         }
     }
@@ -4104,7 +4109,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         // complete maneuver curves can be fed directly into the windEstimation.
         maneuverDetectorPerCompetitorCache.clearCache();
         shortTimeWindCache.clearCache();
-        triggerManeuverCacheRecalculationForAllCompetitors();
+        // no need to trigger maneuver recalculation because it is not using the MANEUVER_BASED_ESTIMATION; see also bug6184
     }
 
     /**
@@ -4451,5 +4456,9 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
 
     public ShortTimeAfterLastHitCache<Competitor, IncrementalManeuverDetector> getManeuverDetectorPerCompetitorCache() {
         return maneuverDetectorPerCompetitorCache;
+    }
+
+    public void setManeuverRaceFingerprintRegistry(ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
+        maneuverCache.setManeuverRaceFingerprintRegistry(maneuverRaceFingerprintRegistry);
     }
 }
