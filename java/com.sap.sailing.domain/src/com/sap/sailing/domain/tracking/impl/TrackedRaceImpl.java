@@ -2870,7 +2870,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         maneuverCache.ensureFilled();
     }
 
-    protected void triggerManeuverCacheRecalculationForAllCompetitors() {
+    public void triggerManeuverCacheRecalculationForAllCompetitors() {
         if (cachesSuspended) {
             triggerManeuverCacheInvalidationForAllCompetitors = true;
         } else {
