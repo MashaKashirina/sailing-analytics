@@ -9,10 +9,10 @@ class App < Precious::App
   before /edit/ do   authorize_write ; end
   before do
         session['gollum.author'] = {
-            :name => "%s" % settings.loggedInUser,
-            :email => "%s@example.com" % settings.loggedInUser,
+            :name => settings.loggedInUser,
+            :email => settings.loggedInUserEmail,
         }
-    end
+  end
 
   helpers do
     def authenticate!
