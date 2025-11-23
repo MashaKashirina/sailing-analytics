@@ -15,23 +15,27 @@ class App < Precious::App
   end
 
   helpers do
+    def public_path?(path)
+        if path == "/" 
+          return true
+        end
+        public_starts = [ "/Home", "/wiki", "/favicon.ico"] 
+        LOGGER.debug(path)
+        return true if public_starts.any? {|link| path.start_with?(link)}
+        public_patterns = [ %r{\A/gollum/(assets|commit|history|last_commit_info).*}, %r{\A/gollum/search}, %r{\A/gollum/latest_changes\z}]
+        public_patterns.any? {|pattern| pattern.match(path)}
+    end
+    def auth_path?(path)
+      auth_paths = [%r{\A/gollum/(edit|create|rename)/.*\z}, %r{\A/gollum/overview}]  
+      auth_paths.any? {|pattern| pattern.match(path)}
+    end
     def authenticate!
-      public_urls=IO.readlines 'public.txt'
-      public_urls.each {|url|
-        if self.env['PATH_INFO'] == url.slice(0, url.length-1)
-          puts "Allowing " + url
-          return
-        end
-
-        if self.env['PATH_INFO'].start_with?('/wiki/images') ||
-            self.env['PATH_INFO'].start_with?('/favicon.ico')
-          return
-        end
-      }
-      if self.env['PATH_INFO'].split('/')[1] == 'gollum' && self.env['PATH_INFO'].split('/')[2] == 'assets'
+      path = self.env['PATH_INFO']
+      if public_path?(path) 
         return
       end
       @auth =  Rack::Auth::Basic::Request.new(request.env)
+      unless auth_path?(path)
         throw(:halt, [403, 'Forbidden - You can not access anything outside wiki/ path.'])
       end
       if @auth.provided? && @auth.basic? && @auth.credentials && (@user = get_user(@auth.credentials))
