@@ -7,8 +7,8 @@ require 'digest/sha1'
 class App < Precious::App
   User = Struct.new(:name, :email, :password_hash, :can_write)
   before { authenticate! }
-  before /edit/ do   authorize_write! ; end
-    before do
+  before /edit/ do   authorize_write ; end
+  before do
         session['gollum.author'] = {
             :name => "%s" % settings.loggedInUser,
             :email => "%s@example.com" % settings.loggedInUser,
@@ -63,7 +63,7 @@ class App < Precious::App
       end
     end
 
-    def authorize_write!
+    def authorize_write
       throw(:halt, [403, "Forbidden\n"]) unless @user.can_write
     end
 
