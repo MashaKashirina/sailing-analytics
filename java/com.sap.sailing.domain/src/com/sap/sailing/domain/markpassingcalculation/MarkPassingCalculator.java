@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -461,8 +460,6 @@ public class MarkPassingCalculator {
                 fixesForCompetitor.addAll(competitorEntry.getValue());
             }
             if (!newMarkFixes.isEmpty()) {
-                // FIXME bug 2745 use new mark fixes to invalidate chooser's mark position and mutual mark/waypoint
-                // distance cache
                 for (Entry<Competitor, List<GPSFixMoving>> fixesAffectedByNewMarkFixes : finder
                         .calculateFixesAffectedByNewMarkFixes(newMarkFixes).entrySet()) {
                     Collection<GPSFixMoving> fixes = combinedCompetitorFixesFinderConsidersAffected
@@ -593,36 +590,26 @@ public class MarkPassingCalculator {
                     suspended = false;
                 } else {
                     suspended = false;
-                    final CountDownLatch latchForRunningListenRun = new CountDownLatch(1);
-                    enqueueUpdate(new StorePositionUpdateStrategy() {
-                        @Override
-                        public void storePositionUpdate(Map<Competitor, List<GPSFixMoving>> competitorFixes,
-                                Map<Competitor, List<GPSFixMoving>> competitorFixesThatReplacedExistingOnes,
-                                Map<Mark, List<GPSFix>> markFixes, List<Waypoint> addedWaypoints,
-                                List<Waypoint> removedWaypoints, IntHolder smallestChangedWaypointIndex,
-                                List<Triple<Competitor, Integer, TimePoint>> fixedMarkPassings,
-                                List<Pair<Competitor, Integer>> removedMarkPassings,
-                                List<Pair<Competitor, Integer>> suppressedMarkPassings,
-                                List<Competitor> unSuppressedMarkPassings, CandidateFinder candidateFinder,
-                                CandidateChooser candidateChooser) {
-                            latchForRunningListenRun.countDown();
-                            assert latchForRunningListenRun.getCount() == 0;
-                        }
-                    });
                     if (markPassingRaceFingerprintRegistry != null) {
-                        new Thread(()->{
-                            try {
-                                latchForRunningListenRun.await();
-                                final Map<Competitor, Map<Waypoint, MarkPassing>> markPassings = race.getMarkPassings(/* waitForLatestUpdates */ true);
-                                markPassingRaceFingerprintRegistry.storeMarkPassings(race.getRaceIdentifier(),
-                                        MarkPassingRaceFingerprintFactory.INSTANCE.createFingerprint(race),
-                                        markPassings, race.getRace().getCourse());
-                            } catch (InterruptedException e) {
-                                logger.log(Level.SEVERE, "Exception while waiting for Listen.run() to start processing in MarkPassingCalculator for "+
-                                        race.getName(), e);
+                        enqueueUpdate(new StorePositionUpdateStrategy() {
+                            @Override
+                            public void storePositionUpdate(Map<Competitor, List<GPSFixMoving>> competitorFixes,
+                                    Map<Competitor, List<GPSFixMoving>> competitorFixesThatReplacedExistingOnes,
+                                    Map<Mark, List<GPSFix>> markFixes, List<Waypoint> addedWaypoints,
+                                    List<Waypoint> removedWaypoints, IntHolder smallestChangedWaypointIndex,
+                                    List<Triple<Competitor, Integer, TimePoint>> fixedMarkPassings,
+                                    List<Pair<Competitor, Integer>> removedMarkPassings,
+                                    List<Pair<Competitor, Integer>> suppressedMarkPassings,
+                                    List<Competitor> unSuppressedMarkPassings, CandidateFinder candidateFinder,
+                                    CandidateChooser candidateChooser) {
+                                executor.submit(()->{
+                                    final Map<Competitor, Map<Waypoint, MarkPassing>> markPassings = race.getMarkPassings(/* waitForLatestUpdates */ true);
+                                    markPassingRaceFingerprintRegistry.storeMarkPassings(race.getRaceIdentifier(),
+                                            MarkPassingRaceFingerprintFactory.INSTANCE.createFingerprint(race),
+                                            markPassings, race.getRace().getCourse());
+                                });
                             }
-                        }, "Waiting for mark passings for "+race.getName()+" after having resumed to store the results in registry")
-                        .start();
+                        });
                     }
                 }
             }
