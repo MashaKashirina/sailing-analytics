@@ -593,6 +593,7 @@ public class MarkPassingCalculator {
                     suspended = false;
                 } else {
                     suspended = false;
+                    // Now trigger the calculator by adding at least one "virtual update":
                     final CountDownLatch latchForRunningListenRun = new CountDownLatch(1);
                     enqueueUpdate(new StorePositionUpdateStrategy() {
                         @Override
@@ -610,7 +611,6 @@ public class MarkPassingCalculator {
                         }
                     });
                     if (markPassingRaceFingerprintRegistry != null) {
-                        // FIXME bug5971: the thread must not be started before Listen.run() has obtained the MarkPassingCalculator's write lock!
                         new Thread(()->{
                             try {
                                 latchForRunningListenRun.await();
