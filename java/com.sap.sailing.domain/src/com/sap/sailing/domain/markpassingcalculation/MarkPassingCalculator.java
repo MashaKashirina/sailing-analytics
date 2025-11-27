@@ -593,6 +593,7 @@ public class MarkPassingCalculator {
                     suspended = false;
                 } else {
                     suspended = false;
+                    // Now trigger the calculator by adding at least one "virtual update":
                     final CountDownLatch latchForRunningListenRun = new CountDownLatch(1);
                     enqueueUpdate(new StorePositionUpdateStrategy() {
                         @Override
