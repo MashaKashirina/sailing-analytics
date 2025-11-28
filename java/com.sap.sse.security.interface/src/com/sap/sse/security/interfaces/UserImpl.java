@@ -72,6 +72,8 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
     private String passwordResetSecret;
     
     private boolean emailValidated;
+    
+    private boolean didOptOutOfMarketingEmails;
 
     private final Map<AccountType, Account> accounts;
 
@@ -111,13 +113,14 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
     public UserImpl(String name, String email, Map<String, UserGroup> defaultTenantForServer,
             Collection<Account> accounts, UserGroupProvider userGroupProvider, LockingAndBanning lockingAndBanning) {
         this(name, email, /* fullName */ null, /* company */ null, /* locale */ null, /* is email validated */ false,
-                /* password reset secret */ null, /* validation secret */ null, defaultTenantForServer, accounts,
-                userGroupProvider, lockingAndBanning);
+                /* did opt out of marketing emails */ null, /* password reset secret */ null, /* validation secret */ null,
+                defaultTenantForServer, accounts, userGroupProvider, lockingAndBanning);
     }
 
     public UserImpl(String name, String email, String fullName, String company, Locale locale, Boolean emailValidated,
-            String passwordResetSecret, String validationSecret, Map<String, UserGroup> defaultTenantForServer,
-            Collection<Account> accounts, UserGroupProvider userGroupProvider, LockingAndBanning lockingAndBanning) {
+            Boolean didOptOutOfMarketingEmails, String passwordResetSecret, String validationSecret,
+            Map<String, UserGroup> defaultTenantForServer, Collection<Account> accounts,
+            UserGroupProvider userGroupProvider, LockingAndBanning lockingAndBanning) {
         super(name);
         this.lockingAndBanning = lockingAndBanning;
         this.defaultTenantForServer = defaultTenantForServer;
@@ -128,6 +131,7 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
         this.passwordResetSecret = passwordResetSecret;
         this.validationSecret = validationSecret;
         this.emailValidated = emailValidated;
+        this.didOptOutOfMarketingEmails = didOptOutOfMarketingEmails == null ? false : didOptOutOfMarketingEmails;
         this.accounts = new HashMap<>();
         this.userGroupProvider = userGroupProvider;
         for (Account a : accounts) {
@@ -370,6 +374,9 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
         builder.append("isEmailValidated()=");
         builder.append(isEmailValidated());
         builder.append(", ");
+        builder.append("didOptOutOfMarketingEmails()=");
+        builder.append(getDidOptOutOfMarketingEmails());
+        builder.append(", ");
         if (getPermissions() != null) {
             builder.append("getPermissions()=");
             builder.append(getPermissions());
@@ -471,5 +478,10 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
     @Override
     public LockingAndBanning getLockingAndBanning() {
         return lockingAndBanning;
+    }
+
+    @Override
+    public boolean getDidOptOutOfMarketingEmails() {
+        return this.didOptOutOfMarketingEmails;
     }
 }

@@ -245,4 +245,9 @@ public class UserProxy implements User {
     public LockingAndBanning getLockingAndBanning() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean getDidOptOutOfMarketingEmails() {
+        throw new UnsupportedOperationException();
+    }
 }
