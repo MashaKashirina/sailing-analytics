@@ -9,14 +9,11 @@ import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.SpanElement;
 import com.google.gwt.dom.client.Style.Display;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventListener;
-import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
 import com.sap.sailing.gwt.home.desktop.places.whatsnew.WhatsNewPlace;
@@ -38,7 +35,7 @@ public class Footer extends Composite {
     interface FooterPanelUiBinder extends UiBinder<Widget, Footer> {
     }
     
-    @UiField Anchor whatsNewLinkUi;
+    @UiField AnchorElement whatsNewLinkUi;
     @UiField AnchorElement supportAnchor;
     @UiField LanguageSelector languageSelector;
     @UiField DivElement copyrightDiv;
@@ -47,11 +44,8 @@ public class Footer extends Composite {
     @UiField AnchorElement jobsAnchor;
     @UiField AnchorElement privacyAnchor;
     @UiField SpanElement pipe;
-    
-    private final MobilePlacesNavigator placeNavigator;
 
     public Footer(MobilePlacesNavigator placeNavigator) {
-        this.placeNavigator = placeNavigator;
         FooterResources.INSTANCE.css().ensureInjected();
         initWidget(uiBinder.createAndBindUi(this));
         placeNavigator.getImprintNavigation().configureAnchorElement(imprintAnchorLink);
@@ -62,6 +56,19 @@ public class Footer extends Composite {
                 if (event.getTypeInt() == Event.ONCLICK) {
                     event.preventDefault();
                     SwitchingEntryPoint.switchToDesktop();
+                }
+            }
+        });
+        whatsNewLinkUi.setHref("");
+        DOM.sinkEvents(whatsNewLinkUi, Event.ONCLICK);
+        DOM.setEventListener(whatsNewLinkUi, new EventListener() {
+            @Override
+            public void onBrowserEvent(Event event) {
+                if (event.getTypeInt() == Event.ONCLICK) {
+                    event.preventDefault();
+                    placeNavigator
+                      .getWhatsNewNavigation(WhatsNewPlace.WhatsNewNavigationTabs.SailingAnalytics)
+                      .goToPlace();
                 }
             }
         });
@@ -84,11 +91,6 @@ public class Footer extends Composite {
                 copyrightDiv.setInnerText(cfg.getFooterCopyright());
             }
         }
-    }
-    
-    @UiHandler("whatsNewLinkUi")
-    void onWhatsNew(ClickEvent e) {
-        placeNavigator.getWhatsNewNavigation(WhatsNewPlace.WhatsNewNavigationTabs.SailingAnalytics).goToPlace();
     }
     
     private static boolean hideIfBlank(DivElement el, String text) {
