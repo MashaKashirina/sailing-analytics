@@ -188,7 +188,7 @@ public interface BoatClassImageResources extends ClientBundle {
     @ImageOptions(preventInlining = true)
     ImageResource F18Icon();
     
-    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/Fareast28R.png")
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/FAREAST28R.png")
     @ImageOptions(preventInlining = true)
     ImageResource Fareast28RIcon();
     
