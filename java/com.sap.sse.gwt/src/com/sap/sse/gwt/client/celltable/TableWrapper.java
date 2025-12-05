@@ -20,6 +20,11 @@ import com.sap.sse.common.util.NaturalComparator;
 import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.StringMessages;
 import com.sap.sse.gwt.client.panels.AbstractFilterablePanel;
+import com.google.gwt.user.cellview.client.Header;
+import com.google.gwt.cell.client.Cell.Context;
+import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.NativeEvent;
 
 /**
  * The {@link #getTable() table} created and wrapped by this object offers already a {@link ListHandler} for sorting.
@@ -239,11 +244,31 @@ public abstract class TableWrapper<T, S extends RefreshableSelectionModel<T>, SM
                     getTableRes().cellTableStyle().cellTableCheckboxColumnCell(), entityIdentityComparator, dataProvider,
                     table);
             columnSortHandler.setComparator(selectionCheckboxColumn, selectionCheckboxColumn.getComparator());
+            selectionCheckboxColumn.setSortable(false);
             @SuppressWarnings("unchecked")
             S typedSelectionModel = (S) selectionCheckboxColumn.getSelectionModel();
             selectionModel = typedSelectionModel;
             table.setSelectionModel(selectionModel, selectionCheckboxColumn.getSelectionManager());
-            table.addColumn(selectionCheckboxColumn, selectionCheckboxColumn.getHeader());
+            Header<Boolean> selectAllHeader = new Header<Boolean>(new CheckboxCell(true, false)) {
+                private boolean checked = false;
+                @Override
+                public Boolean getValue() {
+                    return checked;
+                }
+                @Override
+                public void onBrowserEvent(Context context, Element elem, NativeEvent event) {
+                    super.onBrowserEvent(context, elem, event);
+                    String type = event.getType();
+                    if ("click".equals(type) || "change".equals(type)) {
+                        checked = !checked;
+                        for (T row : dataProvider.getList()) {
+                            selectionModel.setSelected(row, checked);
+                        }
+                        table.redrawHeaders();
+                    }
+                }
+            };
+            table.addColumn(selectionCheckboxColumn, selectAllHeader);
         } else {
             @SuppressWarnings("unchecked")
             S typedSelectionModel = (S) new RefreshableSingleSelectionModel<T>(entityIdentityComparator, dataProvider);

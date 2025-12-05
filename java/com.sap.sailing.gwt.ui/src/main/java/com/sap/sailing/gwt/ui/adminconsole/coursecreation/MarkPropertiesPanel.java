@@ -22,7 +22,6 @@ import com.google.gwt.cell.client.TextCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
-import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
@@ -59,6 +58,8 @@ import com.sap.sse.security.ui.client.component.DefaultActionsImagesBarCell;
 import com.sap.sse.security.ui.client.component.EditOwnershipDialog;
 import com.sap.sse.security.ui.client.component.SecuredDTOOwnerColumn;
 import com.sap.sse.security.ui.client.component.editacl.EditACLDialog;
+import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.user.cellview.client.Header;
 
 public class MarkPropertiesPanel extends FlowPanel implements FilterablePanelProvider<MarkPropertiesDTO>{
     private static AdminConsoleResources resources = GWT.create(AdminConsoleResources.class);
@@ -184,7 +185,22 @@ public class MarkPropertiesPanel extends FlowPanel implements FilterablePanelPro
                         return t.getUuid().hashCode();
                     }
                 }, filterableMarkProperties.getAllListDataProvider(), markPropertiesTable);
-        markPropertiesTable.addColumn(checkColumn, SafeHtmlUtils.fromSafeConstant("<br/>"));
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            @Override
+            public Boolean getValue() {
+                return false;
+             }
+        };
+        selectAllHeader.setUpdater(value -> {
+            for (MarkPropertiesDTO mp : markPropertiesListDataProvider.getList()) {
+                if (refreshableSelectionModel != null) {
+                    refreshableSelectionModel.setSelected(mp, value);
+                }
+                value = !value;
+            }
+        });
+        markPropertiesTable.addColumn(checkColumn, selectAllHeader);
         markPropertiesTable.setColumnWidth(checkColumn, 40, Unit.PX);
         // id
         Column<MarkPropertiesDTO, String> idColumn = new Column<MarkPropertiesDTO, String>(new TextCell()) {

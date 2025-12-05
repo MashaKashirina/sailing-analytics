@@ -11,7 +11,6 @@ import java.util.List;
 import com.google.gwt.cell.client.TextCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Unit;
-import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
@@ -44,6 +43,8 @@ import com.sap.sse.security.ui.client.component.DefaultActionsImagesBarCell;
 import com.sap.sse.security.ui.client.component.EditOwnershipDialog;
 import com.sap.sse.security.ui.client.component.SecuredDTOOwnerColumn;
 import com.sap.sse.security.ui.client.component.editacl.EditACLDialog;
+import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.user.cellview.client.Header;
 
 public class MarkTemplatePanel extends FlowPanel implements FilterablePanelProvider<MarkTemplateDTO>{
     private static AdminConsoleTableResources tableResources = GWT.create(AdminConsoleTableResources.class);
@@ -153,7 +154,22 @@ public class MarkTemplatePanel extends FlowPanel implements FilterablePanelProvi
                         return t.getUuid().hashCode();
                     }
                 }, filterableMarkTemplates.getAllListDataProvider(), markTemplateTable);
-        markTemplateTable.addColumn(checkColumn, SafeHtmlUtils.fromSafeConstant("<br/>"));
+        checkColumn.setSortable(false);
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            private boolean checked = false;
+            @Override
+            public Boolean getValue() {
+                return checked;
+            }
+        };
+        selectAllHeader.setUpdater(value -> {
+            for (MarkTemplateDTO mt : markTemplateListDataProvider.getList()) {
+                refreshableSelectionModel.setSelected(mt, value);
+                value = !value;
+            }
+        });
+        markTemplateTable.addColumn(checkColumn, selectAllHeader);
         markTemplateTable.setColumnWidth(checkColumn, 40, Unit.PX);
         // id
         Column<MarkTemplateDTO, String> idColumn = new Column<MarkTemplateDTO, String>(new TextCell()) {

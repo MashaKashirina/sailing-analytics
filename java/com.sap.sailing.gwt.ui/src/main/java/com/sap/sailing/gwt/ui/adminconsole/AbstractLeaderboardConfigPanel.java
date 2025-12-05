@@ -10,12 +10,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.CellTable;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
@@ -400,10 +402,22 @@ public abstract class AbstractLeaderboardConfigPanel extends FormPanel
                 tableResources.cellTableStyle().cellTableCheckboxDeselected(),
                 tableResources.cellTableStyle().cellTableCheckboxColumnCell(),
                 new NameBasedStrippedLeaderboardDTOEntityIdentityComparator(), listDataProvider, leaderboardTable);
-        selectionCheckboxColumn.setSortable(true);
-        leaderboardColumnListHandler.setComparator(selectionCheckboxColumn,
-                (o1, o2) -> (leaderboardTable.getSelectionModel().isSelected(o1) ? 1 : 0)
-                        - (leaderboardTable.getSelectionModel().isSelected(o2) ? 1 : 0));
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            private boolean checked = false;
+            @Override
+            public Boolean getValue() {
+                return checked;
+            }};
+        selectAllHeader.setUpdater(value -> {
+            List<StrippedLeaderboardDTO> visibleLeaderbords = filteredLeaderboardList.getList();
+            for (StrippedLeaderboardDTO l : visibleLeaderbords) {
+                leaderboardSelectionModel.setSelected(l, value);
+            }
+            value = !value;
+            });
+        selectionCheckboxColumn.setSortable(false);
+        leaderboardTable.addColumn(selectionCheckboxColumn, selectAllHeader);
         return selectionCheckboxColumn;
     }
 

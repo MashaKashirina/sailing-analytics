@@ -14,14 +14,17 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.cell.client.SafeHtmlCell;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -222,8 +225,22 @@ public class RoleDefinitionsPanel extends VerticalPanel {
                 stringMessages);
         roleActionColumn.addAction(DefaultActionsImagesBarCell.ACTION_CHANGE_ACL, DefaultActions.CHANGE_ACL,
                 configACL::openDialog);
-
-        table.addColumn(roleSelectionCheckboxColumn, roleSelectionCheckboxColumn.getHeader());
+        roleSelectionCheckboxColumn.setSortable(false);
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+                    @Override
+                    public Boolean getValue() {
+                        return false;
+                    }
+                };
+        selectAllHeader.setUpdater(value -> {
+            List<RoleDefinitionDTO> visibleRoles = rolesListDataProvider.getList();
+            for (RoleDefinitionDTO role : visibleRoles) {
+                roleSelectionCheckboxColumn.getSelectionModel().setSelected(role, value);
+            }
+            value = !value;
+        });
+        table.addColumn(roleSelectionCheckboxColumn, selectAllHeader);
         table.addColumn(roleDefinitionNameColumn, stringMessages.name());
         table.addColumn(permissionsColumn, stringMessages.permissions());
         SecuredDTOOwnerColumn.configureOwnerColumns(table, columnSortHandler, stringMessages);

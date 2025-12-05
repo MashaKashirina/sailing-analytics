@@ -13,7 +13,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.BrowserEvents;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.dom.client.Style.Unit;
-import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
@@ -48,6 +47,8 @@ import com.sap.sse.security.ui.client.component.DefaultActionsImagesBarCell;
 import com.sap.sse.security.ui.client.component.EditOwnershipDialog;
 import com.sap.sse.security.ui.client.component.SecuredDTOOwnerColumn;
 import com.sap.sse.security.ui.client.component.editacl.EditACLDialog;
+import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.user.cellview.client.Header;
 
 public class MarkRolePanel extends FlowPanel implements FilterablePanelProvider<MarkRoleDTO>{
 
@@ -188,7 +189,23 @@ public class MarkRolePanel extends FlowPanel implements FilterablePanelProvider<
                         return t.getUuid().hashCode();
                     }
                 }, filterableMarkRoles.getAllListDataProvider(), markRolesTable);
-        markRolesTable.addColumn(checkColumn, SafeHtmlUtils.fromSafeConstant("<br/>"));
+        checkColumn.setSortable(false);
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            @Override
+            public Boolean getValue() {
+                return false;
+            }
+        };
+        selectAllHeader.setUpdater(value -> {    
+            for (MarkRoleDTO role : markRoleListDataProvider.getList()) {
+                if (refreshableSelectionModel != null) {
+                    refreshableSelectionModel.setSelected(role, value);
+                }
+                value = !value;
+            }
+        });
+        markRolesTable.addColumn(checkColumn, selectAllHeader);
         markRolesTable.setColumnWidth(checkColumn, 40, Unit.PX);
         // id
         Column<MarkRoleDTO, String> idColumn = new Column<MarkRoleDTO, String>(new TextCell()) {

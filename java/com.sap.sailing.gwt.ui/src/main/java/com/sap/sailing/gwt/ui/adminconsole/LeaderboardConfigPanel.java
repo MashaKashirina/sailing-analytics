@@ -379,7 +379,6 @@ public class LeaderboardConfigPanel extends AbstractLeaderboardConfigPanel
                         configACL.openDialog(t);
                     }
         });
-        leaderboardTable.addColumn(selectionCheckboxColumn, selectionCheckboxColumn.getHeader());
         leaderboardTable.addColumn(linkColumn, stringMessages.name());
         leaderboardTable.addColumn(leaderboardDisplayNameColumn, stringMessages.displayName());
         leaderboardTable.addColumn(leaderboardCanBoatsOfCompetitorsChangePerRaceColumn,

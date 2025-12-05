@@ -13,12 +13,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.google.gwt.cell.client.AbstractCell;
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.CellTable;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.Window;
@@ -304,7 +306,22 @@ public class RegattaListComposite extends Composite {
                 stringMessages);
         actionsColumn.addAction(RegattaConfigImagesBarCell.ACTION_CHANGE_ACL, DefaultActions.CHANGE_ACL,
                 regattaDTO -> configACL.openDialog(regattaDTO));
-        table.addColumn(regattaSelectionCheckboxColumn, regattaSelectionCheckboxColumn.getHeader());
+        regattaSelectionCheckboxColumn.setSortable(false);
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            private boolean checked = false;
+            @Override
+            public Boolean getValue() {
+                return checked;
+            }};
+        selectAllHeader.setUpdater(value -> {
+            List<RegattaDTO> visibleRegattas = regattaListDataProvider.getList();
+            for (RegattaDTO e : visibleRegattas) {
+                refreshableRegattaMultiSelectionModel.setSelected(e, value);
+            }
+            value = !value;
+            });
+        table.addColumn(regattaSelectionCheckboxColumn, selectAllHeader);
         table.addColumn(regattaNameColumn, stringMessages.regattaName());
         table.addColumn(regattaCanBoatsOfCompetitorsChangePerRaceColumn, stringMessages.canBoatsChange());
         table.addColumn(competitorRegistrationTypeColumn, stringMessages.competitorRegistrationTypeShort());

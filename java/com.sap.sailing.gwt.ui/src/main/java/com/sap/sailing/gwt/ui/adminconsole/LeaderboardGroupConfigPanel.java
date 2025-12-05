@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.FontWeight;
 import com.google.gwt.dom.client.Style.Unit;
@@ -30,6 +31,7 @@ import com.google.gwt.safehtml.shared.UriUtils;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.CellTable.Resources;
 import com.google.gwt.user.cellview.client.Column;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.Window;
@@ -279,7 +281,22 @@ public class LeaderboardGroupConfigPanel extends AbstractRegattaPanel
         };
         leaderboardsTable.setWidth("100%");
         leaderboardsTable.addColumnSortHandler(leaderboardsListHandler);
-        leaderboardsTable.addColumn(leaderboardTableSelectionColumn, leaderboardTableSelectionColumn.getHeader());
+        leaderboardTableSelectionColumn.setSortable(false);
+        CheckboxCell selectAllCell = new CheckboxCell();
+        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            private boolean checked = false;
+            @Override
+            public Boolean getValue() {
+                return checked;
+            }};
+        selectAllHeader.setUpdater(value -> {
+            List<StrippedLeaderboardDTO> visibleEvents = leaderboardsProvider.getList();
+            for (StrippedLeaderboardDTO e : visibleEvents) {
+                refreshableLeaderboardsSelectionModel.setSelected(e, value);
+            }
+            value = !value;
+            });
+        leaderboardsTable.addColumn(leaderboardTableSelectionColumn, selectAllHeader);
         leaderboardsTable.addColumn(leaderboardsNameColumn, stringMessages.leaderboardName());
         leaderboardsTable.addColumn(leaderboardsRacesColumn, stringMessages.races());
         refreshableLeaderboardsSelectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
@@ -384,8 +401,24 @@ public class LeaderboardGroupConfigPanel extends AbstractRegattaPanel
                                 return t.getName().hashCode();
                             }
                         }, groupDetailsProvider, groupDetailsTable);
+        groupDetailsTableSelectionColumn.setSortable(false);
+        CheckboxCell groupDetailsSelectAllCell = new CheckboxCell();
+        Header<Boolean> groupDetailsSelectAllHeader = new Header<Boolean>(groupDetailsSelectAllCell) {
+           private boolean checked = false;
+           @Override
+           public Boolean getValue() {
+               return checked;
+           }
+        };
+        groupDetailsSelectAllHeader.setUpdater(value -> {
+            List<StrippedLeaderboardDTO> visibleLeaderboardsInGroup = groupDetailsProvider.getList();
+            for (StrippedLeaderboardDTO leaderboard : visibleLeaderboardsInGroup) {
+                groupDetailsTableSelectionColumn.getSelectionModel().setSelected(leaderboard, value);
+            }
+            value = !value;
+        });
         groupDetailsTable.setWidth("100%");
-        groupDetailsTable.addColumn(groupDetailsTableSelectionColumn, groupDetailsTableSelectionColumn.getHeader());
+        groupDetailsTable.addColumn(groupDetailsTableSelectionColumn, groupDetailsSelectAllHeader);
         groupDetailsTable.addColumn(groupDetailsNameColumn, stringMessages.leaderboardName());
         groupDetailsTable.addColumn(groupDetailsRacesColumn, stringMessages.races());
         refreshableGroupDetailsSelectionModel = groupDetailsTableSelectionColumn.getSelectionModel();
@@ -594,8 +627,24 @@ public class LeaderboardGroupConfigPanel extends AbstractRegattaPanel
                         return t.getId().hashCode();
                     }
                 }, groupsFilterablePanel.getAllListDataProvider(), groupsTable);
-        groupsTable.setWidth("100%");
-        groupsTable.addColumn(leaderboardTableSelectionColumn, leaderboardTableSelectionColumn.getHeader());
+        leaderboardTableSelectionColumn.setSortable(false);
+        CheckboxCell groupsSelectAllCell = new CheckboxCell();
+        Header<Boolean> groupsSelectAllHeader = new Header<Boolean>(groupsSelectAllCell) {
+            private boolean checked = false;
+            @Override
+            public Boolean getValue() {
+                return checked;
+            }
+        };
+        groupsSelectAllHeader.setUpdater(value -> {
+            List<LeaderboardGroupDTO> visibleGroups = groupsProvider.getList();
+            for (LeaderboardGroupDTO group : visibleGroups) {
+                refreshableGroupsSelectionModel.setSelected(group, value);
+            }
+            value = !value;
+        });
+            groupsTable.setWidth("100%");
+        groupsTable.addColumn(leaderboardTableSelectionColumn, groupsSelectAllHeader);
         groupsTable.addColumn(groupNameColumn, stringMessages.name());
         groupsTable.addColumn(groupDescriptionColumn, stringMessages.description());
         groupsTable.addColumn(groupDisplayNameColumn, stringMessages.displayName());
