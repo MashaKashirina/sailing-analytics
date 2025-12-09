@@ -3097,7 +3097,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         if (newStatus.getStatus() == TrackedRaceStatusEnum.LOADING && oldStatus != TrackedRaceStatusEnum.LOADING) {
             suspendAllCachesNotUpdatingWhileLoading();
         } else if (oldStatus == TrackedRaceStatusEnum.LOADING && newStatus.getStatus() != TrackedRaceStatusEnum.LOADING && newStatus.getStatus() != TrackedRaceStatusEnum.REMOVED) {
-            resumeAllCachesNotUpdatingWhileLoading();
+            resumeAllCachesNotUpdatingWhileLoading(); // TODO how sure can we be that at this point all loading is really done? TracTrac receivers, e.g., run in threads with queues, and fixes may still be processed after the status has changed
         }
     }
 
