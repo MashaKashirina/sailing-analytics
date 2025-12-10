@@ -2893,7 +2893,7 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
         if (cachesSuspended) {
             triggerManeuverCacheInvalidationForAllCompetitors = true;
         } else {
-            maneuverCache.triggerUpdate(competitor);
+            maneuverCache.recalculate(competitor);
         }
     }
 
@@ -3160,11 +3160,10 @@ public abstract class TrackedRaceImpl extends TrackedRaceWithWindEssentials impl
             markPassingCalculator.resume();
         }
         crossTrackErrorCache.resume();
-        
+        maneuverCache.resume(); // needs to happen before triggering recalculation because this decides about fingerprint matching
         if (triggerManeuverCacheInvalidationForAllCompetitors) {
             triggerManeuverCacheRecalculationForAllCompetitors();
         }
-        maneuverCache.resume();
     }
 
     /**

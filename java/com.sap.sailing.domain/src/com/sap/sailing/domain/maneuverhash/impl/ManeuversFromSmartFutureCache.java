@@ -66,6 +66,12 @@ public class ManeuversFromSmartFutureCache implements ManeuverCache {
     }
 
     @Override
+    public void recalculate(Competitor competitor) {
+        // need to trigger an update
+        triggerUpdate(competitor);
+    }
+
+    @Override
     public void triggerUpdate(Competitor key) {
         smartFutureCache.triggerUpdate(key, /* updateInterval */ null);
     }
