@@ -113,8 +113,14 @@ public class ManeuverCacheDelegate implements SerializableManeuverCache {
     }
 
     @Override
+    public void recalculate(Competitor competitor) {
+        cacheToUse.recalculate(competitor);
+    }
+
+    @Override
     public void triggerUpdate(Competitor competitor) {
         if (!cacheToUse.canBeUpdated()) {
+            logger.warning("Received a maneuver cache update trigger for competitor "+competitor.getName()+" but current cache cannot be updated; switching to an updatable cache");
             cacheToUse = createUpdatableManeuverCache();
         }
         cacheToUse.triggerUpdate(competitor);

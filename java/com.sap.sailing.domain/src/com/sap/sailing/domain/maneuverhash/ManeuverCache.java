@@ -15,4 +15,11 @@ public interface ManeuverCache {
     void triggerUpdate(Competitor key);
     
     boolean canBeUpdated();
+
+    /**
+     * Called after a race has finished loading. Different implementations may react differently to this event.
+     * A cache loaded from the DB will simply ignore this request. A cache that is empty and based on calculation
+     * will need to trigger an update.
+     */
+    void recalculate(Competitor competitor);
 }

@@ -34,6 +34,11 @@ public class ManeuversFromDatabase implements SerializableManeuverCache {
         return false;
     }
 
+    @Override
+    public void recalculate(Competitor competitor) {
+        // a no-op because we have everything from the DB already
+    }
+
     public void resume() {
         logger.log(Level.WARNING, "Method should never be called");
         throw new IllegalStateException("Method should never be called");
