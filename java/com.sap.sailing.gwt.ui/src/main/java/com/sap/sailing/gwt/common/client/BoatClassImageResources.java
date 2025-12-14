@@ -96,6 +96,10 @@ public interface BoatClassImageResources extends ClientBundle {
     @ImageOptions(preventInlining = true)
     ImageResource BeneteauFirst35Icon();
     
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/BENETEAU_FIRST_36.png")
+    @ImageOptions(preventInlining = true)
+    ImageResource BeneteauFirst36Icon();
+    
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/BENETEAU_FIRST_45.png")
     @ImageOptions(preventInlining = true)
     ImageResource BeneteauFirst45Icon();
@@ -152,6 +156,10 @@ public interface BoatClassImageResources extends ClientBundle {
     @ImageOptions(preventInlining = true)
     ImageResource Elan350Icon();
 
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/ELAN_E4.png")
+    @ImageOptions(preventInlining = true)
+    ImageResource ElanE4Icon();
+
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/EUROPE_INT.png")
     @ImageOptions(preventInlining = true)
     ImageResource EuropeIcon();
@@ -179,6 +187,10 @@ public interface BoatClassImageResources extends ClientBundle {
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/F_18.png")
     @ImageOptions(preventInlining = true)
     ImageResource F18Icon();
+    
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/FAREAST28R.png")
+    @ImageOptions(preventInlining = true)
+    ImageResource Fareast28RIcon();
     
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/FARR_30.png")
     @ImageOptions(preventInlining = true)
@@ -512,6 +524,10 @@ public interface BoatClassImageResources extends ClientBundle {
     @ImageOptions(preventInlining = true)
     ImageResource SplashGreenIcon();
     
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/SRS.png")
+    @ImageOptions(preventInlining = true)
+    ImageResource SRSIcon();
+    
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/ORC.png")
     @ImageOptions(preventInlining = true)
     ImageResource ORCIcon();
@@ -523,6 +539,10 @@ public interface BoatClassImageResources extends ClientBundle {
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/ORC_INTERNATIONAL.png")
     @ImageOptions(preventInlining = true)
     ImageResource ORCInternationalIcon();
+
+    @Source("com/sap/sailing/gwt/ui/client/images/boatclass/ORC_MULTIHULL.png")
+    @ImageOptions(preventInlining = true)
+    ImageResource ORCMultihullIcon();
 
     @Source("com/sap/sailing/gwt/ui/client/images/boatclass/PHRF.png")
     @ImageOptions(preventInlining = true)

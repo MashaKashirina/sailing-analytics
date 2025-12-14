@@ -36,11 +36,12 @@
          When adjusting tycho-version here, also make sure to adjust it accordingly
          in java/com.amazon.aws.aws-java-api/pom.xml
      -->
-    <tycho-version>1.7.0</tycho-version>
-    <gwt.version>2.11.0</gwt.version>
+    <tycho-version>4.0.12</tycho-version>
+    <toolchains-version>3.2.0</toolchains-version>
+    <gwt.version>2.12.4</gwt.version>
     <!-- gwt-maven-plugin is typically in sync with the GWT version. But sometimes versions need extra time after a new GWT release. -->
-    <gwt.plugin.version>2.11.0</gwt.plugin.version>
-    <gwt.minVersion>2.11.0</gwt.minVersion>
+    <gwt.plugin.version>2.12.4</gwt.plugin.version>
+    <gwt.minVersion>2.12.4</gwt.minVersion>
     <gwt.workers>2</gwt.workers>
     <p2-target>race-analysis-p2-remote</p2-target><!--can be overidden through p2-target.local profile -->
     <!-- QUESTION: Which properties or settings are system dependent and differ across different machines/environments? QUESTION:
@@ -89,6 +90,7 @@
         <module>org.hamcrest.core</module>
         <module>com.sap.sse</module>
         <module>com.sap.sse.test</module>
+        <module>com.sap.sse.testutils</module>
         <module>com.sap.sse.aicore</module>
         <module>com.sap.sse.aicore.test</module>
         <module>com.sap.sse.landscape.common</module>
@@ -213,7 +215,9 @@
         <module>com.sap.sailing.server.trackfiles</module>
         <module>com.sap.sailing.feature.runtime</module>
         <module>com.sap.sailing.gwt.ui</module>
-        <module>com.sap.sse.debranding</module>
+        <module>com.sap.sse.branding</module>
+        <module>com.sap.sse.branding.test</module>
+        <module>com.sap.sse.branding.sap</module>
         <module>com.sap.sailing.domain.test</module>
         <module>com.sap.sse.replication.testsupport</module>
         <module>com.sap.sailing.server.testsupport</module>
@@ -476,6 +480,7 @@
 <build>
   <directory>bin</directory>
   <outputDirectory>bin</outputDirectory>
+  <testSourceDirectory>src</testSourceDirectory>
   <testOutputDirectory>bin</testOutputDirectory>
 
   <pluginManagement>
@@ -493,6 +498,11 @@
         <configuration>
           <reportsDirectory>${reportsdirectory}</reportsDirectory>
         </configuration>
+      </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-toolchains-plugin</artifactId>
+          <version>${toolchains-version}</version>
       </plugin>
       <plugin>
           <groupId>com.simpligility.maven.plugins</groupId>
@@ -546,6 +556,25 @@
   </pluginManagement>
 
   <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-toolchains-plugin</artifactId>
+      <version>${toolchains-version}</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>toolchain</goal>
+          </goals>
+        </execution>
+      </executions>
+      <configuration>
+        <toolchains>
+          <jdk>
+            <version>8</version>
+          </jdk>
+        </toolchains>
+      </configuration>
+    </plugin>
     <plugin>
       <groupId>org.eclipse.tycho</groupId>
       <artifactId>tycho-maven-plugin</artifactId>
@@ -607,6 +636,7 @@
         </excludes>
         <reportsDirectory>${reportsdirectory}</reportsDirectory>
         <showEclipseLog>true</showEclipseLog>
+        <useJUnitPlatform>true</useJUnitPlatform>
       </configuration>
     </plugin>
     <plugin>

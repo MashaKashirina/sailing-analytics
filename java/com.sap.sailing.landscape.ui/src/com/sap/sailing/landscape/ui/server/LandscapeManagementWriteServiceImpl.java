@@ -411,6 +411,7 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
     private SailingApplicationReplicaSetDTO<String> convertToSailingApplicationReplicaSetDTO(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> applicationServerReplicaSet,
             Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final Release release = applicationServerReplicaSet.getVersion(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
         return new SailingApplicationReplicaSetDTO<>(applicationServerReplicaSet.getName(),
                 convertToSailingAnalyticsProcessDTO(applicationServerReplicaSet.getMaster(), optionalKeyName, privateKeyEncryptionPassphrase),
                 Util.map(applicationServerReplicaSet.getReplicas(), r->{
@@ -420,9 +421,8 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                         throw new RuntimeException(e);
                     }
                 }),
-                applicationServerReplicaSet.getVersion(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase).getName(),
-                applicationServerReplicaSet.getHostname(), getLandscapeService().getDefaultRedirectPath(applicationServerReplicaSet.getDefaultRedirectRule()),
-                applicationServerReplicaSet.getAutoScalingGroup() == null ? null :
+                release.getName(), release.getReleaseNotesURL().toString(), applicationServerReplicaSet.getHostname(),
+                getLandscapeService().getDefaultRedirectPath(applicationServerReplicaSet.getDefaultRedirectRule()), applicationServerReplicaSet.getAutoScalingGroup() == null ? null :
                     applicationServerReplicaSet.getAutoScalingGroup().getLaunchTemplateDefaultVersion() == null ? null :
                         applicationServerReplicaSet.getAutoScalingGroup().getLaunchTemplateDefaultVersion().launchTemplateData().imageId());
     }
@@ -655,9 +655,9 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                     }
                 }),
                 release.getName(),
+                release.getReleaseNotesURL().toString(),
                 getLandscapeService().getFullyQualifiedHostname(name, Optional.ofNullable(optionalDomainName)),
-                getLandscapeService().getDefaultRedirectPath(result.getDefaultRedirectRule()),
-                result.getAutoScalingGroup()==null?null:result.getAutoScalingGroup().getLaunchTemplateDefaultVersion().launchTemplateData().imageId());
+                getLandscapeService().getDefaultRedirectPath(result.getDefaultRedirectRule()), result.getAutoScalingGroup()==null?null:result.getAutoScalingGroup().getLaunchTemplateDefaultVersion().launchTemplateData().imageId());
     }
 
     @Override
@@ -687,7 +687,6 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
      * 
      * The "internal" method exists in order to declare a few type parameters which wouldn't be possible on the GWT RPC
      * interface method as some of these types are not seen by clients.
-     * @param optionalIgtimiRiotPort TODO
      * @param optionalMinimumAutoScalingGroupSize
      *            defaults to 1; if 0, a replica process will be launched on an eligible shared instance in an
      *            availability zone different from that of the instance hosting the master process. Otherwise,
@@ -733,10 +732,9 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                }), release.getName(),
+                }), release.getName(), release.getReleaseNotesURL().toString(),
                 getLandscapeService().getFullyQualifiedHostname(replicaSetName, Optional.ofNullable(optionalDomainName)),
-                getLandscapeService().getDefaultRedirectPath(result.getDefaultRedirectRule()),
-                result.getAutoScalingGroup()==null?null:result.getAutoScalingGroup().getLaunchTemplateDefaultVersion().launchTemplateData().imageId());
+                getLandscapeService().getDefaultRedirectPath(result.getDefaultRedirectRule()), result.getAutoScalingGroup()==null?null:result.getAutoScalingGroup().getLaunchTemplateDefaultVersion().launchTemplateData().imageId());
     }
 
     @Override
@@ -860,9 +858,9 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                 applicationReplicaSetToCreateLoadBalancerMappingFor.getMaster(),
                 applicationReplicaSetToCreateLoadBalancerMappingFor.getReplicas(),
                 applicationReplicaSetToCreateLoadBalancerMappingFor.getVersion(),
+                applicationReplicaSetToCreateLoadBalancerMappingFor.getReleaseNotesLink(),
                 applicationReplicaSetToCreateLoadBalancerMappingFor.getHostname(),
-                RedirectDTO.toString(defaultRedirect.getPath(), defaultRedirect.getQuery()),
-                applicationReplicaSetToCreateLoadBalancerMappingFor.getAutoScalingGroupAmiId());
+                RedirectDTO.toString(defaultRedirect.getPath(), defaultRedirect.getQuery()), applicationReplicaSetToCreateLoadBalancerMappingFor.getAutoScalingGroupAmiId());
     }
 
     @Override
@@ -909,8 +907,8 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                         throw new RuntimeException(e);
                     }
                 }),
-                release.getName(), applicationReplicaSetToUpgrade.getHostname(),
-                applicationReplicaSetToUpgrade.getDefaultRedirectPath(), applicationReplicaSetToUpgrade.getAutoScalingGroupAmiId());
+                release.getName(), release.getReleaseNotesURL().toString(),
+                applicationReplicaSetToUpgrade.getHostname(), applicationReplicaSetToUpgrade.getDefaultRedirectPath(), applicationReplicaSetToUpgrade.getAutoScalingGroupAmiId());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.sap.sailing.gwt.ui.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -114,7 +115,6 @@ import com.sap.sse.security.interfaces.UserStore;
 import com.sap.sse.security.ui.shared.SuccessInfo;
 
 public interface SailingServiceWrite extends FileStorageManagementGwtService, SailingService {
-
     void setORCPerformanceCurveScratchBoat(String leaderboardName, String raceColumnName, String fleetName,
             CompetitorDTO newScratchBoatDTO) throws NotFoundException;
 
@@ -242,7 +242,7 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
             throws NotFoundException, NotDenotableForRaceLogTrackingException;
 
     Map<RegattaAndRaceIdentifier, Integer> importWindFromIgtimi(List<RaceDTO> selectedRaces,
-            boolean correctByDeclination)
+            boolean correctByDeclination, String optionalBearerTokenOrNull)
             throws IllegalStateException, Exception;
 
     IgtimiDataAccessWindowWithSecurityDTO addIgtimiDataAccessWindow(String deviceSerialNumber, Date from, Date to);
@@ -261,6 +261,14 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
 
     boolean sendRestartCommandToIgtimiDevice(String serialNumber) throws IOException;
 
+    boolean sendIMUCalibrationCommandSequenceToIgtimiDevice(String serialNumber) throws IOException, InterruptedException;
+    
+    boolean sendIgtimiCommand(String serialNumber, String command) throws IOException, InterruptedException;
+    
+    boolean enableIgtimiDeviceOverTheAirLog(String serialNumber, boolean enable) throws Exception;
+    
+    ArrayList<Pair<TimePoint, String>> getIgtimiDeviceLogs(String serialNumber, Duration duration) throws Exception;
+    
     void setTrackingTimes(RaceLogSetTrackingTimesDTO dto) throws NotFoundException;
 
     boolean removeDeviceConfiguration(UUID deviceConfigurationId);
@@ -320,8 +328,8 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
 
     EventDTO updateEvent(UUID eventId, String eventName, String eventDescription, Date startDate, Date endDate,
             VenueDTO venue, boolean isPublic, List<UUID> leaderboardGroupIds, String officialWebsiteURLString,
-            String baseURLAsString, Map<String, String> sailorsInfoWebsiteURLsByLocaleName, List<ImageDTO> images,
-            List<VideoDTO> videos, List<String> windFinderReviewedSpotCollectionIds)
+            String baseURLAsString, Map<String, String> sailorsInfoWebsiteURLsByLocaleName, List<? extends ImageDTO> images,
+            List<? extends VideoDTO> videos, List<String> windFinderReviewedSpotCollectionIds)
             throws UnauthorizedException, IOException;
 
     void updateLeaderboardGroup(UUID leaderboardGroupId, String oldName, String newName, String newDescription,
@@ -334,7 +342,7 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
 
     void trackWithSwissTiming(RegattaIdentifier regattaToAddTo, List<SwissTimingRaceRecordDTO> rrs, String hostname,
             int port, boolean trackWind, boolean correctWindByDeclination, boolean useInternalMarkPassingAlgorithm,
-            String updateURL, String updateUsername, String updatePassword, String eventName, String manage2SailEventUrl) throws UnauthorizedException, Exception;
+            String updateURL, String apiToken, String eventName, String manage2SailEventUrl) throws UnauthorizedException, Exception;
 
     void updateSwissTimingConfiguration(SwissTimingConfigurationWithSecurityDTO configuration)
             throws UnauthorizedException, Exception;
@@ -343,7 +351,7 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
             throws UnauthorizedException, Exception;
 
     void createSwissTimingConfiguration(String configName, String jsonURL, String hostname, Integer port,
-            String updateURL, String updateUsername, String updatePassword) throws UnauthorizedException, Exception;
+            String updateURL, String apiToken) throws UnauthorizedException, Exception;
 
     void updateRacesDelayToLive(List<RegattaAndRaceIdentifier> regattaAndRaceIdentifiers, long delayToLiveInMs);
 
@@ -453,7 +461,7 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
             throws UnauthorizedException, Exception;
 
     void createTracTracConfiguration(String name, String jsonURL, String liveDataURI, String storedDataURI,
-            String courseDesignUpdateURI, String tracTracUsername, String tracTracPassword) throws Exception;
+            String courseDesignUpdateURI, String tracTracApiToken) throws Exception;
 
     void trackWithTracTrac(RegattaIdentifier regattaToAddTo, List<TracTracRaceRecordDTO> rrs, String liveURIFromConfiguration,
             String storedURIFromConfiguration, String courseDesignUpdateURI, boolean trackWind, boolean correctWindByDeclination,
@@ -749,4 +757,9 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
     boolean hasAIAgentCredentials();
     
     void setAIAgentCredentials(String credentials) throws Exception;
+    
+    void resetAIAgentCredentials();
+
+    void copyPairingListFromOtherLeaderboard(String sourceLeaderboardName, String targetLeaderboardName, String fromRaceColumnName,
+            String toRaceColumnInclusiveName) throws UnauthorizedException, NotFoundException;
 }

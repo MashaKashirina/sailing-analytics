@@ -1,6 +1,6 @@
 package com.sap.sailing.domain.test.markpassing;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,9 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.impl.DegreePosition;
@@ -22,13 +22,13 @@ import com.sap.sailing.domain.markpassingcalculation.CandidateFinder;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateChooserImpl;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateFinderImpl;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateImpl;
-import com.sap.sailing.domain.test.measurements.Measurement;
-import com.sap.sailing.domain.test.measurements.MeasurementCase;
-import com.sap.sailing.domain.test.measurements.MeasurementXMLFile;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.DegreeBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.testutils.Measurement;
+import com.sap.sse.testutils.MeasurementCase;
+import com.sap.sse.testutils.MeasurementXMLFile;
 
 public class MarkPassingCalculatorPerformanceTest extends AbstractMockedRaceMarkPassingTest {
 
@@ -41,7 +41,7 @@ public class MarkPassingCalculatorPerformanceTest extends AbstractMockedRaceMark
     protected Random rnd = new Random();
     protected long time;
 
-    @AfterClass
+    @AfterAll
     public static void createXMLFile() throws IOException {
         final MeasurementXMLFile performanceReport = new MeasurementXMLFile(MarkPassingCalculatorPerformanceTest.class);
         for (String key : result.keySet()) {
@@ -65,7 +65,7 @@ public class MarkPassingCalculatorPerformanceTest extends AbstractMockedRaceMark
         time = System.currentTimeMillis() - time;
         result.put("FinderPerformance", time);
         System.out.println(time);
-        Assert.assertTrue("Time expected to be less than 7000ms but was "+time+"ms", time < 7000);
+        Assertions.assertTrue(time < 7000, "Time expected to be less than 7000ms but was "+time+"ms");
     }
 
     @Test
@@ -73,7 +73,7 @@ public class MarkPassingCalculatorPerformanceTest extends AbstractMockedRaceMark
         final long time = timeToAddCandidatesToChooser(500, 1, 25);
         System.out.println(time);
         result.put("ChooserPerformance", time);
-        assertTrue("time needs to be less than 15s but was "+time+"ms", time < 15000);
+        assertTrue(time < 15000, "time needs to be less than 15s but was "+time+"ms");
     }
 
     private long timeToAddCandidatesToChooser(int numberOfTimesAdding, int numberToAddEachTime, int numberOfRepititions) {

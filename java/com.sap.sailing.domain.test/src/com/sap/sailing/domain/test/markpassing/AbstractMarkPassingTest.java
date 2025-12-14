@@ -1,8 +1,8 @@
 package com.sap.sailing.domain.test.markpassing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.Waypoint;
@@ -33,15 +33,15 @@ import com.sap.sailing.domain.markpassingcalculation.MarkPassingCalculator;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateChooserImpl;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateFinderImpl;
 import com.sap.sailing.domain.test.OnlineTracTracBasedTest;
-import com.sap.sailing.domain.test.measurements.Measurement;
-import com.sap.sailing.domain.test.measurements.MeasurementCase;
-import com.sap.sailing.domain.test.measurements.MeasurementXMLFile;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tractracadapter.ReceiverType;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.DegreeBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.testutils.Measurement;
+import com.sap.sse.testutils.MeasurementCase;
+import com.sap.sse.testutils.MeasurementXMLFile;
 
 public abstract class AbstractMarkPassingTest extends OnlineTracTracBasedTest {
     private static final Logger logger = Logger.getLogger(AbstractMarkPassingTest.class.getName());
@@ -222,7 +222,7 @@ public abstract class AbstractMarkPassingTest extends OnlineTracTracBasedTest {
         incorrect += incorrectPasses;
         skipped += wronglyNotComputed;
         extra += wronglyComputed;
-        assertTrue("Expected accuracy to be at least 0.8 but was " + accuracy, accuracy >= 0.8);
+        assertTrue(accuracy >= 0.8, "Expected accuracy to be at least 0.8 but was " + accuracy);
         logger.info(mpc.toString());
     }
 
@@ -290,7 +290,7 @@ public abstract class AbstractMarkPassingTest extends OnlineTracTracBasedTest {
         chooser.calculateMarkPassDeltas(c, f.getA(), f.getB());
     }
 
-    @AfterClass
+    @AfterAll
     public static void createXML() throws IOException {
         double accuracy = correct / totalPasses;
         double different = incorrect / totalPasses;
