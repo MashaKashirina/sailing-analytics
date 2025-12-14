@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -10,9 +10,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
@@ -36,7 +36,7 @@ public class MultipleClassesInRegattaTest {
     private TracTracRaceTracker kiwotest3;
     private TracTracRaceTracker weym470may112014_2;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         domainFactory = new DomainFactoryImpl(new com.sap.sailing.domain.base.impl.DomainFactoryImpl(com.sap.sailing.domain.base.DomainFactory.TEST_RACE_LOG_RESOLVER));
     }
@@ -47,8 +47,7 @@ public class MultipleClassesInRegattaTest {
         String liveURI = "tcp://" + TracTracConnectionConstants.HOST_NAME + ":" + TracTracConnectionConstants.PORT_LIVE;
         String storedURI = "tcp://" + TracTracConnectionConstants.HOST_NAME + ":" + TracTracConnectionConstants.PORT_STORED;
         String courseDesignUpdateURI = "http://tracms.traclive.dk/update_course";
-        String tracTracUsername = "tracTest";
-        String tracTracPassword = "tracTest";
+        String tracTracApiToken = AbstractTracTracLiveTest.getTracTracApiToken();
         if (tractracTunnel) {
             liveURI   = "tcp://"+tractracTunnelHost+":"+TracTracConnectionConstants.PORT_TUNNEL_LIVE;
             storedURI = "tcp://"+tractracTunnelHost+":"+TracTracConnectionConstants.PORT_TUNNEL_STORED;
@@ -58,28 +57,28 @@ public class MultipleClassesInRegattaTest {
                         EmptyRaceLogStore.INSTANCE,
                         EmptyRegattaLogStore.INSTANCE, EmptyWindStore.INSTANCE, new DummyTrackedRegattaRegistry(),
                         mock(RaceLogAndTrackedRaceResolver.class), mock(LeaderboardGroupResolver.class), createConnectivityParams(httpAndHost, liveURI, storedURI, courseDesignUpdateURI,
-                                tracTracUsername, tracTracPassword, "cce678c8-97e6-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
+                                tracTracApiToken, "cce678c8-97e6-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         new DefaultRaceTrackingHandler(), /* markPassingRaceFingerprintRegistry */ null);
         kiwotest2 = domainFactory
                 .createRaceTracker(
                         EmptyRaceLogStore.INSTANCE,
                         EmptyRegattaLogStore.INSTANCE, EmptyWindStore.INSTANCE, new DummyTrackedRegattaRegistry(),
                         mock(RaceLogAndTrackedRaceResolver.class), mock(LeaderboardGroupResolver.class), createConnectivityParams(httpAndHost, liveURI, storedURI, courseDesignUpdateURI,
-                                tracTracUsername, tracTracPassword, "11290bd6-97e7-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
+                                tracTracApiToken, "11290bd6-97e7-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         new DefaultRaceTrackingHandler(), /* markPassingRaceFingerprintRegistry */ null);
         kiwotest3 = domainFactory
                 .createRaceTracker(
                         EmptyRaceLogStore.INSTANCE,
                         EmptyRegattaLogStore.INSTANCE, EmptyWindStore.INSTANCE, new DummyTrackedRegattaRegistry(),
                         mock(RaceLogAndTrackedRaceResolver.class), mock(LeaderboardGroupResolver.class), createConnectivityParams(httpAndHost, liveURI, storedURI, courseDesignUpdateURI,
-                                tracTracUsername, tracTracPassword, "39635b24-97e7-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
+                                tracTracApiToken, "39635b24-97e7-11e0-9aed-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         new DefaultRaceTrackingHandler(), /* markPassingRaceFingerprintRegistry */ null);
         weym470may112014_2 = domainFactory
                 .createRaceTracker(
                         EmptyRaceLogStore.INSTANCE,
                         EmptyRegattaLogStore.INSTANCE, EmptyWindStore.INSTANCE, new DummyTrackedRegattaRegistry(),
                         mock(RaceLogAndTrackedRaceResolver.class), mock(LeaderboardGroupResolver.class), createConnectivityParams(httpAndHost, liveURI, storedURI, courseDesignUpdateURI,
-                                tracTracUsername, tracTracPassword, "04498426-7dfd-11e0-8236-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
+                                tracTracApiToken, "04498426-7dfd-11e0-8236-406186cbf87c"), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         new DefaultRaceTrackingHandler(), /* markPassingRaceFingerprintRegistry */ null);
 
         assertEquals("STG", kiwotest1.getRegatta().getBoatClass().getName());
@@ -92,7 +91,7 @@ public class MultipleClassesInRegattaTest {
     }
 
     private RaceTrackingConnectivityParametersImpl createConnectivityParams(String httpAndHost, String liveURI,
-            String storedURI, String courseDesignUpdateURI, String tracTracUsername, String tracTracPassword, String raceId)
+            String storedURI, String courseDesignUpdateURI, String tracTracApiToken, String raceId)
             throws Exception, MalformedURLException, URISyntaxException {
         return new RaceTrackingConnectivityParametersImpl(new URL(
                 httpAndHost
@@ -101,12 +100,12 @@ public class MultipleClassesInRegattaTest {
                 /* startOfTracking */null, /* endOfTracking */null, /* delayToLiveInMillis */0l,
                 /* offsetToStartTimeOfSimulatedRace */ null, /* ignoreTracTracMarkPassings*/
                 false, EmptyRaceLogStore.INSTANCE, EmptyRegattaLogStore.INSTANCE, domainFactory,
-                tracTracUsername, tracTracPassword, TracTracConnectionConstants.ONLINE_STATUS, TracTracConnectionConstants.ONLINE_VISIBILITY,
+                tracTracApiToken, TracTracConnectionConstants.ONLINE_STATUS, TracTracConnectionConstants.ONLINE_VISIBILITY,
                 /* trackWind */ false, /* correctWindDirectionByMagneticDeclination */ true, /* preferReplayIfAvailable */ false, /* timeoutInMillis */ -1,
                 /* useOfficialEventsToUpdateRaceLog */ false, /* liveURIFromConfiguration */ null, /* storedURIFromConfiguration */ null);
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws MalformedURLException, IOException, InterruptedException {
         kiwotest1.stop(/* preemptive */ false);
         kiwotest2.stop(/* preemptive */ false);

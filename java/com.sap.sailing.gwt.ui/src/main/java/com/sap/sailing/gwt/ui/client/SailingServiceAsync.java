@@ -123,11 +123,10 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
 
     /**
      * The string returned in the callback's pair is the common event name
-     * 
      * @param listHiddenRaces
      */
     void listTracTracRacesInEvent(String eventJsonURL, boolean listHiddenRaces,
-            AsyncCallback<Util.Pair<String, List<TracTracRaceRecordDTO>>> callback);
+            String tracTracApiToken, AsyncCallback<Util.Pair<String, List<TracTracRaceRecordDTO>>> callback);
 
     void replaySwissTimingRace(RegattaIdentifier regattaIdentifier, Iterable<SwissTimingReplayRaceDTO> replayRaces,
             boolean trackWind, boolean correctWindByDeclination, boolean useInternalMarkPassingAlgorithm,
@@ -278,7 +277,7 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
     void getWindSourcesInfo(RegattaAndRaceIdentifier raceIdentifier, AsyncCallback<WindInfoForRaceDTO> callback);
 
     void getServerConfiguration(AsyncCallback<ServerConfigurationDTO> callback);
-
+    
     void getRemoteSailingServerReferences(AsyncCallback<List<RemoteSailingServerReferenceDTO>> callback);
 
     void getResultImportUrls(String resultProviderName, AsyncCallback<List<UrlDTO>> callback);
@@ -590,7 +589,7 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
 
     /**
      * Obtains the {@link ImpliedWindSource} set in the race log identified by the triple {@code leaderboardName},
-     * {@code raceColumnName}, and {@code fleetName}. Note that other than in the ORC Performance Curve ranking metric
+     * {@code raceColumnName}, and {@code fleetName}. Note that other than in the ORC Polar Curve ranking metric
      * no defaulting takes place here, and {@code null} is a possible result that indicates that either no race log
      * event was found that set an implied wind source, or that event explicitly set the implied wind source to {@code null}
      * (which will have the ranking metric default to {@link OwnMaxImpliedWind}, eventually).
@@ -688,4 +687,6 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
     void getCourseAreaForEventOfLeaderboard(String leaderboardName, AsyncCallback<List<CourseAreaDTO>> callback);
 
     void getGoogleMapsLoaderAuthenticationParams(AsyncCallback<String> callback);
+    
+    void getBrandAffiliationWithSailing(String locale, AsyncCallback<String> callback);
 }

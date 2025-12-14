@@ -1,15 +1,15 @@
 package com.sap.sse.security.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.security.interfaces.UserStore;
 import com.sap.sse.security.shared.UserGroupManagementException;
 import com.sap.sse.security.shared.UserManagementException;
-import com.sap.sse.security.shared.impl.LockingAndBanningImpl;
 import com.sap.sse.security.userstore.mongodb.UserStoreImpl;
 
 public class UserStoreTest {
@@ -24,9 +24,9 @@ public class UserStoreTest {
         userStore = new UserStoreImpl(null, null, "TestDefaultTenant");
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws UserManagementException, UserGroupManagementException {
-        userStore.createUser(username, email, new LockingAndBanningImpl());
+        userStore.createUser(username, email, new TimedLockImpl());
         userStore.setAccessToken(username, accessToken);
         userStore.setPreference(username, prefKey, prefValue);
     }
@@ -54,6 +54,6 @@ public class UserStoreTest {
     @Test
     public void testDeleteUserWithPreference() throws UserManagementException {
         userStore.deleteUser(username);
-        assertNull(prefValue, userStore.getPreference(username, prefKey));
+        assertNull(userStore.getPreference(username, prefKey), prefValue);
     }
 }

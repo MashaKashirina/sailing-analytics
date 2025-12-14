@@ -1,30 +1,33 @@
 package com.sap.sse.security.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.shiro.SecurityUtils;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoDatabase;
 import com.sap.sse.common.Util;
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.common.mail.MailException;
 import com.sap.sse.mongodb.MongoDBConfiguration;
 import com.sap.sse.mongodb.MongoDBService;
@@ -44,7 +47,6 @@ import com.sap.sse.security.shared.UserStoreManagementException;
 import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.WithQualifiedObjectIdentifier;
 import com.sap.sse.security.shared.impl.AccessControlList;
-import com.sap.sse.security.shared.impl.LockingAndBanningImpl;
 import com.sap.sse.security.shared.impl.Ownership;
 import com.sap.sse.security.shared.impl.QualifiedObjectIdentifierImpl;
 import com.sap.sse.security.shared.impl.Role;
@@ -64,7 +66,7 @@ public class LoginTest {
     private AccessControlStore accessControlStore;
     private SecurityService securityService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws UnknownHostException, MongoException, UserGroupManagementException, UserManagementException {
         final MongoDBConfiguration dbConfiguration = MongoDBConfiguration.getDefaultTestConfiguration();
         final MongoDBService service = dbConfiguration.getService();
@@ -82,8 +84,8 @@ public class LoginTest {
         Activator.setTestStores(userStore, accessControlStore);
         // enables shiro to find classes from com.sap.sse.security
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-        securityService = new SecurityServiceImpl(/* mailServiceTracker */ null, /* corsFilterConfigurationTracker */ null, userStore,
-                accessControlStore, SecuredSecurityTypes::getAllInstances, SSESubscriptionPlan::getAllInstances);
+        securityService = new SecurityServiceImpl(/* mailServiceTracker */ null, /* corsFilterConfigurationTracker */ null, /* brandingConfigurationServiceTracker */ null,
+                userStore, accessControlStore, SecuredSecurityTypes::getAllInstances, SSESubscriptionPlan::getAllInstances);
         Activator.setSecurityService(securityService);
     }
 
@@ -222,7 +224,7 @@ public class LoginTest {
     
     @Test
     public void testGetUser() {
-        assertNotNull("Subject should not be null: ", SecurityUtils.getSubject());
+        assertNotNull(SecurityUtils.getSubject(), "Subject should not be null: ");
     }
     
     @Test
@@ -242,7 +244,7 @@ public class LoginTest {
 
     @Test
     public void rolesTest() throws UserStoreManagementException {
-        userStore.createUser("me", "me@sap.com", new LockingAndBanningImpl());
+        userStore.createUser("me", "me@sap.com", new TimedLockImpl());
         RoleDefinition testRoleDefinition = userStore.createRoleDefinition(UUID.randomUUID(), "testRole",
                 Collections.emptySet());
         final Role testRole = new Role(testRoleDefinition, true);
@@ -254,7 +256,7 @@ public class LoginTest {
     @Test
     public void roleWithQualifiersTest() throws UserStoreManagementException {
         UserGroupImpl userDefaultTenant = userStore.createUserGroup(UUID.randomUUID(), "me-tenant");
-        User meUser = userStore.createUser("me", "me@sap.com", new LockingAndBanningImpl());
+        User meUser = userStore.createUser("me", "me@sap.com", new TimedLockImpl());
         RoleDefinition testRoleDefinition = userStore.createRoleDefinition(UUID.randomUUID(), "testRole",
                 Collections.emptySet());
         final Role testRole = new Role(testRoleDefinition, userDefaultTenant, meUser, true);
@@ -268,12 +270,52 @@ public class LoginTest {
 
     @Test
     public void permissionsTest() throws UserStoreManagementException {
-        userStore.createUser("me", "me@sap.com", new LockingAndBanningImpl());
+        userStore.createUser("me", "me@sap.com", new TimedLockImpl());
         userStore.addPermissionForUser("me", new WildcardPermission("a:b:c"));
         UserStoreImpl store2 = createAndLoadUserStore();
         User allUser = userStore.getUserByName(SecurityService.ALL_USERNAME);
         User user = store2.getUserByName("me");
         assertTrue(PermissionChecker.isPermitted(new WildcardPermission("a:b:c"), user, allUser, null, null));
+    }
+
+    @Test
+    public void testUnlockBearerTokenAbuser() throws UserStoreManagementException, IOException, InterruptedException {
+        final String localhost = "127.0.0.1";
+        final int attempts = 4;
+        for(int i = 0; i < attempts; i++) {
+            securityService.failedBearerTokenAuthentication(localhost);
+            final long lockDuration = (long) Math.pow(2, i) * 1000;
+            final boolean isFinalAttempt = i == (attempts - 1);
+            if (!isFinalAttempt) {
+                Thread.sleep(lockDuration);
+            }
+        }
+        assertTrue(securityService.isClientIPLockedForBearerTokenAuthentication(localhost));
+        securityService.releaseBearerTokenLockOnIp(localhost);
+        assertFalse(securityService.isClientIPLockedForBearerTokenAuthentication(localhost));
+    }
+
+    @Test
+    public void testUnlockUserCreationAbuser() throws UserStoreManagementException, IOException, InterruptedException, MailException {
+        final String localhost = "127.0.0.1";
+        final int attempts = 4;
+        for(int i = 0; i < attempts; i++) {
+            try {
+                securityService.createSimpleUser("USERNAME" + i, "a@b.c", "PASSWORD", "The User", "SAP SE",
+                        /* validation URL */ Locale.ENGLISH, null, null, /* clientIP */ localhost,
+                        /* enforce strong password */ false);
+            } catch (UserManagementException e) {
+                // do nothing, expected due to lock
+            }
+            final long lockDuration = (long) Math.pow(2, i) * 1000;
+            final boolean isFinalAttempt = i == (attempts - 1);
+            if (!isFinalAttempt) {
+                Thread.sleep(lockDuration);
+            }
+        }
+        assertTrue(securityService.isUserCreationLockedForClientIP(localhost));
+        securityService.releaseUserCreationLockOnIp(localhost);
+        assertFalse(securityService.isUserCreationLockedForClientIP(localhost));
     }
 
     private UserStoreImpl createAndLoadUserStore() throws UserStoreManagementException {

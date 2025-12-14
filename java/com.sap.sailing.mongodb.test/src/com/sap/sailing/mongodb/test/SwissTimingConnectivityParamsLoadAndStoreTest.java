@@ -1,7 +1,7 @@
 package com.sap.sailing.mongodb.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoException;
 import com.sap.sailing.domain.base.BoatClass;
@@ -56,7 +56,7 @@ public class SwissTimingConnectivityParamsLoadAndStoreTest extends AbstractConne
                 hostname, port, raceID, raceName, raceDescription, boatClass, startList, delayToLiveInMillis,
                 SwissTimingFactory.INSTANCE, new SwissTimingAdapterFactoryImpl().getOrCreateSwissTimingAdapter(domainObjectFactory.getBaseDomainFactory()).getSwissTimingDomainFactory(),
                 /* raceLogStore */ null, /* regattaLogStore */ null, useInternalMarkPassingAlgorithm, trackWind, correctWindDirectionByMagneticDeclination,
-                /* updateURL */ null, /* updateUsername */ null, /* updatePassword */ null, eventName, manage2SailEventUrl);
+                /* updateURL */ null, /* apiToken */ null, eventName, manage2SailEventUrl);
         // store
         mongoObjectFactory.addConnectivityParametersForRaceToRestore(stParams);
         // load
@@ -111,7 +111,7 @@ public class SwissTimingConnectivityParamsLoadAndStoreTest extends AbstractConne
                 hostname, port, raceID, raceName, raceDescription, boatClass, startList, delayToLiveInMillis,
                 SwissTimingFactory.INSTANCE, new SwissTimingAdapterFactoryImpl().getOrCreateSwissTimingAdapter(domainObjectFactory.getBaseDomainFactory()).getSwissTimingDomainFactory(),
                 /* raceLogStore */ null, /* regattaLogStore */ null, useInternalMarkPassingAlgorithm, trackWind, correctWindDirectionByMagneticDeclination,
-                /* updateURL */ null, /* updateUsername */ null, /* updatePassword */ null, eventName, manage2SailEventUrl);
+                /* updateURL */ null, /* updateApiToken */ null, eventName, manage2SailEventUrl);
         // store
         mongoObjectFactory.addConnectivityParametersForRaceToRestore(stParams);
         // load

@@ -2,9 +2,11 @@ package com.sap.sse.security;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -21,10 +23,12 @@ import org.apache.shiro.subject.Subject;
 import org.osgi.framework.BundleContext;
 
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.http.HttpHeaderUtil;
 import com.sap.sse.common.mail.MailException;
+import com.sap.sse.common.media.TakedownNoticeRequestContext;
 import com.sap.sse.replication.ReplicableWithObjectInputStream;
 import com.sap.sse.security.impl.ReplicableSecurityService;
 import com.sap.sse.security.impl.SecurityServiceImpl;
@@ -51,7 +55,6 @@ import com.sap.sse.security.shared.UserManagementException;
 import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.WithQualifiedObjectIdentifier;
 import com.sap.sse.security.shared.impl.AccessControlList;
-import com.sap.sse.security.shared.impl.LockingAndBanning;
 import com.sap.sse.security.shared.impl.Ownership;
 import com.sap.sse.security.shared.impl.Role;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
@@ -176,6 +179,16 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
 
     void deleteUserGroup(UserGroup userGroup) throws UserGroupManagementException;
 
+    /**
+     * Releases the lock applied on IP due to user creation abuse.
+     */
+    void releaseUserCreationLockOnIp(String ip);
+
+    /**
+     * Releases the lock applied on IP due to user creation abuse.
+     */
+    void releaseBearerTokenLockOnIp(String ip);
+
     Iterable<User> getUserList();
 
     User getUserByName(String username);
@@ -209,7 +222,6 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
      *            if <code>null</code>, no validation will be attempted
      * @param requestClientIP
      *            used for throttling user creation requests coming from the same IP address
-     * @param enforceStrongPassword TODO
      */
     User createSimpleUser(String username, String email, String password, String fullName, String company,
             Locale locale, String validationBaseURL, UserGroup userOwner, String requestClientIP, boolean enforceStrongPassword)
@@ -220,6 +232,8 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
     void updateSimpleUserEmail(String username, String newEmail, String validationBaseURL) throws UserManagementException;
     
     void updateUserProperties(String username, String fullName, String company, Locale locale) throws UserManagementException;
+    
+    void resetUserTimedLock(String username) throws UserManagementException;
 
     void deleteUser(String username) throws UserManagementException;
 
@@ -872,7 +886,7 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
 
     Pair<Boolean, Set<String>> getCORSFilterConfiguration(String serverName);
 
-    LockingAndBanning failedPasswordAuthentication(User user);
+    TimedLock failedPasswordAuthentication(User user);
 
     void successfulPasswordAuthentication(User user);
 
@@ -888,9 +902,8 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
      * If two locking durations have expired without this method being invoked for equal {@cod eclientIP} and
      * {@code userAgent}, the locking record including its last locking duration is expunged from the internal data
      * structures, avoiding garbage piling up.
-     * @return TODO
      */
-    LockingAndBanning failedBearerTokenAuthentication(String clientIP);
+    TimedLock failedBearerTokenAuthentication(String clientIP);
 
     /**
      * Call this when the combination of {@code clientIP} and {@code userAgent} was not
@@ -905,9 +918,34 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
      * Used in conjunction with {@link #failedBearerTokenAuthentication(String)} and
      * {@link #successfulBearerTokenAuthentication(String)}. If and only if a locking state for the combination
      * of {@code clientIP} and {@code userAgent} is known and still locked, {@code true} is returned. Unlocking
-     * will bappen by calling {@link #successfulBearerTokenAuthentication(String)} with an equal combination
-     * of {@code clientIP} and {@code userAgent}. Invoking {@link #failedBearerTokenAuthentication(String)}
-     * will establish (if not yet locked) or extend the locking duration for the combination.
+     * will happen by calling {@link #successfulBearerTokenAuthentication(String)} with an equal combination of
+     * {@code clientIP} and {@code userAgent} or by calling {@link releaseBearerTokenLockOnIp(String)}. Invoking
+     * {@link #failedBearerTokenAuthentication(String)} will establish (if not yet locked) or extend the locking
+     * duration for the combination.
      */
     boolean isClientIPLockedForBearerTokenAuthentication(String clientIP);
+
+    boolean isUserCreationLockedForClientIP(String clientIP);
+
+    void fileTakedownNotice(TakedownNoticeRequestContext takedownNoticeRequestContext) throws MailException;
+    
+    /**
+     * For a {@link SecuredSecurityTypes#SERVER SERVER} object identified by {@code serverName}, determines the user set
+     * as the server's owner, plus additional users that have the permission to execute
+     * {@code alsoSendToAllUsersWithThisPermissionOnReplicaSet} on that server.
+     * 
+     * @param serverName
+     *            identifies the server object; for the local server that would, e.g., be {@link ServerInfo#getName()}.
+     *            For replica sets, this is the name of the replica set.
+     * @param alsoSendToAllUsersWithThisPermissionOnReplicaSet
+     *            when not empty, all users that have permission to this {@link SecuredSecurityTypes#SERVER SERVER}
+     *            action on the {@code replicaSet} will receive the e-mail in addition to the server owner. No user will
+     *            receive the e-mail twice.
+     */
+    Iterable<User> getUsersToInformAboutReplicaSet(String serverName,
+            Optional<com.sap.sse.security.shared.HasPermissions.Action> alsoSendToAllUsersWithThisPermissionOnReplicaSet);
+    
+    HashMap<String, TimedLock> getClientIPBasedTimedLocksForUserCreation();
+    
+    HashMap<String, TimedLock> getClientIPBasedTimedLocksForBearerTokenAbuse();
 }

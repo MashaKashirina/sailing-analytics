@@ -1,11 +1,11 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.base.Competitor;
@@ -47,11 +47,11 @@ import com.sap.sse.common.Color;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.interfaces.UserStore;
 import com.sap.sse.security.shared.UserGroupManagementException;
 import com.sap.sse.security.shared.UserManagementException;
-import com.sap.sse.security.shared.impl.LockingAndBanningImpl;
 import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.security.shared.impl.UserGroup;
 import com.sap.sse.security.userstore.mongodb.UserStoreImpl;
@@ -111,7 +111,7 @@ public class OfflineSerializationTest extends AbstractSerializationTest {
         UserStore userStore = new UserStoreImpl("defaultTenant");
         userStore.clear();
         UserGroup defaultTenant = userStore.createUserGroup(UUID.randomUUID(), "admin"+SecurityService.TENANT_SUFFIX);
-        User user = userStore.createUser("admin", "", new LockingAndBanningImpl());
+        User user = userStore.createUser("admin", "", new TimedLockImpl());
         defaultTenant.add(user);
         userStore.updateUserGroup(defaultTenant);
         user.getDefaultTenantMap().put("testserver", defaultTenant);

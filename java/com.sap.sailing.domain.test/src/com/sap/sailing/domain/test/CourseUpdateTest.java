@@ -1,11 +1,11 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -22,9 +22,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.sap.sailing.domain.base.Competitor;
@@ -88,7 +88,7 @@ public class CourseUpdateTest extends AbstractTracTracLiveTest {
         super();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         routeDataFuture = new CompletableFuture<>();
@@ -106,7 +106,7 @@ public class CourseUpdateTest extends AbstractTracTracLiveTest {
                     }
                 },
                 /* delayToLiveInMillis */0l, /* millisecondsOverWhichToAverageWind */30000, /* simulator */null, /* courseDesignUpdateURI */
-                null, /* tracTracUsername */null, /* tracTracPassword */null, getEventSubscriber(), getRaceSubscriber(),
+                null, /* tracTracApiToken */null, getEventSubscriber(), getRaceSubscriber(),
                 /*ignoreTracTracMarkPassings*/false, mock(RaceLogAndTrackedRaceResolver.class), mock(LeaderboardGroupResolver.class), RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                 new DefaultRaceTrackingHandler(), /* markPassingRaceFingerprintRegistry */ null) {
             @Override
@@ -372,7 +372,7 @@ public class CourseUpdateTest extends AbstractTracTracLiveTest {
         testLegStructure(3);
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws MalformedURLException, IOException, InterruptedException {
         super.tearDown();
         routeDataFuture = null;

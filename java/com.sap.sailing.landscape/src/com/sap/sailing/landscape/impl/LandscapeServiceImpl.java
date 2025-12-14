@@ -66,7 +66,6 @@ import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.common.mail.MailException;
 import com.sap.sse.i18n.ResourceBundleStringMessages;
-import com.sap.sse.i18n.impl.ResourceBundleStringMessagesImpl;
 import com.sap.sse.landscape.DefaultProcessConfigurationVariables;
 import com.sap.sse.landscape.InboundReplicationConfiguration;
 import com.sap.sse.landscape.Landscape;
@@ -107,8 +106,6 @@ import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.SessionUtils;
 import com.sap.sse.security.shared.HasPermissions.Action;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
-import com.sap.sse.security.shared.OwnershipAnnotation;
-import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.ServerAdminRole;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
 import com.sap.sse.security.shared.WildcardPermission;
@@ -804,7 +801,7 @@ public class LandscapeServiceImpl implements LandscapeService {
     @Override
     public Release getRelease(String releaseNameOrNullForLatestMaster) {
         return releaseNameOrNullForLatestMaster==null
-                ? SailingReleaseRepository.INSTANCE.getLatestMasterRelease()
+                ? SailingReleaseRepository.INSTANCE.getLatestDefaultRelease()
                 : SailingReleaseRepository.INSTANCE.getRelease(releaseNameOrNullForLatestMaster);
     }
 
@@ -1675,16 +1672,8 @@ public class LandscapeServiceImpl implements LandscapeService {
     private void sendMailToReplicaSetOwner(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             final String subjectMessageKey, final String bodyMessageKey, Optional<Action> alsoSendToAllUsersWithThisPermissionOnReplicaSet) throws MailException {
-        final OwnershipAnnotation serverOwnership = getSecurityService().getOwnership(getReplicaSetQualifiedObjectIdentifier(replicaSet));
-        final User serverOwner;
-        final ResourceBundleStringMessages stringMessages = new ResourceBundleStringMessagesImpl(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
-        final Set<User> usersToSendMailTo = new HashSet<>();
-        if (serverOwnership != null && serverOwnership.getAnnotation() != null && (serverOwner = serverOwnership.getAnnotation().getUserOwner()) != null) {
-            usersToSendMailTo.add(serverOwner);
-        }
-        alsoSendToAllUsersWithThisPermissionOnReplicaSet.ifPresent(
-                serverAction -> getSecurityService().getUsersWithPermissions(getReplicaSetQualifiedObjectIdentifier(replicaSet).getPermission(serverAction))
-                .forEach(usersToSendMailTo::add));
+        final Iterable<User> usersToSendMailTo = getSecurityService().getUsersToInformAboutReplicaSet(replicaSet.getServerName(), alsoSendToAllUsersWithThisPermissionOnReplicaSet);
+        final ResourceBundleStringMessages stringMessages = ResourceBundleStringMessages.create(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
         for (final User user : usersToSendMailTo) {
             final String subject = stringMessages.get(user.getLocaleOrDefault(), subjectMessageKey, replicaSet.getServerName());
             final String body = stringMessages.get(user.getLocaleOrDefault(), bodyMessageKey, replicaSet.getServerName());
@@ -1697,11 +1686,6 @@ public class LandscapeServiceImpl implements LandscapeService {
                         " with e-mail address "+user.getEmail()+" because e-mail address has not been validated");
             }
         }
-    }
-
-    private QualifiedObjectIdentifier getReplicaSetQualifiedObjectIdentifier(
-            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) {
-        return SecuredSecurityTypes.SERVER.getQualifiedObjectIdentifier(new TypeRelativeObjectIdentifier(replicaSet.getServerName()));
     }
 
     /**

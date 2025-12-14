@@ -1,12 +1,12 @@
 package com.sap.sailing.server.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,9 +22,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.osgi.framework.BundleContext;
 
@@ -98,7 +98,7 @@ public class AutomaticRetrackUponCompetitorSetChangeTest {
     private MongoObjectFactory mongoObjectFactory;
     private RegattaName regattaIdentifier;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         final BundleContext contextMock = mock(BundleContext.class);
         when(contextMock.createFilter(ArgumentMatchers.any())).thenReturn(null);
@@ -150,8 +150,7 @@ public class AutomaticRetrackUponCompetitorSetChangeTest {
         URI liveURI = AbstractTracTracLiveTest.getLiveURI();
         URI storedURI = new URI("http://event.tractrac.com/events/event_20150818_Bundesliga/datafiles/4c54e750-27c2-0133-5064-60a44ce903c3.mtb");
         URI courseDesignUpdateURI = AbstractTracTracLiveTest.getCourseDesignUpdateURI();
-        String tracTracUsername = AbstractTracTracLiveTest.getTracTracUsername();
-        String tracTracPassword = AbstractTracTracLiveTest.getTracTracPassword();
+        String tracTracApiToken = AbstractTracTracLiveTest.getTracTracApiToken();
         GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         cal.set(2015, 8, 22, 9, 23, 57);
         MillisecondsTimePoint startOfTracking = new MillisecondsTimePoint(cal.getTimeInMillis());
@@ -161,7 +160,7 @@ public class AutomaticRetrackUponCompetitorSetChangeTest {
                 .createTrackingConnectivityParameters(paramURL, liveURI, storedURI, courseDesignUpdateURI,
                         startOfTracking, endOfTracking, /* delayToLiveInMillis */
                         0l, /* offsetToStartTimeOfSimulatedRace */null, /*ignoreTracTracMarkPassings*/ false, EmptyRaceLogStore.INSTANCE,
-                        EmptyRegattaLogStore.INSTANCE, tracTracUsername, tracTracPassword, "", "", /* trackWind */ false, /* correctWindDirectionByMagneticDeclination */ false,
+                        EmptyRegattaLogStore.INSTANCE, tracTracApiToken, "", "", /* trackWind */ false, /* correctWindDirectionByMagneticDeclination */ false,
                         /* preferReplayIfAvailable */ false, /* timeoutInMillis */ (int) RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         /* useOfficialEventsToUpdateRaceLog */ false, /* liveURIFromConfiguration */ null, /* storedURIFromConfiguration */ null);
         racesHandle = service.addRace(/* regattaToAddTo */ regattaIdentifier, trackingParams, /* timeoutInMilliseconds */ 60000,
@@ -239,7 +238,7 @@ public class AutomaticRetrackUponCompetitorSetChangeTest {
         return raceTracker;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (racesHandle != null) {
             racesHandle.getRaceTracker().stop(/* preemptive */ false);
