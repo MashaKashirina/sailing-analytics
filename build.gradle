@@ -64,7 +64,7 @@ ext {
 
     // testing - jvm
     junit = "4.12"
-    mockito = "1.9.5"
+    mockito = "5.8.0"
 
     // testing - ui
     test = "0.2"
