@@ -25,6 +25,7 @@ import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbstractImagePrototype;
@@ -58,8 +59,6 @@ import com.sap.sse.security.ui.client.component.DefaultActionsImagesBarCell;
 import com.sap.sse.security.ui.client.component.EditOwnershipDialog;
 import com.sap.sse.security.ui.client.component.SecuredDTOOwnerColumn;
 import com.sap.sse.security.ui.client.component.editacl.EditACLDialog;
-import com.google.gwt.cell.client.CheckboxCell;
-import com.google.gwt.user.cellview.client.Header;
 
 public class MarkPropertiesPanel extends FlowPanel implements FilterablePanelProvider<MarkPropertiesDTO>{
     private static AdminConsoleResources resources = GWT.create(AdminConsoleResources.class);
@@ -185,21 +184,7 @@ public class MarkPropertiesPanel extends FlowPanel implements FilterablePanelPro
                         return t.getUuid().hashCode();
                     }
                 }, filterableMarkProperties.getAllListDataProvider(), markPropertiesTable);
-        final CheckboxCell selectAllCell = new CheckboxCell();
-        Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
-            @Override
-            public Boolean getValue() {
-                return false;
-             }
-        };
-        checkColumn.setSortable(false);
-        selectAllHeader.setUpdater(value -> {
-            for (MarkPropertiesDTO mp : markPropertiesListDataProvider.getList()) {
-                if (refreshableSelectionModel != null) {
-                    refreshableSelectionModel.setSelected(mp, value);
-                }
-            }
-        });
+        final Header<Boolean> selectAllHeader = checkColumn.createHeader();
         markPropertiesTable.addColumn(checkColumn, selectAllHeader);
         markPropertiesTable.setColumnWidth(checkColumn, 40, Unit.PX);
         // id
@@ -334,13 +319,6 @@ public class MarkPropertiesPanel extends FlowPanel implements FilterablePanelPro
         markPropertiesTable.addColumn(actionsColumn, stringMessages.actions());
         refreshableSelectionModel = checkColumn.getSelectionModel();
         markPropertiesTable.setSelectionModel(checkColumn.getSelectionModel(), checkColumn.getSelectionManager());
-        refreshableSelectionModel.addSelectionChangeHandler(e -> {
-            if (refreshableSelectionModel.getSelectedSet().isEmpty()) {
-                selectAllCell.setViewData(/* key */ selectAllHeader.getValue(), false);
-            } else if (refreshableSelectionModel.getSelectedSet().size() == markPropertiesListDataProvider.getList().size()) {
-                selectAllCell.setViewData(/* key */ selectAllHeader.getValue(), true);
-            }
-        });
     }
 
     public void refreshMarkProperties() {

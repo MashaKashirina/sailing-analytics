@@ -1,6 +1,7 @@
 package com.sap.sse.gwt.client.celltable;
 
 import com.google.gwt.cell.client.Cell.Context;
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.dom.client.BrowserEvents;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
@@ -83,6 +84,32 @@ public class SelectionCheckboxColumn<T> extends AbstractSortableColumnWithMinMax
         this.checkboxColumnCellCSSClass = checkboxColumnCellCSSClass;
         this.selectionEventTranslator = createSelectionEventTranslator();
         this.selectionModel = createSelectionModel(entityIdentityComparator);
+        this.setSortable(false);
+    }
+    
+    public Header<Boolean> createHeader() {
+        final CheckboxCell selectAllCell = new CheckboxCell();
+        final Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
+            @Override
+            public Boolean getValue() {
+                return false;
+             }
+        };
+        selectAllHeader.setUpdater(value -> {
+            for (final T mp : listDataProvider.getList()) {
+                if (selectionModel != null) {
+                    selectionModel.setSelected(mp, value);
+                }
+            }
+        });
+        selectionModel.addSelectionChangeHandler(e -> {
+            if (selectionModel.getSelectedSet().isEmpty()) {
+                selectAllCell.setViewData(/* key */ selectAllHeader.getValue(), false);
+            } else if (selectionModel.getSelectedSet().size() == listDataProvider.getList().size()) {
+                selectAllCell.setViewData(/* key */ selectAllHeader.getValue(), true);
+            }
+        });
+        return selectAllHeader;
     }
     
     /**
