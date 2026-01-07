@@ -20,9 +20,9 @@ More background information is available in the project's Wiki which is currentl
 
 ## Quick Start with Docker Compose
 
-If you have built or obtained the ``ghcr.io/sap/sailing-analytics:latest`` multi-platform image (currently available for linux/amd64 and linux/arm64 architectures), try this:
+To run the latest release build (currently available for linux/amd64 and linux/arm64 architectures), try this:
 ```
-    cd docker
+    wget "https://github.com/SAP/sailing-analytics/raw/refs/heads/main/docker/docker-compose.yml"
     docker-compose up
 ```
 Based on the ``docker/docker-compose.yml`` definition you should end up with three running Docker containers:
@@ -30,12 +30,12 @@ Based on the ``docker/docker-compose.yml`` definition you should end up with thr
 - a RabbitMQ server, listening on default port
 - a Sailing Analytics server, listening for HTTP requests on port 8888 and for telnet connections to the OSGi console on port 14888
 
-Try a request to [``http://127.0.0.1:8888/index.html``](http://127.0.0.1:8888/index.html) or [``http://127.0.0.1:8888/gwt/status``](http://127.0.0.1:8888/gwt/status) to see if things worked.
+Try a request to [``http://127.0.0.1:8888/index.html``](http://127.0.0.1:8888/index.html) or [``http://127.0.0.1:8888/gwt/status``](http://127.0.0.1:8888/gwt/status) to see if things worked. The default login to your local administration console at [``http://127.0.0.1:8888/gwt/AdminConsole.html``](http://127.0.0.1:8888/gwt/AdminConsole.html) uses the user name ``admin`` with password ``admin``.
 
 To use Java 25, use the ``docker-compose-25.yml`` file instead:
 
 ```
-    cd docker
+    wget "https://github.com/SAP/sailing-analytics/raw/refs/heads/main/docker/docker-compose-25.yml"
     docker-compose -f docker-compose-25.yml up
 ```
 
