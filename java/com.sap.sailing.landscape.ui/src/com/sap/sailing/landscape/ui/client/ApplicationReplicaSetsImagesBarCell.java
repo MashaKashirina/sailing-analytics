@@ -94,6 +94,9 @@ public class ApplicationReplicaSetsImagesBarCell extends ImagesBarCell {
             result.add(new ImageSpec(ACTION_MOVE_ALL_APPLICATION_PROCESSES_AWAY_FROM,
                     stringMessages.moveAllApplicationProcessesAwayFromMaster(), IconResources.INSTANCE.moveAway()));
         }
+        if (applicationReplicaSet.isArchive()) {
+            result.add(new ImageSpec(ACTION_UPGRADE, stringMessages.upgrade(), IconResources.INSTANCE.refreshIcon()));
+        }
         return result;
     }
 }
