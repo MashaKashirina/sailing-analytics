@@ -319,7 +319,7 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
 
     @Override
     public UserDTO updateUserProperties(final String username, String fullName, String company, String localeName,
-            boolean didOptOutOfMarketingEmails, String defaultTenant) throws UserManagementException {
+            Boolean didOptOutOfMarketingEmails, String defaultTenant) throws UserManagementException {
         getSecurityService().checkCurrentUserUpdatePermission(getSecurityService().getCurrentUser());
         getSecurityService().updateUserProperties(username, fullName, company, getLocaleFromLocaleName(localeName),
                 didOptOutOfMarketingEmails);

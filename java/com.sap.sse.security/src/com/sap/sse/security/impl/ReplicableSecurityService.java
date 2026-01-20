@@ -68,7 +68,7 @@ public interface ReplicableSecurityService extends SecurityService {
     Void internalUpdateSimpleUserPassword(String username, byte[] salt, String hashedPasswordBase64);
 
     Void internalUpdateUserProperties(String username, String fullName, String company, Locale locale,
-            boolean didOptOutOfMarketingEmails);
+            Boolean didOptOutOfMarketingEmails);
 
     Boolean internalValidateEmail(String username, String validationSecret);
 

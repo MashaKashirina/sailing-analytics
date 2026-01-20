@@ -222,7 +222,7 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
     void updateSimpleUserEmail(String username, String newEmail, String validationBaseURL) throws UserManagementException;
     
     void updateUserProperties(String username, String fullName, String company, Locale locale,
-            boolean didOptOutOfMarketingEmails) throws UserManagementException;
+            Boolean didOptOutOfMarketingEmails) throws UserManagementException;
 
     void deleteUser(String username) throws UserManagementException;
 

@@ -1257,7 +1257,7 @@ implements ReplicableSecurityService, ClearStateTestSupport {
 
     @Override
     public void updateUserProperties(String username, String fullName, String company, Locale locale,
-            boolean didOptOutOfMarketingEmails) throws UserManagementException {
+            Boolean didOptOutOfMarketingEmails) throws UserManagementException {
         final User user = store.getUserByName(username);
         if (user == null) {
             throw new UserManagementException(UserManagementException.USER_DOES_NOT_EXIST);
@@ -1267,12 +1267,14 @@ implements ReplicableSecurityService, ClearStateTestSupport {
 
     @Override
     public Void internalUpdateUserProperties(String username, String fullName, String company, Locale locale,
-            boolean didOptOutOfMarketingEmails) {
+            Boolean didOptOutOfMarketingEmails) {
         final User user = store.getUserByName(username);
         user.setFullName(fullName);
         user.setCompany(company);
         user.setLocale(locale);
-        user.setDidOptOutOfMarketingEmails(didOptOutOfMarketingEmails);
+        if (didOptOutOfMarketingEmails != null) {
+            user.setDidOptOutOfMarketingEmails(didOptOutOfMarketingEmails);
+        }
         store.updateUser(user);
         return null;
     }

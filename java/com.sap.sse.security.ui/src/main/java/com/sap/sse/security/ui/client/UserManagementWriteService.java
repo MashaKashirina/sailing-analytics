@@ -68,7 +68,7 @@ public interface UserManagementWriteService extends UserManagementService {
             throws UserManagementException, MailException, org.apache.shiro.authz.UnauthorizedException;
 
     UserDTO updateUserProperties(String username, String fullName, String company, String localeName,
-            boolean didOptOutOfMarketingEmails, String defaultTenantIdAsString)
+            Boolean didOptOutOfMarketingEmails, String defaultTenantIdAsString)
             throws UserManagementException, org.apache.shiro.authz.UnauthorizedException;
 
     void resetPassword(String username, String eMailAddress, String baseURL)

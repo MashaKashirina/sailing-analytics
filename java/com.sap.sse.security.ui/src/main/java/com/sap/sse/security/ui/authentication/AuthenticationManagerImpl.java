@@ -204,7 +204,7 @@ public class AuthenticationManagerImpl implements AuthenticationManager {
     
     @Override
     public void updateUserProperties(String fullName, String company, String localeName,
-            boolean didOptOutMarketingEmails, String defaultTenantIdAsString, final AsyncCallback<UserDTO> callback) {
+            Boolean didOptOutMarketingEmails, String defaultTenantIdAsString, final AsyncCallback<UserDTO> callback) {
         final UserDTO currentUser = getAuthenticationContext().getCurrentUser();
         final String username = currentUser.getName();
         final String locale = currentUser.getLocale();

@@ -63,7 +63,7 @@ public interface AuthenticationManager {
      */
     void logout();
     
-    void updateUserProperties(String fullName, String company, String localeName, boolean didOptOutMarketingEmails,
+    void updateUserProperties(String fullName, String company, String localeName, Boolean didOptOutMarketingEmails,
             String defaultTenantIdAsString, AsyncCallback<UserDTO> callback);
 
     /**

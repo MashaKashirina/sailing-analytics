@@ -10,10 +10,10 @@ public class UpdateUserPropertiesOperation implements SecurityOperation<Void> {
     protected final String fullName;
     protected final String company;
     protected final Locale locale;
-    protected final boolean didOptOutOfMarketingEmails;
+    protected final Boolean didOptOutOfMarketingEmails;
 
     public UpdateUserPropertiesOperation(String username, String fullName, String company, Locale locale,
-            boolean didOptOutOfMarketingEmails) {
+            Boolean didOptOutOfMarketingEmails) {
         this.username = username;
         this.fullName = fullName;
         this.company = company;
