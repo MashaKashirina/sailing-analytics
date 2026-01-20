@@ -1,0 +1,10 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder" xmlns:g="urn:import:com.google.gwt.user.client.ui">
+    <ui:with field="i18n" type="com.sap.sailing.gwt.ui.client.StringMessages" />
+    <ui:with field="res" type="com.sap.sailing.gwt.common.client.SharedResources" />
+    <ui:with field="local_res" type="com.sap.sailing.gwt.home.shared.partials.multiselection.SuggestedMultiSelectionResources" />
+    <g:HTMLPanel addStyleNames="{local_res.css.suggestionsSettingsMenuItem}">
+       <g:Label addStyleNames="{local_res.css.suggestionsSettingsMenuItemLabel}" ui:field="labelUi"/>
+       <g:CheckBox addStyleNames="{local_res.css.suggestionsToggleButton}" ui:field="toggleButtonUi" />
+    </g:HTMLPanel>
+</ui:UiBinder> 

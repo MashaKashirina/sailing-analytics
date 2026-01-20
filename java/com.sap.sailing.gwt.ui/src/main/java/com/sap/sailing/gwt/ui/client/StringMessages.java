@@ -2548,4 +2548,7 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String testConnection();
     String tracTracConnectionTestFailed(String message);
     String sourceCode();
+    String miscellaneous();
+    String securityUpdates();
+    String featureAndCommunityUpdates();
 }
