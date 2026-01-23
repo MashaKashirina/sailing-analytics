@@ -677,8 +677,15 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
     }
     
     @Override
-    public SailingApplicationReplicaSetDTO<String> startArchiveServer(SailingApplicationReplicaSetDTO<String> replicaSet, String replicaSetName) throws Exception {
-       logger.info(replicaSet.getName());
+    public SailingApplicationReplicaSetDTO<String> startArchiveServer(String regionId,
+            SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade, String releaseOrNullForLatestMaster,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken) throws Exception {
+        checkLandscapeManageAwsPermission();
+        logger.info(applicationReplicaSetToUpgrade.getName());
+        getLandscapeService().createApplicationReplicaSet(
+                regionId, optionalKeyName, true, replicationBearerToken, regionId, false, releaseOrNullForLatestMaster,
+                optionalKeyName, privateKeyEncryptionPassphrase, replicationBearerToken, replicationBearerToken, replicationBearerToken,
+                null, null, null, null, null);
         return null;
     }
     

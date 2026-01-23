@@ -39,6 +39,7 @@ import com.sap.sailing.landscape.ui.client.CreateApplicationReplicaSetDialog.Cre
 import com.sap.sailing.landscape.ui.client.MoveMasterProcessDialog.MoveMasterToOtherInstanceInstructions;
 import com.sap.sailing.landscape.ui.client.SwitchToReplicaOnSharedInstanceDialog.SwitchToReplicaOnSharedInstanceDialogInstructions;
 import com.sap.sailing.landscape.ui.client.UpgradeApplicationReplicaSetDialog.UpgradeApplicationReplicaSetInstructions;
+import com.sap.sailing.landscape.ui.client.UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions;
 import com.sap.sailing.landscape.ui.client.i18n.StringMessages;
 import com.sap.sailing.landscape.ui.shared.AmazonMachineImageDTO;
 import com.sap.sailing.landscape.ui.shared.AvailabilityZoneDTO;
@@ -1466,13 +1467,18 @@ public class LandscapeManagementPanel extends SimplePanel {
             
             @Override
             public void onSuccess(ArrayList<ReleaseDTO> result) {
-                new UpgradeApplicationReplicaSetDialog(landscapeManagementService, result.stream().map(r->r.getName())::iterator,
-                        stringMessages, errorReporter, new DialogCallback<UpgradeApplicationReplicaSetDialog.UpgradeApplicationReplicaSetInstructions>() {
+                new UpgradeArchiveServerDialog(landscapeManagementService, result.stream().map(r->r.getName())::iterator,
+                        stringMessages, errorReporter, new DialogCallback<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions>() {
                             @Override
-                            public void ok(UpgradeApplicationReplicaSetInstructions upgradeInstructions) {
+                            public void ok(UpgradeArchiveServerInstructions upgradeInstructions) {
                                 final int[] howManyMoreToGo = new int[] { Util.size(replicaSets) };
                                 for (final SailingApplicationReplicaSetDTO<String> replicaSet : replicaSets) {
-                                    landscapeManagementService.startArchiveServer(replicaSet, replicaSet.getName(),
+                                    landscapeManagementService.startArchiveServer(regionId, replicaSet, 
+                                            upgradeInstructions.getReleaseNameOrNullForLatestMaster(),
+                                            sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
+                                                    sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
+                                                    ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes() : null,
+                                            upgradeInstructions.getReplicaReplicationBearerToken(),
                                             new AsyncCallback<SailingApplicationReplicaSetDTO<String>>() {
                                         @Override
                                         public void onFailure(Throwable caught) {

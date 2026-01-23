@@ -167,7 +167,9 @@ public interface LandscapeManagementWriteService extends RemoteService {
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception;
     
     SailingApplicationReplicaSetDTO<String> startArchiveServer(
-            SailingApplicationReplicaSetDTO<String> replicaSet, String replicaSetName) throws Exception;
+            String regionId,
+            SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade, String releaseOrNullForLatestMaster,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken) throws Exception;
     
     ArrayList<LeaderboardNameDTO> getLeaderboardNames(SailingApplicationReplicaSetDTO<String> replicaSet, String bearerToken) throws Exception;
     
