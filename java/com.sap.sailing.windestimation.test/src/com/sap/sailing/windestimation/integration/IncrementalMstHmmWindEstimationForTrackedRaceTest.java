@@ -153,11 +153,11 @@ public class IncrementalMstHmmWindEstimationForTrackedRaceTest extends OnlineTra
     @Test
     public void testIncrementalMstHmmWindEstimationForTrackedRace() throws NoWindException, IOException {
         assertTrue(windEstimationFactoryService.isReady(), "Wind estimation models are empty");
-        DynamicTrackedRaceImpl trackedRace = getTrackedRace();
-        WindTrack estimatedWindTrackOfTrackedRace = trackedRace
+        final DynamicTrackedRaceImpl trackedRace = getTrackedRace();
+        final WindTrack estimatedWindTrackOfTrackedRace = trackedRace
                 .getOrCreateWindTrack(new WindSourceImpl(WindSourceType.MANEUVER_BASED_ESTIMATION));
-        List<CompetitorTrackWithEstimationData<CompleteManeuverCurveWithEstimationData>> competitorTracks = new ArrayList<>();
-        for (Competitor competitor : trackedRace.getRace().getCompetitors()) {
+        final List<CompetitorTrackWithEstimationData<CompleteManeuverCurveWithEstimationData>> competitorTracks = new ArrayList<>();
+        for (final Competitor competitor : trackedRace.getRace().getCompetitors()) {
             IncrementalManeuverDetectorImpl maneuverDetector = new IncrementalManeuverDetectorImpl(trackedRace,
                     competitor, null);
             ManeuverDetectorWithEstimationDataSupportDecoratorImpl maneuverDetectorWithEstimationDataSupportDecorator = new ManeuverDetectorWithEstimationDataSupportDecoratorImpl(
@@ -172,32 +172,32 @@ public class IncrementalMstHmmWindEstimationForTrackedRaceTest extends OnlineTra
                     completeManeuverCurvesWithEstimationData, 1, null, null, null, 0, 0);
             competitorTracks.add(competitorTrack);
         }
-        RaceWithEstimationData<CompleteManeuverCurveWithEstimationData> race = new RaceWithEstimationData<>(
+        final RaceWithEstimationData<CompleteManeuverCurveWithEstimationData> race = new RaceWithEstimationData<>(
                 competitorTracks.get(0).getRegattaName(), competitorTracks.get(0).getRaceName(), WindQuality.LOW,
                 competitorTracks);
-        ManeuverBasedWindEstimationComponentImpl<RaceWithEstimationData<CompleteManeuverCurveWithEstimationData>> targetWindEstimation = new ManeuverBasedWindEstimationComponentImpl<>(
+        final ManeuverBasedWindEstimationComponentImpl<RaceWithEstimationData<CompleteManeuverCurveWithEstimationData>> targetWindEstimation = new ManeuverBasedWindEstimationComponentImpl<>(
                 new RaceElementsFilteringPreprocessingPipelineImpl(false,
                         new CompleteManeuverCurveWithEstimationDataToManeuverForEstimationTransformer()),
                 windEstimationFactoryService.maneuverClassifiersCache,
                 new ManeuverClassificationsAggregatorFactory(null, modelStore, false, Long.MAX_VALUE).mstHmm(false),
                 new WindTrackCalculatorImpl(new MiddleCourseBasedTwdCalculatorImpl(),
                         new DummyBasedTwsCalculatorImpl()));
-        List<WindWithConfidence<Pair<Position, TimePoint>>> windFixes = targetWindEstimation.estimateWindTrack(race);
+        final List<WindWithConfidence<Pair<Position, TimePoint>>> windFixes = targetWindEstimation.estimateWindTrack(race);
         final MeasurementXMLFile performanceReport = new MeasurementXMLFile(this.getClass());
         final MeasurementCase performanceReportCase = performanceReport.addCase(getClass().getSimpleName());
         performanceReportCase.addMeasurement(new Measurement("NumberOfTargetEstimationFixes", windFixes.size()));
-        List<Wind> targetWindFixes = new ArrayList<>(windFixes.size());
-        for (WindWithConfidence<Pair<Position, TimePoint>> windFix : windFixes) {
-            Wind wind = windFix.getObject();
+        performanceReport.write();
+        final List<Wind> targetWindFixes = new ArrayList<>(windFixes.size());
+        for (final WindWithConfidence<Pair<Position, TimePoint>> windFix : windFixes) {
+            final Wind wind = windFix.getObject();
             targetWindFixes.add(wind);
-            // System.out.println("Target: " + wind.getTimePoint() + " " + wind.getPosition() + " "
-            // + Math.round(wind.getFrom().getDegrees()));
+            System.out.println("" + wind.getTimePoint().asMillis() + "," + Math.round(wind.getFrom().getDegrees()));
         }
-        List<Wind> estimatedWindFixes = new ArrayList<>();
+        final List<Wind> estimatedWindFixes = new ArrayList<>();
         assertMostFixesTWDAround(targetWindFixes, 233, /* range for 90% quantile */ 17, /* average tolerance */ 2);
         estimatedWindTrackOfTrackedRace.lockForRead();
         try {
-            for (Wind wind : estimatedWindTrackOfTrackedRace.getFixes()) {
+            for (final Wind wind : estimatedWindTrackOfTrackedRace.getFixes()) {
                 estimatedWindFixes.add(wind);
                 // System.out.println("Estimated: " + wind.getTimePoint() + " " + wind.getPosition() + " "
                 // + Math.round(wind.getFrom().getDegrees()));
@@ -239,7 +239,6 @@ public class IncrementalMstHmmWindEstimationForTrackedRaceTest extends OnlineTra
         }
         assertTrue((double) foundCount / (double) targetWindFixes.size() > PERCENT_QUANTILE,
                 "Expected ratio of matching fixes to be at least "+PERCENT_QUANTILE+" but was only "+(double) foundCount / (double) estimatedWindFixes.size());
-        performanceReport.write();
     }
 
     /**
