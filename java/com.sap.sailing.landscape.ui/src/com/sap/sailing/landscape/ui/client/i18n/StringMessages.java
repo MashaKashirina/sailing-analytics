@@ -102,6 +102,7 @@ com.sap.sse.gwt.adminconsole.StringMessages {
     String successfullyUpgradedApplicationReplicaSet(String name, String version);
     String upgradingApplicationReplicaSetFailed(String name);
     String upgradeApplicationReplicaSet();
+    String upgradeArchiveServer();
     String successfullyArchivedReplicaSet(String name);
     String removeArchivedReplicaSet();
     String bearerTokenOrNullForApplicationReplicaSetToArchive(String replicaSetName);

@@ -22,7 +22,7 @@ public class UpgradeArchiveServerDialog extends AbstractApplicationReplicaSetDia
 
     public UpgradeArchiveServerDialog(LandscapeManagementWriteServiceAsync landscapeManagementService, Iterable<String> releaseNames,
             StringMessages stringMessages, ErrorReporter errorReporter, DialogCallback<UpgradeArchiveServerInstructions> callback) {
-        super(stringMessages.upgradeApplicationReplicaSet(), landscapeManagementService, releaseNames, stringMessages, errorReporter, /* validator */ null, callback);
+        super(stringMessages.upgradeArchiveServer(), landscapeManagementService, releaseNames, stringMessages, errorReporter, /* validator */ null, callback);
         this.stringMessages = stringMessages;
         sharedInstanceTypeListBox = LandscapeDialogUtil.createInstanceTypeListBox(this, landscapeManagementService,
                 stringMessages, SharedLandscapeConstants.DEFAULT_SHARED_INSTANCE_TYPE_NAME, errorReporter, /* canBeDeployedInNlbInstanceBasedTargetGroup */ false);
@@ -41,7 +41,7 @@ public class UpgradeArchiveServerDialog extends AbstractApplicationReplicaSetDia
         result.setWidget(row++, 1, getReleaseNameBox());
         result.setWidget(row, 0, new Label(stringMessages.instanceType()));
         result.setWidget(row++, 1, getSharedInstanceTypeListBox());
-        result.setWidget(row, 0, new Label(stringMessages.replicaReplicationBearerToken()));
+        result.setWidget(row, 0, new Label(stringMessages.bearerTokenForSecurityReplication()));
         result.setWidget(row++, 1, getReplicaReplicationBearerTokenBox());
         return result;
     }
