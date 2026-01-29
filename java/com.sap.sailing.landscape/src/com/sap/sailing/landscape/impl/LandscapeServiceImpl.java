@@ -236,6 +236,46 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
     
     @Override
+    public AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> createArchiveReplicaSet(
+            String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken,
+            String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception {
+        final AwsLandscape<String> landscape = getLandscape();
+        final String hostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
+        final Iterable<ResourceRecordSet> existingDNSRulesForHostname = landscape.getResourceRecordSets(hostname);
+        // Failing early in case DNS record already exists (see also bug 5826):
+        if (existingDNSRulesForHostname != null && !Util.isEmpty(existingDNSRulesForHostname)) {
+            throw new IllegalArgumentException("DNS record for "+hostname+" already exists");
+        }
+        final AwsRegion region = new AwsRegion(regionId, landscape);
+        final Release release = getRelease(releaseNameOrNullForLatestMaster);
+        final com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<?, String> masterConfigurationBuilder =
+                createMasterConfigurationBuilder(replicaSetName, securityServiceReplicationBearerToken, optionalMemoryInMegabytesOrNull,
+                         null, optionalIgtimiRiotPort, region, release);
+        final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
+        masterHostBuilder
+            .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
+            .setInstanceType(InstanceType.valueOf(instanceType))
+            .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
+            .setLandscape(landscape)
+            .setRegion(region)
+            .setPrivateKeyEncryptionPassphrase(privateKeyEncryptionPassphrase);
+        if (optionalKeyName != null) {
+            masterHostBuilder.setKeyName(optionalKeyName);
+        }
+        final StartSailingAnalyticsMasterHost<String> masterHostStartProcedure = masterHostBuilder.build();
+        masterHostStartProcedure.run();
+        final SailingAnalyticsProcess<String> master = masterHostStartProcedure.getSailingAnalyticsProcess();
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> result =
+            createLoadBalancingAndAutoScalingSetup(landscape, region, replicaSetName, master, release, instanceType,
+                /* dynamicLoadBalancerMapping */ false, optionalKeyName, privateKeyEncryptionPassphrase, optionalDomainName,
+                Optional.of(masterHostBuilder.getMachineImage()), securityServiceReplicationBearerToken,
+                /* minimumAutoScalingGroupSize */ Optional.empty(), /* maximumAutoScalingGroupSize */ Optional.empty(), optionalIgtimiRiotPort);
+        return result;
+    }
+    
+    @Override
     public AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> deployApplicationToExistingHost(String replicaSetName,
             SailingAnalyticsHost<String> hostToDeployTo, String replicaInstanceType, boolean dynamicLoadBalancerMapping,
             String releaseNameOrNullForLatestMaster, String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
@@ -1648,6 +1688,11 @@ public class LandscapeServiceImpl implements LandscapeService {
         return getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), newMaster, replicaSet.getReplicas(),
                 Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
     }
+    
+//    private void sendMailAboutNewArchiveCandidate(
+//            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
+//        sendMailToReplicaSetOwner(replicaSet, "StartingNewArchiveCandidateSubject", "StartingNewArchiveCandidateBody", Optional.of(ServerActions.CONFIGURE_REMOTE_INSTANCES));
+//    }
 
     private void sendMailAboutMasterUnavailable(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {

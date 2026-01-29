@@ -12,8 +12,13 @@ import com.sap.sse.gwt.client.ErrorReporter;
 public class UpgradeArchiveServerDialog extends AbstractApplicationReplicaSetDialog<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions> {
     
     public static class UpgradeArchiveServerInstructions extends AbstractApplicationReplicaSetDialog.AbstractApplicationReplicaSetInstructions {
-        public UpgradeArchiveServerInstructions(String releaseNameOrNullForLatestMaster, String masterReplicationBearerToken, String replicaReplicationBearerToken, String optionalSharedInstanceType) {
+        private final String optionalInstanceType;
+        public UpgradeArchiveServerInstructions(String releaseNameOrNullForLatestMaster, String masterReplicationBearerToken, String replicaReplicationBearerToken, String optionalInstanceType) {
             super(releaseNameOrNullForLatestMaster, masterReplicationBearerToken, replicaReplicationBearerToken);
+            this.optionalInstanceType = optionalInstanceType;
+        }
+        public String getOptionalInstanceType() {
+            return optionalInstanceType;
         }
     }
     

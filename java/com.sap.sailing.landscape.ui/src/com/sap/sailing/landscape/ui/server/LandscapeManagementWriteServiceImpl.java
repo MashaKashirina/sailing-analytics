@@ -677,16 +677,22 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
     }
     
     @Override
-    public SailingApplicationReplicaSetDTO<String> startArchiveServer(String regionId,
-            SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade, String releaseOrNullForLatestMaster,
-            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken) throws Exception {
+    public SailingApplicationReplicaSetDTO<String> createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade,
+            String instanceType, String releaseNameOrNullForLatestMaster, String optionalKeyName,
+            byte[] privateKeyEncryptionPassphrase, String replicationBearerToken) throws Exception {
         checkLandscapeManageAwsPermission();
-        logger.info(applicationReplicaSetToUpgrade.getName());
-        getLandscapeService().createApplicationReplicaSet(
-                regionId, optionalKeyName, true, replicationBearerToken, regionId, false, releaseOrNullForLatestMaster,
-                optionalKeyName, privateKeyEncryptionPassphrase, replicationBearerToken, replicationBearerToken, replicationBearerToken,
-                null, null, null, null, null);
-        return null;
+        final String replicaSetName = SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME;
+        final String archiveCandidateSubDomain = SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN; 
+        final String domainName = AwsLandscape.getHostedZoneName(applicationReplicaSetToUpgrade.getHostname());
+        final Release release = getLandscapeService().getRelease(releaseNameOrNullForLatestMaster);
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> result = getLandscapeService().createArchiveReplicaSet(regionId, replicaSetName,
+                instanceType, releaseNameOrNullForLatestMaster, optionalKeyName, privateKeyEncryptionPassphrase, replicationBearerToken, domainName,
+                /* optionalMemoryInMegabytesOrNull */ null, /* optionalMemoryTotalSizeFactorOrNull */ null, /* optionalIgtimiRiotPort */ null);
+        return new SailingApplicationReplicaSetDTO<String>(result.getName(), convertToSailingAnalyticsProcessDTO(result
+                .getMaster(), Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase), /* replicas */ Collections.emptySet(),
+                release.getName(), release.getReleaseNotesURL().toString(),
+                getLandscapeService().getFullyQualifiedHostname(archiveCandidateSubDomain, Optional.ofNullable(domainName)),
+                /* redirect rule */ null, /* autoScalingGroup */ null);
     }
     
     /**

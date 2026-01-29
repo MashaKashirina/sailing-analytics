@@ -1471,12 +1471,11 @@ public class LandscapeManagementPanel extends SimplePanel {
                         stringMessages, errorReporter, new DialogCallback<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions>() {
                             @Override
                             public void ok(UpgradeArchiveServerInstructions upgradeInstructions) {
-                                landscapeManagementService.startArchiveServer(regionId, replicaSet, 
-                                        upgradeInstructions.getReleaseNameOrNullForLatestMaster(),
-                                        sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
-                                                sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
-                                                ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes() : null,
-                                        upgradeInstructions.getReplicaReplicationBearerToken(),
+                                landscapeManagementService.createArchiveReplicaSet(regionId, replicaSet, upgradeInstructions.getOptionalInstanceType(), 
+                                        upgradeInstructions.getReleaseNameOrNullForLatestMaster(), sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
+                                        sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
+                                        ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes() : null,
+                                                upgradeInstructions.getReplicaReplicationBearerToken(),
                                         new AsyncCallback<SailingApplicationReplicaSetDTO<String>>() {
                                     @Override
                                     public void onFailure(Throwable caught) {

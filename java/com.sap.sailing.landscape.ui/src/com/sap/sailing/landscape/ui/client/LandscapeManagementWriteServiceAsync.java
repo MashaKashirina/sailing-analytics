@@ -190,10 +190,9 @@ public interface LandscapeManagementWriteServiceAsync {
             AwsInstanceDTO optionalPreferredInstanceToDeployUnmanagedReplicaTo,
             AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
     
-    void startArchiveServer(String regionId,
-            SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade, String releaseOrNullForLatestMaster,
-            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken,
-            AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
+    void createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade,
+            String optionalSharedInstanceType, String releaseOrNullForLatestMaster, String optionalKeyName,
+            byte[] privateKeyEncryptionPassphrase, String replicationBearerToken, AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
 
     /**
      * For the given replica set ensures there is at least one healthy replica, then stops replicating on all replicas and
