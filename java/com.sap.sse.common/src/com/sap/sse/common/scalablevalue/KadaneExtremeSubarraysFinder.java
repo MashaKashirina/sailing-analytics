@@ -1,6 +1,7 @@
 package com.sap.sse.common.scalablevalue;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,7 +26,7 @@ import java.util.List;
  *
  */
 public class KadaneExtremeSubarraysFinder<ValueType, AveragesTo extends Comparable<AveragesTo>, T extends ComparableScalableValueWithDistance<ValueType, AveragesTo>>
-implements Serializable {
+implements Serializable, Iterable<T> {
     private static final long serialVersionUID = 2109193559337714286L;
     
     /**
@@ -35,7 +36,11 @@ implements Serializable {
     
     /**
      * The element at index <tt>i</tt> holds the maximum value of the sum of any contiguous sub-sequence ending at index
-     * <tt>i</tt>.
+     * <tt>i</tt>. Outside of {@code synchronized} blocks it holds as many elements as {@link #sequence}. The element
+     * at index {@code i} is computed as {@code maxSumEndingAt.get(i-1)+sequence.get(i), max(sequence.get(i))}. This covers
+     * the two cases extending the complete induction. Either, the sequence with the maximum sum ending at index {@code i}
+     * includes prior elements; or the single element {@code sequence.get(i)} is greater than the sum of it and the maximum
+     * sum ending at the previous element {@code i-1}.
      */
     private final List<AveragesTo> maxSumEndingAt;
     
@@ -55,8 +60,7 @@ implements Serializable {
     private int endIndexExclusiveOfMaxSumSequence;
     
     /**
-     * The element at index <tt>i</tt> holds the minimum value of the sum of any contiguous sub-sequence ending at index
-     * <tt>i</tt>.
+     * See {@code #maxSumEndingAt}, only for the minimum.
      */
     private final List<AveragesTo> minSumEndingAt;
     
@@ -82,5 +86,52 @@ implements Serializable {
         endIndexExclusiveOfMaxSumSequence = -1;
         startIndexInclusiveOfMinSumSequence = -1;
         endIndexExclusiveOfMinSumSequence = -1;
+    }
+
+    public synchronized void add(int index, T t) {
+        sequence.add(index, t);
+        // TODO update all structures, sums, indices, and invariants
+    }
+    
+    public synchronized void remove(int index) {
+        sequence.remove(index);
+        // TODO update all structures, sums, indices, and invariants
+    }
+    
+    public synchronized void add(T t) {
+        add(sequence.size(), t);
+    }
+    
+    public synchronized void remove(T t) {
+        remove(sequence.indexOf(t));
+    }
+    
+    public AveragesTo getMaxSum() {
+        return maxSum;
+    }
+    
+    public AveragesTo getMinSum() {
+        return minSum;
+    }
+    
+    public int getStartIndexInclusiveOfMaxSumSequence() {
+        return startIndexInclusiveOfMaxSumSequence;
+    }
+
+    public int getEndIndexExclusiveOfMaxSumSequence() {
+        return endIndexExclusiveOfMaxSumSequence;
+    }
+
+    public int getStartIndexInclusiveOfMinSumSequence() {
+        return startIndexInclusiveOfMinSumSequence;
+    }
+
+    public int getEndIndexExclusiveOfMinSumSequence() {
+        return endIndexExclusiveOfMinSumSequence;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return sequence.iterator();
     }
 }
