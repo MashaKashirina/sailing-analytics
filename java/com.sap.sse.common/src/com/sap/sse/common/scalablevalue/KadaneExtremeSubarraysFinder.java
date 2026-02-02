@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * In a sequence of {@link ComparableScalableValueWithDistance} objects, tells the contiguous sub-sequence with the
@@ -90,23 +91,52 @@ implements Serializable, Iterable<T> {
 
     public synchronized void add(int index, T t) {
         sequence.add(index, t);
-        if (index == 0) {
-            maxSumEndingAt.add(index, t);
-            // TODO update subsequent elements based on the change
+        final ScalableValueWithDistance<ValueType, AveragesTo> newMaxSumEndingAtIndex;
+        final ScalableValueWithDistance<ValueType, AveragesTo> sum = index == 0 ? null : t.add(maxSumEndingAt.get(index-1));
+        if (index == 0 || compare(t, sum) >= 0) {
+            newMaxSumEndingAtIndex = t; // one-element sum consisting of element at "index" is the maximum
         } else {
-            if (t.divide(1).compareTo(maxSumEndingAt.get(index-1).divide(1)) >= 0) {
-                maxSumEndingAt.add(index, t); // one-element sum consisting of element at "index" is the maximum
-            } else {
-                maxSumEndingAt.add(index, t.add(maxSumEndingAt.get(index-1)));
-                // TODO
-            }
+            newMaxSumEndingAtIndex = sum;
         }
-        // TODO update all structures, sums, indices, and invariants
+        maxSumEndingAt.add(index, newMaxSumEndingAtIndex);
+        update(index+1, newMaxSumEndingAtIndex);
+    }
+
+    private int compare(final ScalableValueWithDistance<ValueType, AveragesTo> a, final ScalableValueWithDistance<ValueType, AveragesTo> b) {
+        return a.divide(1).compareTo(b.divide(1));
     }
     
+    /**
+     * For each element in {@link #sequence} starting at index {@code i}, this method checks whether the {@link #maxSumEndingAt}{@code [i]}
+     * still is the maximum of {@link #maxSumEndingAt}{@code [i-1]+sequence[i]} and {@link #sequence}{@code [i]}. If yes, any change to
+     * elements with index less than {@code i} do not have to be carried forward any further. Otherwise, {@link #maxSumEndingAt}{@code [i]}
+     * is updated, and the process continues at {@code i+1} "recursively" (implemented iteratively, without recursion).
+     * @param newMaxSumEndingAtIndex 
+     */
+    private void update(int i, ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtPreviousIndex) {
+        final ListIterator<T> sequenceIter = sequence.listIterator(i);
+        final ListIterator<ScalableValueWithDistance<ValueType, AveragesTo>> maxSumEndingAtIter = maxSumEndingAt.listIterator(i);
+        boolean finished = false;
+        while (sequenceIter.hasNext() && !finished) {
+            final T next = sequenceIter.next();
+            final ScalableValueWithDistance<ValueType, AveragesTo> nextMaxSumEndingAt = maxSumEndingAtIter.next();
+            final ScalableValueWithDistance<ValueType, AveragesTo> sum = next.add(maxSumEndingAtPreviousIndex);
+            final ScalableValueWithDistance<ValueType, AveragesTo> newMaxSumEndingAt = compare(next, sum) >= 0 ?
+                    next : sum;
+            if (compare(nextMaxSumEndingAt, newMaxSumEndingAt) != 0) {
+                maxSumEndingAtIter.remove();
+                maxSumEndingAtIter.add(newMaxSumEndingAt);
+                maxSumEndingAtPreviousIndex = newMaxSumEndingAt;
+            } else {
+                finished = true; // no more changes to propagate
+            }
+        }
+    }
+
     public synchronized void remove(int index) {
         sequence.remove(index);
-        // TODO update all structures, sums, indices, and invariants
+        final ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtIndex = maxSumEndingAt.remove(index);
+        update(index+1, maxSumEndingAtIndex);
     }
     
     public synchronized void add(T t) {
