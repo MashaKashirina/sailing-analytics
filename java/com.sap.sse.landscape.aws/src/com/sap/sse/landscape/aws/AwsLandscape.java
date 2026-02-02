@@ -329,7 +329,7 @@ public interface AwsLandscape<ShardingKey> extends Landscape<ShardingKey> {
 
     Instance getInstanceByPublicIpAddress(Region region, String publicIpAddress);
 
-    Instance getInstanceByPrivateIpAddress(Region region, String publicIpAddress);
+    Instance getInstanceByPrivateDnsOrIpAddress(Region region, String publicIpAddress);
 
     /**
      * @param hostname
