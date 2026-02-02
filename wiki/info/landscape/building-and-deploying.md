@@ -114,6 +114,7 @@ Couldn't fetch secret at 'piper/PIPELINE-GROUP-5565/PIPELINE-29049/cumulus' - Er
 see also [here](https://pages.github.tools.sap/SAPMobile/Documentation/Support/faq/#my-pipeline-fails-with-invalid-secret-id-or-invalid-role-id).
 
 The build uses a SonarQube check step. For that, the [SonarQube Security Configuration](https://sonar.tools.sap/account/security) is where we create access tokens. These, in turn, have to be set in the [Vault here](https://vault.tools.sap/ui/vault/secrets/piper/kv/PIPELINE-GROUP-5565%2FPIPELINE-29049%2Fsonar-SAP-Sailing-Analytics-Sonarqube/details?namespace=ies%2Fhyperspace%2Fpipelines) as a new version in the ``token`` field, with the ``url`` field being set to ``https://sonar.tools.sap``. These tokens are good for at most one year. The error we see upon token expiry would be something like
+
 ```
 error sonarExecuteScan - 18:56:54.249 ERROR Error during SonarScanner CLI execution
 info  sonarExecuteScan - java.lang.IllegalStateException: Error status returned by url [https://sonar.tools.sap/api/v2/analysis/jres?os=linux&arch=x86_64]: 401
