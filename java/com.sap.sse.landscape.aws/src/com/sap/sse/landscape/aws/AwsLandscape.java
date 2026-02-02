@@ -262,7 +262,7 @@ public interface AwsLandscape<ShardingKey> extends Landscape<ShardingKey> {
      */
     <HostT extends AwsInstance<ShardingKey>> Iterable<HostT> getRunningHostsWithTag(Region region, String tagName, HostSupplier<ShardingKey, HostT> hostSupplier);
 
-    <HostT extends AwsInstance<ShardingKey>> HostT getHostByPrivateIpAddress(Region region, String publicIpAddress,
+    <HostT extends AwsInstance<ShardingKey>> HostT getHostByPrivateDnsNameOrIpAddress(Region region, String privateDnsNameOrIpAddress,
             HostSupplier<ShardingKey, HostT> hostSupplier);
 
     <HostT extends AwsInstance<ShardingKey>> HostT getHostByPublicIpAddress(Region region, String publicIpAddress,
@@ -329,7 +329,7 @@ public interface AwsLandscape<ShardingKey> extends Landscape<ShardingKey> {
 
     Instance getInstanceByPublicIpAddress(Region region, String publicIpAddress);
 
-    Instance getInstanceByPrivateDnsOrIpAddress(Region region, String publicIpAddress);
+    Instance getInstanceByPrivateDnsNameOrIpAddress(Region region, String privateDnsNameOrIpAddress);
 
     /**
      * @param hostname

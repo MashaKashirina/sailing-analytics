@@ -237,7 +237,7 @@ public class LandscapeServiceImpl implements LandscapeService {
     
     @Override
     public AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> createArchiveReplicaSet(
-            String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster,
+            String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration, 
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken,
             String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
             Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception {
@@ -251,7 +251,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         final AwsRegion region = new AwsRegion(regionId, landscape);
         final Release release = getRelease(releaseNameOrNullForLatestMaster);
         final com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<?, String> masterConfigurationBuilder =
-                createMasterConfigurationBuilder(replicaSetName, securityServiceReplicationBearerToken, optionalMemoryInMegabytesOrNull,
+                createArchiveConfigurationBuilder(replicaSetName, databaseConfiguration, securityServiceReplicationBearerToken, optionalMemoryInMegabytesOrNull,
                          null, optionalIgtimiRiotPort, region, release);
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
         masterHostBuilder
@@ -267,12 +267,12 @@ public class LandscapeServiceImpl implements LandscapeService {
         final StartSailingAnalyticsMasterHost<String> masterHostStartProcedure = masterHostBuilder.build();
         masterHostStartProcedure.run();
         final SailingAnalyticsProcess<String> master = masterHostStartProcedure.getSailingAnalyticsProcess();
-        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> result =
-            createLoadBalancingAndAutoScalingSetup(landscape, region, replicaSetName, master, release, instanceType,
-                /* dynamicLoadBalancerMapping */ false, optionalKeyName, privateKeyEncryptionPassphrase, optionalDomainName,
-                Optional.of(masterHostBuilder.getMachineImage()), securityServiceReplicationBearerToken,
-                /* minimumAutoScalingGroupSize */ Optional.empty(), /* maximumAutoScalingGroupSize */ Optional.empty(), optionalIgtimiRiotPort);
-        return result;
+        logger.info("Waiting for archive new candidate "+master+" to get ready with new release "+release.getName());
+        master.waitUntilReady(Optional.of(Duration.ONE_DAY.times(2))); // wait a little longer since archive candidate may need to load many races
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet =
+                landscape.getApplicationReplicaSet(region, replicaSetName, master, Collections.emptySet(),
+                        Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        return replicaSet;
     }
     
     @Override
@@ -923,6 +923,30 @@ public class LandscapeServiceImpl implements LandscapeService {
             masterConfigurationBuilder.setCommaSeparatedEmailAddressesToNotifyOfStartup(currentUser.getEmail());
         }
         masterConfigurationBuilder
+            .setLandscape(getLandscape())
+            .setServerName(replicaSetName)
+            .setRelease(release)
+            .setRegion(region)
+            // TODO bug5684: probably this is the place to add the REPLICATE_MASTER_SERVLET_HOST/REPLICATE_MASTER_EXCHANGE_NAME variables to point to a default security service?
+            .setInboundReplicationConfiguration(InboundReplicationConfiguration.builder().setCredentials(new BearerTokenReplicationCredentials(bearerTokenUsedByMaster)).build());
+        if (optionalIgtimiRiotPort != null) {
+            masterConfigurationBuilder.setIgtimiRiotPort(optionalIgtimiRiotPort);
+        }
+        applyMemoryConfigurationToApplicationConfigurationBuilder(masterConfigurationBuilder, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull);
+        return masterConfigurationBuilder;
+    }
+    
+    private <AppConfigBuilderT extends com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<AppConfigBuilderT, String>> AppConfigBuilderT createArchiveConfigurationBuilder(
+            String replicaSetName, Database databaseConfiguration, String optionalMasterReplicationBearerTokenOrNull, Integer optionalMemoryInMegabytesOrNull,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, final AwsRegion region, final Release release) {
+        final AppConfigBuilderT masterConfigurationBuilder = SailingAnalyticsMasterConfiguration.masterBuilder();
+        final String bearerTokenUsedByMaster = getEffectiveBearerToken(optionalMasterReplicationBearerTokenOrNull);
+        final User currentUser = getSecurityService().getCurrentUser();
+        if (currentUser != null && currentUser.isEmailValidated() && currentUser.getEmail() != null) {
+            masterConfigurationBuilder.setCommaSeparatedEmailAddressesToNotifyOfStartup(currentUser.getEmail());
+        }
+        masterConfigurationBuilder
+            .setDatabaseConfiguration(databaseConfiguration)
             .setLandscape(getLandscape())
             .setServerName(replicaSetName)
             .setRelease(release)

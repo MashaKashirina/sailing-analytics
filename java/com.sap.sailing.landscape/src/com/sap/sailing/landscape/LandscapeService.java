@@ -26,6 +26,7 @@ import com.sap.sse.landscape.aws.AwsApplicationReplicaSet;
 import com.sap.sse.landscape.aws.AwsAvailabilityZone;
 import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.impl.AwsRegion;
+import com.sap.sse.landscape.mongodb.Database;
 import com.sap.sse.landscape.mongodb.MongoEndpoint;
 import com.sap.sse.security.SecurityService;
 
@@ -153,7 +154,7 @@ public interface LandscapeService {
             throws Exception;
     
     AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> createArchiveReplicaSet(
-            String regionId, String name, String instanceType, String releaseNameOrNullForLatestMaster,
+            String regionId, String name, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration,
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken,
             String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
             Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception;
