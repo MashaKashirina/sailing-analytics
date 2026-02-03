@@ -23,8 +23,8 @@ public class KadaneExtremeSubarraysFinderTest {
         finder.add(new ScalableDouble(2));
         finder.add(new ScalableDouble(3));
         assertEquals(6.0, finder.getMaxSum().divide(1.0), EPSILON);
-        assertEquals(0, finder.getStartIndexInclusiveOfMaxSumSequence());
-        assertEquals(3, finder.getEndIndexExclusiveOfMaxSumSequence());
+        assertEquals(0, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(2, finder.getEndIndexOfMaxSumSequence());
     }
 
     @Test
@@ -33,8 +33,8 @@ public class KadaneExtremeSubarraysFinderTest {
         finder.add(new ScalableDouble(3));
         finder.add(1, new ScalableDouble(2));
         assertEquals(6.0, finder.getMaxSum().divide(1.0), EPSILON);
-        assertEquals(0, finder.getStartIndexInclusiveOfMaxSumSequence());
-        assertEquals(3, finder.getEndIndexExclusiveOfMaxSumSequence());
+        assertEquals(0, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(2, finder.getEndIndexOfMaxSumSequence());
     }
 
     @Test
@@ -47,8 +47,8 @@ public class KadaneExtremeSubarraysFinderTest {
         finder.add(new ScalableDouble(6));
         finder.add(new ScalableDouble(-5));
         assertEquals(13.0, finder.getMaxSum().divide(1.0), EPSILON);
-        assertEquals(0, finder.getStartIndexInclusiveOfMaxSumSequence());
-        assertEquals(6, finder.getEndIndexExclusiveOfMaxSumSequence());
+        assertEquals(0, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(5, finder.getEndIndexOfMaxSumSequence());
     }
     
     @Test
@@ -59,11 +59,11 @@ public class KadaneExtremeSubarraysFinderTest {
         finder.add(new ScalableDouble(4));
         finder.add(new ScalableDouble(5));
         assertEquals(15.0, finder.getMaxSum().divide(1.0), EPSILON);
-        assertEquals(0, finder.getStartIndexInclusiveOfMaxSumSequence());
-        assertEquals(6, finder.getEndIndexExclusiveOfMaxSumSequence());
+        assertEquals(0, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(4, finder.getEndIndexOfMaxSumSequence());
         finder.add(3, new ScalableDouble(-7));
         assertEquals(9.0, finder.getMaxSum().divide(1.0), EPSILON);
-        assertEquals(4, finder.getStartIndexInclusiveOfMaxSumSequence());
-        assertEquals(6, finder.getEndIndexExclusiveOfMaxSumSequence());
+        assertEquals(4, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(5, finder.getEndIndexOfMaxSumSequence());
     }
 }

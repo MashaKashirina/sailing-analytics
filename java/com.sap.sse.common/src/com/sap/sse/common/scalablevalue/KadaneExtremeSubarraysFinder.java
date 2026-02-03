@@ -46,60 +46,101 @@ implements Serializable, Iterable<T> {
     private final List<ScalableValueWithDistance<ValueType, AveragesTo>> maxSumEndingAt;
     
     /**
-     * The maximum of the sums of any contiguous sub-sequence
+     * Indices of the first element in {@link #sequence} of the contiguous sub-sequence having the maximum sum
+     * ending at the {@link #sequence} index that corresponds with the index of the element in this list. Example:
+     * if the contiguous sub-sequence in {@link #sequence} ending at the element before index 5 with the maximum
+     * sum starts at index 1, then {@link #startIndexOfMaxSumSequence}{@code .get(5)==1}.
      */
-    private ScalableValueWithDistance<ValueType, AveragesTo> maxSum;
+    private List<Integer> startIndexOfMaxSumSequence;
     
     /**
-     * Index of the first element in {@link #sequence} of the contiguous sub-sequence having the maximum sum
+     * Index of the element in {@link #sequence} at which the contiguous sub-sequence ends that has the maximum sum
+     * of all such sub-sequences. This means that {@link #maxSumEndingAt}{@code .get(}{@link #endIndexOfMaxSumSequence})
+     * is minimal across all elements in {@link #maxSumEndingAt}.
      */
-    private int startIndexInclusiveOfMaxSumSequence;
-    
-    /**
-     * Index of the element after the last element in {@link #sequence} of the contiguous sub-sequence having the maximum sum
-     */
-    private int endIndexExclusiveOfMaxSumSequence;
+    private int endIndexOfMaxSumSequence;
     
     /**
      * See {@code #maxSumEndingAt}, only for the minimum.
      */
     private final List<ScalableValueWithDistance<ValueType, AveragesTo>> minSumEndingAt;
     
-    private ScalableValueWithDistance<ValueType, AveragesTo> minSum;
+    /**
+     * Indices of the first element in {@link #sequence} of the contiguous sub-sequence having the minimum sum
+     * ending at the {@link #sequence} index that corresponds with the index of the element in this list. Example:
+     * if the contiguous sub-sequence in {@link #sequence} ending at the element before index 5 with the minimum
+     * sum starts at index 1, then {@link #startIndexOfMaxSumSequence}{@code .get(5)==1}.
+     */
+    private List<Integer> startIndexOfMinSumSequence;
     
     /**
-     * Index of the first element in {@link #sequence} of the contiguous sub-sequence having the minium sum
+     * Index of the element in {@link #sequence} at which the contiguous sub-sequence ends that has the minimum sum
+     * of all such sub-sequences. This means that {@link #minSumEndingAt}{@code .get(}{@link #endIndexOfMinSumSequence})
+     * is minimal across all elements in {@link #minSumEndingAt}.
      */
-    private int startIndexInclusiveOfMinSumSequence;
-    
-    /**
-     * Index of the element after the last element in {@link #sequence} of the contiguous sub-sequence having the minimum sum
-     */
-    private int endIndexExclusiveOfMinSumSequence;
+    private int endIndexOfMinSumSequence;
     
     public KadaneExtremeSubarraysFinder() {
         sequence = new LinkedList<>();
         maxSumEndingAt = new LinkedList<>();
         minSumEndingAt = new LinkedList<>();
-        maxSum = null;
-        minSum = null;
-        startIndexInclusiveOfMaxSumSequence = -1;
-        endIndexExclusiveOfMaxSumSequence = -1;
-        startIndexInclusiveOfMinSumSequence = -1;
-        endIndexExclusiveOfMinSumSequence = -1;
+        startIndexOfMaxSumSequence = new LinkedList<>();
+        endIndexOfMaxSumSequence = -1;
+        startIndexOfMinSumSequence = new LinkedList<>();
+        endIndexOfMinSumSequence = -1;
     }
 
     public synchronized void add(int index, T t) {
+        final ScalableValueWithDistance<ValueType, AveragesTo> oldMaxSum = getMaxSum();
+        final ScalableValueWithDistance<ValueType, AveragesTo> oldMinSum = getMinSum();
+        final boolean insertingIntoMaxSumSequence = index <= endIndexOfMaxSumSequence && index > startIndexOfMaxSumSequence.get(endIndexOfMaxSumSequence);
+        final boolean insertingIntoMinSumSequence = index <= endIndexOfMinSumSequence && index > startIndexOfMinSumSequence.get(endIndexOfMinSumSequence);
         sequence.add(index, t);
         final ScalableValueWithDistance<ValueType, AveragesTo> newMaxSumEndingAtIndex;
-        final ScalableValueWithDistance<ValueType, AveragesTo> sum = index == 0 ? null : t.add(maxSumEndingAt.get(index-1));
-        if (index == 0 || compare(t, sum) >= 0) {
+        final ScalableValueWithDistance<ValueType, AveragesTo> sumWithMax = index == 0 ? null : t.add(maxSumEndingAt.get(index-1));
+        if (index == 0 || compare(t, sumWithMax) >= 0) {
             newMaxSumEndingAtIndex = t; // one-element sum consisting of element at "index" is the maximum
+            startIndexOfMaxSumSequence.add(index, index);
         } else {
-            newMaxSumEndingAtIndex = sum;
+            newMaxSumEndingAtIndex = sumWithMax;
+            startIndexOfMaxSumSequence.add(index, startIndexOfMaxSumSequence.get(index-1));
         }
         maxSumEndingAt.add(index, newMaxSumEndingAtIndex);
-        update(index+1, newMaxSumEndingAtIndex);
+        if (oldMaxSum == null || compare(newMaxSumEndingAtIndex, oldMaxSum) > 0) {
+            endIndexOfMaxSumSequence = index;
+        }
+        final ScalableValueWithDistance<ValueType, AveragesTo> newMinSumEndingAtIndex;
+        final ScalableValueWithDistance<ValueType, AveragesTo> sumWithMin = index == 0 ? null : t.add(minSumEndingAt.get(index-1));
+        if (index == 0 || compare(t, sumWithMin) <= 0) {
+            newMinSumEndingAtIndex = t; // one-element sum consisting of element at "index" is the minimum
+            startIndexOfMinSumSequence.add(index, index);
+        } else {
+            newMinSumEndingAtIndex = sumWithMin;
+            startIndexOfMinSumSequence.add(index, startIndexOfMinSumSequence.get(index-1));
+        }
+        minSumEndingAt.add(index, newMinSumEndingAtIndex);
+        if (oldMinSum == null || compare(newMinSumEndingAtIndex, oldMinSum) < 0) {
+            endIndexOfMinSumSequence = index;
+        }
+        if (index < sequence.size()) {
+            update(index+1, newMaxSumEndingAtIndex, newMinSumEndingAtIndex);
+        }
+        if (insertingIntoMaxSumSequence) { // TODO probably also check whether a "positive" value was inserted; in this case, max can only grow further, and sub-sequence indices will stay unchanged
+            updateMax();
+        }
+        if (insertingIntoMinSumSequence) { // TODO probably also check whether a "negative" value was inserted; in this case, min can only shrink further, and sub-sequence indices will stay unchanged
+            updateMin();
+        }
+    }
+
+    private void updateMin() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private void updateMax() {
+        // TODO Auto-generated method stub
+        
     }
 
     private int compare(final ScalableValueWithDistance<ValueType, AveragesTo> a, final ScalableValueWithDistance<ValueType, AveragesTo> b) {
@@ -111,32 +152,64 @@ implements Serializable, Iterable<T> {
      * still is the maximum of {@link #maxSumEndingAt}{@code [i-1]+sequence[i]} and {@link #sequence}{@code [i]}. If yes, any change to
      * elements with index less than {@code i} do not have to be carried forward any further. Otherwise, {@link #maxSumEndingAt}{@code [i]}
      * is updated, and the process continues at {@code i+1} "recursively" (implemented iteratively, without recursion).
-     * @param newMaxSumEndingAtIndex 
      */
-    private void update(int i, ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtPreviousIndex) {
+    private void update(int i, ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtPreviousIndex, ScalableValueWithDistance<ValueType, AveragesTo> newMinSumEndingAtIndex) {
         final ListIterator<T> sequenceIter = sequence.listIterator(i);
         final ListIterator<ScalableValueWithDistance<ValueType, AveragesTo>> maxSumEndingAtIter = maxSumEndingAt.listIterator(i);
-        boolean finished = false;
-        while (sequenceIter.hasNext() && !finished) {
+        final ListIterator<ScalableValueWithDistance<ValueType, AveragesTo>> minSumEndingAtIter = minSumEndingAt.listIterator(i);
+        final ListIterator<Integer> startIndexOfMaxSumSequenceIter = startIndexOfMaxSumSequence.listIterator(i);
+        final ListIterator<Integer> startIndexOfMinSumSequenceIter = startIndexOfMinSumSequence.listIterator(i);
+        boolean finishedMax = false;
+        boolean finishedMin = false;
+        while (sequenceIter.hasNext() && (!finishedMax || !finishedMin)) {
             final T next = sequenceIter.next();
-            final ScalableValueWithDistance<ValueType, AveragesTo> nextMaxSumEndingAt = maxSumEndingAtIter.next();
-            final ScalableValueWithDistance<ValueType, AveragesTo> sum = next.add(maxSumEndingAtPreviousIndex);
-            final ScalableValueWithDistance<ValueType, AveragesTo> newMaxSumEndingAt = compare(next, sum) >= 0 ?
-                    next : sum;
-            if (compare(nextMaxSumEndingAt, newMaxSumEndingAt) != 0) {
-                maxSumEndingAtIter.remove();
-                maxSumEndingAtIter.add(newMaxSumEndingAt);
-                maxSumEndingAtPreviousIndex = newMaxSumEndingAt;
-            } else {
-                finished = true; // no more changes to propagate
+            if (!finishedMax) {
+                final ScalableValueWithDistance<ValueType, AveragesTo> nextMaxSumEndingAt = maxSumEndingAtIter.next();
+                startIndexOfMaxSumSequenceIter.next();
+                final ScalableValueWithDistance<ValueType, AveragesTo> sum = next.add(maxSumEndingAtPreviousIndex);
+                final boolean nextGreaterOrEqualsThanSum = compare(next, sum) >= 0;
+                final ScalableValueWithDistance<ValueType, AveragesTo> newMaxSumEndingAt = nextGreaterOrEqualsThanSum ? next : sum;
+                if (compare(nextMaxSumEndingAt, newMaxSumEndingAt) != 0) {
+                    maxSumEndingAtIter.remove();
+                    maxSumEndingAtIter.add(newMaxSumEndingAt);
+                    maxSumEndingAtPreviousIndex = newMaxSumEndingAt;
+                    startIndexOfMaxSumSequenceIter.remove();
+                    startIndexOfMaxSumSequenceIter.add(nextGreaterOrEqualsThanSum ? i : startIndexOfMaxSumSequence.get(i-1));
+                    if (compare(newMaxSumEndingAt, getMaxSum()) > 0) {
+                        endIndexOfMaxSumSequence = i;
+                    }
+                } else {
+                    finishedMax = true; // no more changes to propagate
+                }
             }
+            if (!finishedMin) {
+                final ScalableValueWithDistance<ValueType, AveragesTo> nextMinSumEndingAt = minSumEndingAtIter.next();
+                startIndexOfMinSumSequenceIter.next();
+                final ScalableValueWithDistance<ValueType, AveragesTo> sum = next.add(maxSumEndingAtPreviousIndex);
+                final boolean nextLessOrEqualsThanSum = compare(next, sum) <= 0;
+                final ScalableValueWithDistance<ValueType, AveragesTo> newMinSumEndingAt = nextLessOrEqualsThanSum ? next : sum;
+                if (compare(nextMinSumEndingAt, newMinSumEndingAt) != 0) {
+                    minSumEndingAtIter.remove();
+                    minSumEndingAtIter.add(newMinSumEndingAt);
+                    maxSumEndingAtPreviousIndex = newMinSumEndingAt;
+                    startIndexOfMinSumSequenceIter.remove();
+                    startIndexOfMinSumSequenceIter.add(nextLessOrEqualsThanSum ? i : startIndexOfMinSumSequence.get(i-1));
+                    if (compare(newMinSumEndingAt, getMinSum()) < 0) {
+                        endIndexOfMinSumSequence = i;
+                    }
+                } else {
+                    finishedMin = true; // no more changes to propagate
+                }
+            }
+            i++;
         }
     }
 
     public synchronized void remove(int index) {
         sequence.remove(index);
         final ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtIndex = maxSumEndingAt.remove(index);
-        update(index+1, maxSumEndingAtIndex);
+        final ScalableValueWithDistance<ValueType, AveragesTo> minSumEndingAtIndex = minSumEndingAt.remove(index);
+        update(index+1, maxSumEndingAtIndex, minSumEndingAtIndex);
     }
     
     public synchronized void add(T t) {
@@ -148,27 +221,27 @@ implements Serializable, Iterable<T> {
     }
     
     public ScalableValueWithDistance<ValueType, AveragesTo> getMaxSum() {
-        return maxSum;
+        return endIndexOfMaxSumSequence == -1 ? null : maxSumEndingAt.get(endIndexOfMaxSumSequence);
     }
     
     public ScalableValueWithDistance<ValueType, AveragesTo> getMinSum() {
-        return minSum;
+        return endIndexOfMinSumSequence == -1 ? null : minSumEndingAt.get(endIndexOfMinSumSequence);
     }
     
-    public int getStartIndexInclusiveOfMaxSumSequence() {
-        return startIndexInclusiveOfMaxSumSequence;
+    public int getStartIndexOfMaxSumSequence() {
+        return startIndexOfMaxSumSequence.isEmpty() ? -1 : startIndexOfMaxSumSequence.get(endIndexOfMaxSumSequence);
     }
 
-    public int getEndIndexExclusiveOfMaxSumSequence() {
-        return endIndexExclusiveOfMaxSumSequence;
+    public int getEndIndexOfMaxSumSequence() {
+        return endIndexOfMaxSumSequence;
     }
 
-    public int getStartIndexInclusiveOfMinSumSequence() {
-        return startIndexInclusiveOfMinSumSequence;
+    public int getStartIndexOfMinSumSequence() {
+        return startIndexOfMinSumSequence.isEmpty() ? -1 : startIndexOfMinSumSequence.get(endIndexOfMinSumSequence);
     }
 
-    public int getEndIndexExclusiveOfMinSumSequence() {
-        return endIndexExclusiveOfMinSumSequence;
+    public int getEndIndexOfMinSumSequence() {
+        return endIndexOfMinSumSequence;
     }
 
     @Override
