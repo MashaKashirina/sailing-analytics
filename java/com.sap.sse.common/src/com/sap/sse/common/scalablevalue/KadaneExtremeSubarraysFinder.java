@@ -175,7 +175,7 @@ implements Serializable, Iterable<T> {
                     maxSumEndingAtPreviousIndex = newMaxSumEndingAt;
                     startIndexOfMaxSumSequenceIter.remove();
                     startIndexOfMaxSumSequenceIter.add(nextGreaterOrEqualsThanSum ? i : startIndexOfMaxSumSequence.get(i-1));
-                    if (compare(newMaxSumEndingAt, getMaxSum()) > 0) {
+                    if (compare(newMaxSumEndingAt, getMaxSum()) > 0) { // FIXME getMaxSum() cannot be asked while we are still updating; indices may have moved left (remove) or right (add)!
                         endIndexOfMaxSumSequence = i;
                     }
                 } else {
@@ -208,7 +208,19 @@ implements Serializable, Iterable<T> {
     public synchronized void remove(int index) {
         sequence.remove(index);
         final ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingAtIndex = maxSumEndingAt.remove(index);
+        startIndexOfMaxSumSequence.remove(index);
+        if (endIndexOfMaxSumSequence > index) {
+            endIndexOfMaxSumSequence--;
+        } else if (endIndexOfMaxSumSequence == index) {
+            // TODO but if endIndexOfMaxSumSequence == index, we have deleted the last element of the max sum sequence and need to re-evaluate
+        }
+        if (endIndexOfMinSumSequence > index) {
+            endIndexOfMinSumSequence--;
+        } else if (endIndexOfMinSumSequence == index) {
+            // TODO but if endIndexOfMinSumSequence == index, we have deleted the last element of the min sum sequence and need to re-evaluate
+        }
         final ScalableValueWithDistance<ValueType, AveragesTo> minSumEndingAtIndex = minSumEndingAt.remove(index);
+        startIndexOfMinSumSequence.remove(index);
         update(index+1, maxSumEndingAtIndex, minSumEndingAtIndex);
     }
     
@@ -232,6 +244,11 @@ implements Serializable, Iterable<T> {
         return startIndexOfMaxSumSequence.isEmpty() ? -1 : startIndexOfMaxSumSequence.get(endIndexOfMaxSumSequence);
     }
 
+    /**
+     * @return the index into {@link #sequence} holding the last element of the contiguous sub-sequence that has the
+     *         maximal sum; note that pointing <em>to</em> and not <em>after</em> the last element of that sequence is
+     *         slightly different from how indices may be handled in some other from/to collection operations.
+     */
     public int getEndIndexOfMaxSumSequence() {
         return endIndexOfMaxSumSequence;
     }
@@ -240,6 +257,11 @@ implements Serializable, Iterable<T> {
         return startIndexOfMinSumSequence.isEmpty() ? -1 : startIndexOfMinSumSequence.get(endIndexOfMinSumSequence);
     }
 
+    /**
+     * @return the index into {@link #sequence} holding the last element of the contiguous sub-sequence that has the
+     *         minimal sum; note that pointing <em>to</em> and not <em>after</em> the last element of that sequence is
+     *         slightly different from how indices may be handled in some other from/to collection operations.
+     */
     public int getEndIndexOfMinSumSequence() {
         return endIndexOfMinSumSequence;
     }

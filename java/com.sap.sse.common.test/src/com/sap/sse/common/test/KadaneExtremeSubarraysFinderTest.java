@@ -62,8 +62,10 @@ public class KadaneExtremeSubarraysFinderTest {
         assertEquals(0, finder.getStartIndexOfMaxSumSequence());
         assertEquals(4, finder.getEndIndexOfMaxSumSequence());
         finder.add(3, new ScalableDouble(-7));
-        assertEquals(9.0, finder.getMaxSum().divide(1.0), EPSILON);
+        assertEquals(9.0, finder.getMaxSum().divide(1.0), EPSILON); // FIXME this test passes "coincidentally" because of the way getMaxSum() works while updating the aggregates...
         assertEquals(4, finder.getStartIndexOfMaxSumSequence());
         assertEquals(5, finder.getEndIndexOfMaxSumSequence());
     }
+    
+    // TODO add tests using the remove(...) method
 }
