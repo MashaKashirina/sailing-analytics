@@ -205,8 +205,9 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
         this.last = null;
         final Comparator<Node<ValueType, AveragesTo, T>> minSumComparator = (n1, n2)->compare(n1.getMinSumEndingHere(), n2.getMinSumEndingHere());
         final Comparator<Node<ValueType, AveragesTo, T>> maxSumComparator = (n1, n2)->compare(n1.getMaxSumEndingHere(), n2.getMaxSumEndingHere());
-        this.nodesOrderedByMinSum = new TreeSet<>(minSumComparator.thenComparing((n1, n2)->Integer.compare(n1.getId(), n2.getId())));
-        this.nodesOrderedByMaxSum = new TreeSet<>(maxSumComparator.thenComparing((n1, n2)->Integer.compare(n1.getId(), n2.getId())));
+        final Comparator<? super Node<ValueType, AveragesTo, T>> idComparator = (n1, n2)->Integer.compare(n1.getId(), n2.getId());
+        this.nodesOrderedByMinSum = new TreeSet<>((n1,n2)->(n1==n2?0:minSumComparator.thenComparing(idComparator).compare(n1, n2)));
+        this.nodesOrderedByMaxSum = new TreeSet<>((n1,n2)->(n1==n2?0:maxSumComparator.thenComparing(idComparator).compare(n1, n2)));
     }
     
     @Override

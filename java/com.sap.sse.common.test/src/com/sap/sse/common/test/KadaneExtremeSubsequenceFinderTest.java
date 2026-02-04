@@ -3,6 +3,9 @@ package com.sap.sse.common.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Random;
+import java.util.TreeSet;
+
 import org.junit.jupiter.api.Test;
 
 import com.sap.sse.common.scalablevalue.KadaneExtremeSubsequenceFinder;
@@ -131,5 +134,17 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
         assertEquals(9.0, finder.getMaxSum().divide(1.0), EPSILON);
         assertEquals(0, finder.getStartIndexOfMaxSumSequence());
         assertEquals(1, finder.getEndIndexOfMaxSumSequence());
+    }
+    
+    @Test
+    public void performanceTest() {
+        final Random random = new Random();
+        final int NODES = 10000;
+        for (int i=0; i<NODES; i++) {
+            finder.add(new ScalableDouble(random.nextDouble()-0.5));
+        }
+        for (int i=0; i<NODES/2; i++) {
+            finder.remove(random.nextInt(finder.size()));
+        }
     }
 }
