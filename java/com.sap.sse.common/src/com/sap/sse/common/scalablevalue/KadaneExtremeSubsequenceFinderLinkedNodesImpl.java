@@ -9,6 +9,17 @@ import java.util.function.Function;
 
 import com.sap.sse.common.Util;
 
+/**
+ * An implementation of Kadane's algorithm for "maximum sub-sequence sum" that works incrementally,
+ * allows insertion and removal anywhere in the sequence, and maintains the start/end points of those
+ * extreme sum sequences for both, the maximal and the minimal sum. It furthermore supports iteration,
+ * also across sub-sequences such as those extreme sum sub-sequences, a {@link #size()} as well as an
+ * {@link #isEmpty()} operation.<p>
+ * 
+ * This implementation uses a doubly-linked sequence of {@link Node}s.
+ * 
+ * @author Axel Uhl (D043530)
+ */
 public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo extends Comparable<AveragesTo>, T extends ComparableScalableValueWithDistance<ValueType, AveragesTo>>
         implements KadaneExtremeSubsequenceFinder<ValueType, AveragesTo, T> {
 
