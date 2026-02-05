@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -11,6 +12,7 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
+import com.sap.sse.common.Util;
 import com.sap.sse.common.scalablevalue.KadaneExtremeSubsequenceFinder;
 import com.sap.sse.common.scalablevalue.ScalableDouble;
 import com.sap.sse.testutils.Measurement;
@@ -73,6 +75,7 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
         assertEquals(9.0, finder.getMaxSum().divide(1.0), EPSILON);
         assertEquals(4, finder.getStartIndexOfMaxSumSequence());
         assertEquals(5, finder.getEndIndexOfMaxSumSequence());
+        assertTrue(Util.equals(Arrays.asList(new ScalableDouble(4), new ScalableDouble(5)), ()->finder.getSubSequenceWithMaxSum()));
     }
     
     @Test
@@ -118,6 +121,7 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
         assertEquals(15.0, finder.getMaxSum().divide(1.0), EPSILON);
         assertEquals(5, finder.getStartIndexOfMaxSumSequence());
         assertEquals(9, finder.getEndIndexOfMaxSumSequence());
+        assertTrue(Util.equals(Arrays.asList(new ScalableDouble(1), new ScalableDouble(2), new ScalableDouble(3), new ScalableDouble(4), new ScalableDouble(5)), ()->finder.getSubSequenceWithMaxSum()));
         finder.remove(8); // removes the 4.0 from the second sequence, resulting again in two equal max sum sub-sequences:
         assertEquals(11.0, finder.getMaxSum().divide(1.0), EPSILON);
         assertTrue(finder.getStartIndexOfMaxSumSequence() == 0 || finder.getStartIndexOfMaxSumSequence() == 5);

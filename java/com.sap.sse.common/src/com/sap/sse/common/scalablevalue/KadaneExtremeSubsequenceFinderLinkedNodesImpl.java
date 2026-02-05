@@ -16,7 +16,8 @@ import com.sap.sse.common.Util;
  * also across sub-sequences such as those extreme sum sub-sequences, a {@link #size()} as well as an
  * {@link #isEmpty()} operation.<p>
  * 
- * This implementation uses a doubly-linked sequence of {@link Node}s.
+ * This implementation uses a doubly-linked sequence of {@link Node}s. It is <em>not</em> thread-safe.
+ * Callers must ensure that concurrent modifications are properly synchronized.
  * 
  * @author Axel Uhl (D043530)
  */
