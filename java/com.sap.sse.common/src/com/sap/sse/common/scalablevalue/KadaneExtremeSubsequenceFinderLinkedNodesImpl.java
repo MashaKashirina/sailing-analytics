@@ -509,4 +509,29 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
         final Iterable<Node<ValueType, AveragesTo, T>> nodeIterable = ()->nodeIterator(nodeWhereBestMinSumSubSequenceEnds.getStartOfMinSumSubSequenceEndingHere(), nodeWhereBestMinSumSubSequenceEnds);
         return Util.map(nodeIterable, node->node.getValue()).iterator();
     }
+    
+    @Override
+    public int getAverageMinChangePropagationSteps() {
+        return minChangePropagationsCount == 0 ? 0 : minChangePropagationStepsSum / minChangePropagationsCount;
+    }
+    
+    @Override
+    public int getAverageMaxChangePropagationSteps() {
+        return maxChangePropagationsCount == 0 ? 0 : maxChangePropagationStepsSum / maxChangePropagationsCount;
+    }
+    
+    @Override
+    public void resetStats() {
+        minChangePropagationStepsSum = 0;
+        minChangePropagationsCount = 0;
+        maxChangePropagationStepsSum = 0;
+        maxChangePropagationsCount = 0;
+    }
+
+    @Override
+    public String toString() {
+        return "KadaneExtremeSubsequenceFinderLinkedNodesImpl [size=" + size
+                + ", minChangePropagationStepsAvg=" + minChangePropagationStepsSum / minChangePropagationsCount
+                + ", maxChangePropagationStepsAvg=" + maxChangePropagationStepsSum / maxChangePropagationsCount + "]";
+    }
 }

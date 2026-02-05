@@ -68,4 +68,20 @@ public interface KadaneExtremeSubsequenceFinder<ValueType, AveragesTo extends Co
      *         slightly different from how indices may be handled in some other from/to collection operations.
      */
     int getEndIndexOfMinSumSequence();
+
+    /**
+     * @return statistics: average number of propagation steps when a change affected a minimum sum sub-sequence
+     */
+    int getAverageMinChangePropagationSteps();
+
+    /**
+     * @return statistics: average number of propagation steps when a change affected a maximum sum sub-sequence
+     */
+    int getAverageMaxChangePropagationSteps();
+    
+    /**
+     * Resets the statistics on change propagation steps as returned by {@link #getAverageMinChangePropagationSteps()}
+     * and {@link #getAverageMaxChangePropagationSteps()}.
+     */
+    void resetStats();
 }

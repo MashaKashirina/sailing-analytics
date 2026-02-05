@@ -3,17 +3,27 @@ package com.sap.sse.common.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import com.sap.sse.common.scalablevalue.KadaneExtremeSubsequenceFinder;
 import com.sap.sse.common.scalablevalue.ScalableDouble;
+import com.sap.sse.testutils.Measurement;
+import com.sap.sse.testutils.MeasurementCase;
+import com.sap.sse.testutils.MeasurementXMLFile;
 
 public abstract class KadaneExtremeSubsequenceFinderTest {
     private static final double EPSILON = 0.00000001;
+    private static final Logger logger = Logger.getLogger(KadaneExtremeSubsequenceFinderTest.class.getName());
+
     protected KadaneExtremeSubsequenceFinder<Double, Double, ScalableDouble> finder;
+    private static Random random = new Random();
+    private static final MeasurementXMLFile performanceReport = new MeasurementXMLFile(KadaneExtremeSubsequenceFinderTest.class);
     
     @Test
     public void testSimplePositiveSequence() {
@@ -137,42 +147,59 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
     }
     
     @Test
-    public void performanceTestWithRandomRemove() {
-        final Random random = new Random();
+    public void performanceTestWithRandomRemove() throws IOException {
+        final MeasurementCase performanceMeasurement = performanceReport.addCase("PerformanceTestWithRandomRemove");
         final int NODES = 10000;
         for (int i=0; i<NODES; i++) {
             finder.add(new ScalableDouble(random.nextDouble()-0.5));
         }
         assertEquals(NODES, finder.size());
+        finder.resetStats();
         for (int i=0; i<NODES/2; i++) {
             finder.remove(random.nextInt(finder.size()));
         }
         assertEquals(NODES-NODES/2, finder.size());
+        performanceMeasurement.addMeasurement(new Measurement("minChangePropagationCount", finder.getAverageMinChangePropagationSteps()));
+        performanceMeasurement.addMeasurement(new Measurement("maxChangePropagationCount", finder.getAverageMaxChangePropagationSteps()));
+        logger.info("Stats after random remove: " + finder.toString());
     }
 
     @Test
-    public void performanceTestWithRemoveFromBeginning() {
-        final Random random = new Random();
+    public void performanceTestWithRemoveFromBeginning() throws IOException {
+        final MeasurementCase performanceMeasurement = performanceReport.addCase("PerformanceTestWithRemoveFromBeginning");
         final int NODES = 10000;
         for (int i=0; i<NODES; i++) {
             finder.add(new ScalableDouble(random.nextDouble()-0.5));
         }
         assertEquals(NODES, finder.size());
+        finder.resetStats();
         for (int i=0; i<NODES/2; i++) {
             finder.remove(0);
         }
         assertEquals(NODES-NODES/2, finder.size());
+        performanceMeasurement.addMeasurement(new Measurement("minChangePropagationCount", finder.getAverageMinChangePropagationSteps()));
+        performanceMeasurement.addMeasurement(new Measurement("maxChangePropagationCount", finder.getAverageMaxChangePropagationSteps()));
+        logger.info("Stats after removing from beginning: " + finder.toString());
     }
 
     @Test
-    public void performanceTestWithPruneFromBeginning() {
-        final Random random = new Random();
+    public void performanceTestWithPruneFromBeginning() throws IOException {
+        final MeasurementCase performanceMeasurement = performanceReport.addCase("PerformanceTestWithPruneFromBeginning");
         final int NODES = 10000;
         for (int i=0; i<NODES; i++) {
             finder.add(new ScalableDouble(random.nextDouble()-0.5));
         }
         assertEquals(NODES, finder.size());
+        finder.resetStats();
         finder.removeFirst(NODES/2);
         assertEquals(NODES-NODES/2, finder.size());
+        performanceMeasurement.addMeasurement(new Measurement("minChangePropagationCount", finder.getAverageMinChangePropagationSteps()));
+        performanceMeasurement.addMeasurement(new Measurement("maxChangePropagationCount", finder.getAverageMaxChangePropagationSteps()));
+        logger.info("Stats after pruning from beginning: " + finder.toString());
+    }
+    
+    @AfterAll
+    public static void writeMeasurements() throws IOException {
+        performanceReport.write();
     }
 }
