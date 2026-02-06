@@ -1,6 +1,7 @@
 package com.sap.sse.common.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -197,6 +198,10 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
         finder.resetStats();
         finder.removeFirst(NODES/2);
         assertEquals(NODES-NODES/2, finder.size());
+        assertNotEquals(-1, finder.getStartIndexOfMaxSumSequence());
+        assertNotEquals(-1, finder.getEndIndexOfMaxSumSequence());
+        assertNotEquals(-1, finder.getStartIndexOfMinSumSequence());
+        assertNotEquals(-1, finder.getEndIndexOfMinSumSequence());
         performanceMeasurement.addMeasurement(new Measurement("minChangePropagationCount", finder.getAverageMinChangePropagationSteps()));
         performanceMeasurement.addMeasurement(new Measurement("maxChangePropagationCount", finder.getAverageMaxChangePropagationSteps()));
         logger.info("Stats after pruning from beginning: " + finder.toString());

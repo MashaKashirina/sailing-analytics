@@ -280,7 +280,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
          */
         private Pair<GPSFixMoving, Integer> getManeuverCandidate() {
             final GPSFixMoving result;
-            final Double maximumCourseChangeToStarboard = courseChangeBetweenFixesInWindow.getMaxSum().divide(1);
+            final double maximumCourseChangeToStarboard = courseChangeBetweenFixesInWindow.getMaxSum().divide(1);
             final double maximumCourseChangeToPort = -courseChangeBetweenFixesInWindow.getMinSum().divide(1);
             final double absoluteMaximumTotalCourseChangeFromBeginningOfWindowInDegrees = Math.max(maximumCourseChangeToStarboard, maximumCourseChangeToPort);
             int indexOfMaximumAbsoluteCourseChangeInCorrectDirection = -1;

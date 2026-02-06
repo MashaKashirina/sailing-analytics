@@ -422,6 +422,8 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
             assert last == node;
             last = node.getPrevious();
         }
+        nodesOrderedByMinSum.remove(node);
+        nodesOrderedByMaxSum.remove(node);
         size--;
     }
 
@@ -448,6 +450,12 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
         if (howManyNodesToRemove > 0) { // otherwise this is a no-op
             final Node<ValueType, AveragesTo, T> lastNodeToRemove = getNode(howManyNodesToRemove-1);
             first = lastNodeToRemove.getNext();
+            Node<ValueType, AveragesTo, T> nodeRemoved = lastNodeToRemove;
+            while (nodeRemoved != null) {
+                nodesOrderedByMinSum.remove(nodeRemoved);
+                nodesOrderedByMaxSum.remove(nodeRemoved);
+                nodeRemoved = nodeRemoved.getPrevious();
+            }
             if (first != null) {
                 first.setPrevious(null);
                 if (first.updateThisFromPrevious()) {
