@@ -1,5 +1,8 @@
 package com.sap.sse.common.scalablevalue;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,9 +31,9 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
 
     private static final long serialVersionUID = -8986609116472739636L;
 
-    private Node<ValueType, AveragesTo, T> first;
+    private transient Node<ValueType, AveragesTo, T> first;
     
-    private Node<ValueType, AveragesTo, T> last;
+    private transient Node<ValueType, AveragesTo, T> last;
 
     private int size;
     
@@ -63,12 +66,12 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
         private static int idCounter = 0;
         private final T value;
         private final int id;
-        private Node<ValueType, AveragesTo, T> previous;
-        private Node<ValueType, AveragesTo, T> next;
+        private transient Node<ValueType, AveragesTo, T> previous;
+        private transient Node<ValueType, AveragesTo, T> next;
         private ScalableValueWithDistance<ValueType, AveragesTo> minSumEndingHere;
-        private Node<ValueType, AveragesTo, T> startOfMinSumSubSequenceEndingHere;
+        private transient Node<ValueType, AveragesTo, T> startOfMinSumSubSequenceEndingHere;
         private ScalableValueWithDistance<ValueType, AveragesTo> maxSumEndingHere;
-        private Node<ValueType, AveragesTo, T> startOfMaxSumSubSequenceEndingHere;
+        private transient Node<ValueType, AveragesTo, T> startOfMaxSumSubSequenceEndingHere;
 
         private Node(Node<ValueType, AveragesTo, T> previous, Node<ValueType, AveragesTo, T> next, T value) {
             super();
@@ -244,6 +247,57 @@ public class KadaneExtremeSubsequenceFinderLinkedNodesImpl<ValueType, AveragesTo
         final SerializableComparator<? super Node<ValueType, AveragesTo, T>> maxSumOuterComparator = (n1,n2)->(n1==n2?0:maxSumComparator.thenComparing(idComparator).compare(n1, n2));
         this.nodesOrderedByMinSum = new TreeSet<>(minSumOuterComparator);
         this.nodesOrderedByMaxSum = new TreeSet<>(maxSumOuterComparator);
+    }
+    
+    /**
+     * Writes the sequence iteratively instead of by recursion, which would be the default
+     * {@link ObjectOutputStream} behavior. The nodes need to be "wired" again by the reading end
+     * regarding the {@link #previous} and {@link #next} links based on the order in which the
+     * nodes are written to the stream.<p>
+     * 
+     * After the nodes follow two references per node to the start nodes of the extreme sum sub-sequences ending at that node,
+     * as those are transient again to avoid recursion, and thus not written by the default serialization process. We can assume
+     * that the {@link ObjectOutputStream} already holds those nodes, and so only references to those nodes need to be written.
+     */
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+        oos.defaultWriteObject();
+        final Iterable<Node<ValueType, AveragesTo, T>> iterable = this::nodeIterator;
+        for (final Node<ValueType, AveragesTo, T> node : iterable) {
+            oos.writeObject(node);
+        }
+        // writing the start nodes of the extreme sum sub-sequences separately, as they are transient and thus not written by the default serialization process;
+        // we need to write them separately as otherwise we would lose the references to those nodes, and thus the information about where the extreme sum sub-sequences start
+        for (final Node<ValueType, AveragesTo, T> node : iterable) {
+            oos.writeObject(node.getStartOfMinSumSubSequenceEndingHere());
+            oos.writeObject(node.getStartOfMaxSumSubSequenceEndingHere());
+        }
+    }
+    
+    private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+        ois.defaultReadObject(); // this is expected to read the size field
+        Node<ValueType, AveragesTo, T> lastRead = null;
+        for (int i=0; i<size; i++) {
+            @SuppressWarnings("unchecked")
+            final Node<ValueType, AveragesTo, T> node = (Node<ValueType, AveragesTo, T>) ois.readObject();
+            node.setPrevious(lastRead);
+            if (lastRead != null) {
+                lastRead.setNext(node);
+            }
+            lastRead = node;
+            if (first == null) {
+                first = lastRead;
+            }
+        }
+        last = lastRead;
+        final Iterable<Node<ValueType, AveragesTo, T>> iterable = this::nodeIterator;
+        for (final Node<ValueType, AveragesTo, T> node : iterable) {
+            @SuppressWarnings("unchecked")
+            final Node<ValueType, AveragesTo, T> startOfMinSubSubSequenceEndingHere = (Node<ValueType, AveragesTo, T>) ois.readObject();
+            node.setStartOfMinSumSubSequenceEndingHere(startOfMinSubSubSequenceEndingHere);
+            @SuppressWarnings("unchecked")
+            final Node<ValueType, AveragesTo, T> startOfMaxSubSubSequenceEndingHere = (Node<ValueType, AveragesTo, T>) ois.readObject();
+            node.setStartOfMaxSumSubSequenceEndingHere(startOfMaxSubSubSequenceEndingHere);
+        }
     }
     
     @Override
