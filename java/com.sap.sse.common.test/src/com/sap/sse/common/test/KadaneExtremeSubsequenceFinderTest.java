@@ -207,6 +207,22 @@ public abstract class KadaneExtremeSubsequenceFinderTest {
         logger.info("Stats after pruning from beginning: " + finder.toString());
     }
     
+    @Test
+    public void testSingleNegativeNumber() {
+        finder.add(new ScalableDouble(1));
+        finder.add(new ScalableDouble(2));
+        finder.add(new ScalableDouble(3));
+        finder.add(new ScalableDouble(4));
+        finder.add(new ScalableDouble(-38.001708984375));
+        finder.removeFirst(4);
+        assertEquals(-38.001708984375, finder.getMaxSum().divide(1.0), EPSILON);
+        assertEquals(0, finder.getStartIndexOfMaxSumSequence());
+        assertEquals(0, finder.getEndIndexOfMaxSumSequence());
+        assertEquals(-38.001708984375, finder.getMinSum().divide(1.0), EPSILON);
+        assertEquals(0, finder.getStartIndexOfMinSumSequence());
+        assertEquals(0, finder.getEndIndexOfMinSumSequence());
+    }
+    
     @AfterAll
     public static void writeMeasurements() throws IOException {
         performanceReport.write();
