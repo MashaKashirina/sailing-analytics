@@ -113,12 +113,12 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
     public UserImpl(String name, String email, Map<String, UserGroup> defaultTenantForServer,
             Collection<Account> accounts, UserGroupProvider userGroupProvider, LockingAndBanning lockingAndBanning) {
         this(name, email, /* fullName */ null, /* company */ null, /* locale */ null, /* is email validated */ false,
-                /* did opt out of marketing emails */ null, /* password reset secret */ null, /* validation secret */ null,
+                /* did opt out of marketing emails */ false, /* password reset secret */ null, /* validation secret */ null,
                 defaultTenantForServer, accounts, userGroupProvider, lockingAndBanning);
     }
 
     public UserImpl(String name, String email, String fullName, String company, Locale locale, Boolean emailValidated,
-            Boolean didOptOutOfFeatureAndCommunityEmails, String passwordResetSecret, String validationSecret,
+            boolean didOptOutOfFeatureAndCommunityEmails, String passwordResetSecret, String validationSecret,
             Map<String, UserGroup> defaultTenantForServer, Collection<Account> accounts,
             UserGroupProvider userGroupProvider, LockingAndBanning lockingAndBanning) {
         super(name);
@@ -131,7 +131,7 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
         this.passwordResetSecret = passwordResetSecret;
         this.validationSecret = validationSecret;
         this.emailValidated = emailValidated;
-        this.didOptOutOfFeatureAndCommunityEmails = didOptOutOfFeatureAndCommunityEmails == null ? false : didOptOutOfFeatureAndCommunityEmails;
+        this.didOptOutOfFeatureAndCommunityEmails = didOptOutOfFeatureAndCommunityEmails;
         this.accounts = new HashMap<>();
         this.userGroupProvider = userGroupProvider;
         for (Account a : accounts) {
