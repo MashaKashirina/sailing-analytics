@@ -252,13 +252,13 @@ public class LandscapeServiceImpl implements LandscapeService {
         final Release release = getRelease(releaseNameOrNullForLatestMaster);
         final com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<?, String> masterConfigurationBuilder =
                 createArchiveConfigurationBuilder(replicaSetName, databaseConfiguration, securityServiceReplicationBearerToken, optionalMemoryInMegabytesOrNull,
-                         null, optionalIgtimiRiotPort, region, release);
+                        optionalMemoryTotalSizeFactorOrNull, optionalIgtimiRiotPort, region, release);
         final String bearerTokenUsedByReplicas = getEffectiveBearerToken(replicaReplicationBearerToken);
         final InboundReplicationConfiguration inboundMasterReplicationConfiguration = masterConfigurationBuilder.getInboundReplicationConfiguration().get();
         establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
                 inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
-        masterHostBuilder
+        masterHostBuilder // TODO bug6203: choose AZ such that ideally we have a reverse proxy in that AZ and the AZ differs from the current production ARCHIVE's AZ (which will become the failover later)
             .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
             .setInstanceType(InstanceType.valueOf(instanceType))
             .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
@@ -278,11 +278,9 @@ public class LandscapeServiceImpl implements LandscapeService {
                         Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
                 getLandscape().getCentralReverseProxy(region);
-        // TODO bug5311: when refactoring this for general scope migration, moving to a dedicated replica set will not require this
-        // TODO bug5311: when refactoring this for general scope migration, moving into a cold storage server other than ARCHIVE will require ALBToReverseProxyRedirectMapper instead
         final String privateIpAdress = master.getHost().getPrivateAddress().getHostAddress();
         logger.info("Adding reverse proxy rule for archive candidate with hostname "+ hostname + " and private ip address " + privateIpAdress);
-        reverseProxyCluster.setPlainRedirect(hostname, master, Optional.of(optionalKeyName), privateKeyEncryptionPassphrase);
+        reverseProxyCluster.setPlainRedirect(hostname, master, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         sendMailAboutNewArchiveCandidate(replicaSet);
         return replicaSet;
     }
@@ -972,7 +970,6 @@ public class LandscapeServiceImpl implements LandscapeService {
             .setServerName(replicaSetName)
             .setRelease(release)
             .setRegion(region)
-            // TODO bug5684: probably this is the place to add the REPLICATE_MASTER_SERVLET_HOST/REPLICATE_MASTER_EXCHANGE_NAME variables to point to a default security service?
             .setInboundReplicationConfiguration(InboundReplicationConfiguration.builder().setCredentials(new BearerTokenReplicationCredentials(bearerTokenUsedByMaster)).build());
         if (optionalIgtimiRiotPort != null) {
             masterConfigurationBuilder.setIgtimiRiotPort(optionalIgtimiRiotPort);
@@ -1736,7 +1733,22 @@ public class LandscapeServiceImpl implements LandscapeService {
     
     private void sendMailAboutNewArchiveCandidate(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
-        sendMailToReplicaSetOwner(replicaSet, "StartingNewArchiveCandidateSubject", "StartingNewArchiveCandidateBody", Optional.empty());
+        final ResourceBundleStringMessages stringMessages = ResourceBundleStringMessages.create(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
+        final User currentUser = getSecurityService().getCurrentUser();
+        if (currentUser != null && currentUser.isEmailValidated()) {
+            final String subject = stringMessages.get(currentUser.getLocaleOrDefault(), "StartingNewArchiveCandidateSubject", replicaSet.getServerName());
+            final String body = stringMessages.get(currentUser.getLocaleOrDefault(), "StartingNewArchiveCandidateBody", replicaSet.getServerName());
+            getSecurityService().sendMail(currentUser.getName(), subject, body);
+        } else {
+            logger.warning("Not sending e-mail about new archive candidate to current user because no user is logged in or email address of logged in user "+
+                    (currentUser == null ? "" : currentUser.getName()+" ")+"is not validated");
+        }
+        sendMailToReplicaSetOwner(replicaSet, "RefrainFromArchivingSubject", "RefrainFromArchivingBody", Optional.empty());
+    }
+
+    private void sendMailAboutNewArchiveServerLive(
+            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
+        sendMailToReplicaSetOwner(replicaSet, "NewArchiveServerLiveSubject", "NewArchiveServerLiveBody", Optional.empty());
     }
 
     private void sendMailAboutMasterUnavailable(
