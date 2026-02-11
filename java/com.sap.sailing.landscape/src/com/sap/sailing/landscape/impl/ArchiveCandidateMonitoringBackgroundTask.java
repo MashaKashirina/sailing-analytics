@@ -1,6 +1,5 @@
 package com.sap.sailing.landscape.impl;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import org.apache.shiro.subject.Subject;
@@ -16,7 +14,9 @@ import org.apache.shiro.subject.Subject;
 import com.sap.sailing.landscape.SailingAnalyticsMetrics;
 import com.sap.sailing.landscape.SailingAnalyticsProcess;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Named;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.impl.NamedImpl;
 import com.sap.sse.landscape.Landscape;
 import com.sap.sse.landscape.RotatingFileBasedLog;
 import com.sap.sse.landscape.aws.AwsApplicationReplicaSet;
@@ -50,14 +50,40 @@ import com.sap.sse.landscape.aws.ReverseProxy;
  *
  */
 public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
-    @FunctionalInterface
-    private static interface BooleanSupplierWithException {
-        boolean getAsBoolean() throws Exception;
+    private interface Check extends Named {
+        boolean runCheck() throws Exception;
+        boolean hasTimedOut();
+        Duration getDelayAfterFailure();
+    }
+    
+    private abstract class AbstractCheck extends NamedImpl implements Check {
+        private static final long serialVersionUID = -8809199091635882129L;
+        private final TimePoint creationTime;
+        private final Duration timeout;
+        private final Duration delayAfterFailure;
+
+        public AbstractCheck(String name, Duration timeout, Duration delayAfterFailure) {
+            super(name);
+            this.creationTime = TimePoint.now();
+            this.timeout = timeout;
+            this.delayAfterFailure = delayAfterFailure;
+        }
+
+        @Override
+        public boolean hasTimedOut() {
+            return creationTime.until(TimePoint.now()).compareTo(timeout) > 0;
+        }
+        
+        @Override
+        public Duration getDelayAfterFailure() {
+            return delayAfterFailure;
+        }
     }
     
     private static final Logger logger = Logger.getLogger(ArchiveCandidateMonitoringBackgroundTask.class.getName());
 
     private final static Duration DELAY_BETWEEN_CHECKS = Duration.ONE_MINUTE.times(5);
+    private final static Duration LONG_TIMEOUT = Duration.ONE_DAY.times(3);
     private final static double MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE = 2.0;
     private final static int MAXIMUM_THREAD_POOL_QUEUE_SIZE = 10;
     private final static Optional<Duration> TIMEOUT_FIRST_CONTACT = Optional.of(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get().plus(Landscape.WAIT_FOR_HOST_TIMEOUT.get()));
@@ -70,10 +96,9 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private final ScheduledExecutorService executor;
     private final TimePoint firstRun;
     private final List<String> messagesToSendToProcessOwner;
-    private Iterable<BooleanSupplierWithException> checks;
-    private Iterator<BooleanSupplierWithException> checksIterator;
-    private BooleanSupplierWithException currentCheck;
-    private boolean candidateSeenServingStatusRequest;
+    private Iterable<Check> checks;
+    private Iterator<Check> checksIterator;
+    private Check currentCheck;
     
     public ArchiveCandidateMonitoringBackgroundTask(Subject subject, AwsLandscape<String> landscape,
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
@@ -89,14 +114,13 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
         this.executor = executor;
         this.firstRun = TimePoint.now();
         this.messagesToSendToProcessOwner = new LinkedList<>();
-        this.candidateSeenServingStatusRequest = false;
         this.checks = Arrays.asList(
-                this::isReady,
-                this::hasLowEnoughSystemLoad,
-                this::hasShortEnoughDefaultBackgroundThreadPoolExecutorQueue,
-                this::hasShortEnoughDefaultForegroundThreadPoolExecutorQueue,
-                this::compareServersWithRestAPI,
-                this::compareServersByLeaderboardGroups);
+                new IsReady(),
+                new HasLowEnoughSystemLoad(),
+                new HasShortEnoughDefaultBackgroundThreadPoolExecutorQueue(),
+                new HasShortEnoughDefaultForegroundThreadPoolExecutorQueue(),
+                new CompareServersWithRestAPI(),
+                new CompareServersByLeaderboardGroups());
         this.checksIterator = this.checks.iterator();
         this.currentCheck = checksIterator.next();
     }
@@ -104,48 +128,109 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (currentCheck.getAsBoolean()) {
-                logger.info("Another check passed.");
+            if (currentCheck.runCheck()) {
+                logger.info("Check "+currentCheck+" passed.");
                 // the check passed; proceed to next check, if any
                 currentCheck = checksIterator.hasNext() ? checksIterator.next() : null;
-            }
-            if (currentCheck != null) {
-                logger.info("More checks to do; re-scheduling.");
-                // re-schedule this task to run next check in a while
-                executor.schedule(this, DELAY_BETWEEN_CHECKS.asMillis(), TimeUnit.MILLISECONDS);
+                if (currentCheck != null) {
+                    logger.info("More checks to do; re-scheduling to run next check "+currentCheck);
+                    // re-schedule this task to run next check immediately
+                    executor.submit(this);
+                } else {
+                    logger.info("Done with all checks; candidate is ready for production.");
+                    // all checks passed; candidate is ready for production; nothing more to do here
+                }
             } else {
-                logger.info("Done with all checks; candidate is ready for comparison.");
-                // all checks passed; candidate is ready for comparison; nothing more to do here
+                rescheduleCurrentCheckAfterFailureOrTimeout();
             }
         } catch (Exception e) {
             logger.warning("Exception while running check " + currentCheck + " for candidate " + replicaSet.getMaster().getHost().getHostname() + ": " + e.getMessage());
         }
-        
-    }
-        
-    private Boolean isReady() throws IOException {
-        return replicaSet.getMaster().isReady(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
-    }
-    
-    private boolean hasLowEnoughSystemLoad() throws TimeoutException, Exception {
-        return replicaSet.getMaster().getLastMinuteSystemLoadAverage(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE;
-    }
-    
-    private boolean hasShortEnoughDefaultBackgroundThreadPoolExecutorQueue() throws TimeoutException, Exception {
-        return replicaSet.getMaster().getDefaultBackgroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
     }
 
-    private boolean hasShortEnoughDefaultForegroundThreadPoolExecutorQueue() throws TimeoutException, Exception {
-        return replicaSet.getMaster().getDefaultForegroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
+    private void rescheduleCurrentCheckAfterFailureOrTimeout() {
+        executor.schedule(this, currentCheck.getDelayAfterFailure().asMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private class IsReady extends AbstractCheck {
+        private static final long serialVersionUID = -4265303532881568290L;
+
+        private IsReady() {
+            super("is ready", TIMEOUT_FIRST_CONTACT.get(), DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            return replicaSet.getMaster().isReady(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
+        }
+    }
+
+    private class HasLowEnoughSystemLoad extends AbstractCheck {
+        private static final long serialVersionUID = -7931266212387969287L;
+
+        public HasLowEnoughSystemLoad() {
+            super("has low enough system load", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            return replicaSet.getMaster().getLastMinuteSystemLoadAverage(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE;
+        }
+        
     }
     
-    private boolean compareServersWithRestAPI() throws Exception {
-        // TODO
-        return false;
+    private class HasShortEnoughDefaultBackgroundThreadPoolExecutorQueue extends AbstractCheck {
+        private static final long serialVersionUID = 3482148861663152178L;
+
+        public HasShortEnoughDefaultBackgroundThreadPoolExecutorQueue() {
+            super("has short enough default background thread pool executor queue", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            return replicaSet.getMaster().getDefaultBackgroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
+        }
+    }
+
+    private class HasShortEnoughDefaultForegroundThreadPoolExecutorQueue extends AbstractCheck {
+        private static final long serialVersionUID = 5194383164577435150L;
+
+        public HasShortEnoughDefaultForegroundThreadPoolExecutorQueue() {
+            super("has short enough default foreground thread pool executor queue", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            return replicaSet.getMaster().getDefaultForegroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT) < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
+        }
     }
     
-    private boolean compareServersByLeaderboardGroups() throws Exception {
-        // TODO
-        return false;
+    private class CompareServersWithRestAPI extends AbstractCheck {
+        private static final long serialVersionUID = -5271988056894947109L;
+
+        public CompareServersWithRestAPI() {
+            super("compare servers with REST API", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+        }
+
+
+        @Override
+        public boolean runCheck() throws Exception {
+            // TODO Auto-generated method stub
+            return false;
+        }
+    }
+    
+    private class CompareServersByLeaderboardGroups extends AbstractCheck {
+        private static final long serialVersionUID = -5271988056894947109L;
+
+        public CompareServersByLeaderboardGroups() {
+            super("compare servers with Leaderboard Groups", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            // TODO Auto-generated method stub
+            return false;
+        }
     }
 }
