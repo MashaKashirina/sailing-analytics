@@ -1466,33 +1466,28 @@ public class LandscapeManagementPanel extends SimplePanel {
             }
             
             @Override
-            public void onSuccess(ArrayList<ReleaseDTO> result) {
-                new UpgradeArchiveServerDialog(landscapeManagementService, result.stream().map(r->r.getName())::iterator,
+            public void onSuccess(ArrayList<ReleaseDTO> releases) {
+                new UpgradeArchiveServerDialog(landscapeManagementService, releases.stream().map(r->r.getName())::iterator,
                         stringMessages, errorReporter, new DialogCallback<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions>() {
                             @Override
                             public void ok(UpgradeArchiveServerInstructions upgradeInstructions) {
-                                landscapeManagementService.createArchiveReplicaSet(regionId, replicaSet, upgradeInstructions.getOptionalInstanceType(), 
+                                landscapeManagementService.createArchiveReplicaSet(regionId, replicaSet, upgradeInstructions.getInstanceTypeOrNull(), 
                                         upgradeInstructions.getReleaseNameOrNullForLatestMaster(), sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
                                         sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
                                         ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes() : null,
                                                 upgradeInstructions.getMasterReplicationBearerToken(), upgradeInstructions.getReplicaReplicationBearerToken(),
-                                        new AsyncCallback<SailingApplicationReplicaSetDTO<String>>() {
+                                                upgradeInstructions.getOptionalMemoryInMegabytesOrNull(), upgradeInstructions.getOptionalMemoryTotalSizeFactorOrNull(),
+                                        new AsyncCallback<Void>() {
                                     @Override
                                     public void onFailure(Throwable caught) {
                                         errorReporter.reportError(caught.getMessage());
                                     }
 
                                     @Override
-                                    public void onSuccess(SailingApplicationReplicaSetDTO<String> result) {
-                                        if (result != null) {
-                                            Notification.notify(stringMessages.successfullyUpgradedApplicationReplicaSet(
-                                                            result.getName(), result.getVersion()), NotificationType.SUCCESS);
-                                            applicationReplicaSetsTable.replaceBasedOnEntityIdentityComparator(result);
-                                            applicationReplicaSetsTable.refresh();
-                                        } else {
-                                            Notification.notify(stringMessages.upgradingApplicationReplicaSetFailed(replicaSet.getName()),
-                                                    NotificationType.ERROR);
-                                        }
+                                    public void onSuccess(Void result) {
+                                        Notification.notify(stringMessages.successfullyLaunchedNewArchiveCandidate(
+                                                replicaSet.getName(), upgradeInstructions.getReleaseNameOrNullForLatestMaster()),
+                                                NotificationType.SUCCESS);
                                     }
                                 });
                             }

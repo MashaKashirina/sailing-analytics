@@ -84,6 +84,7 @@ import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.AwsShard;
 import com.sap.sse.landscape.aws.HostSupplier;
 import com.sap.sse.landscape.aws.ReverseProxy;
+import com.sap.sse.landscape.aws.ReverseProxyCluster;
 import com.sap.sse.landscape.aws.Tags;
 import com.sap.sse.landscape.aws.TargetGroup;
 import com.sap.sse.landscape.aws.common.shared.RedirectDTO;
@@ -125,6 +126,7 @@ import software.amazon.awssdk.services.ec2.model.LaunchTemplate;
 import software.amazon.awssdk.services.ec2.model.LaunchTemplateVersion;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.TagDescription;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthDescription;
 import software.amazon.awssdk.services.route53.model.RRType;
 import software.amazon.awssdk.services.route53.model.ResourceRecordSet;
@@ -237,7 +239,7 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
     
     @Override
-    public AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> createArchiveReplicaSet(
+    public void createArchiveReplicaSet(
             String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration, 
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken, String replicaReplicationBearerToken,
             String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
@@ -259,8 +261,11 @@ public class LandscapeServiceImpl implements LandscapeService {
         final InboundReplicationConfiguration inboundMasterReplicationConfiguration = masterConfigurationBuilder.getInboundReplicationConfiguration().get();
         establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
                 inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
+        final ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
+                getLandscape().getCentralReverseProxy(region);
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
-        masterHostBuilder // TODO bug6203: choose AZ such that ideally we have a reverse proxy in that AZ and the AZ differs from the current production ARCHIVE's AZ (which will become the failover later)
+        masterHostBuilder
+            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, reverseProxyCluster))
             .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
             .setInstanceType(InstanceType.valueOf(instanceType))
             .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
@@ -273,23 +278,48 @@ public class LandscapeServiceImpl implements LandscapeService {
         final StartSailingAnalyticsMasterHost<String> masterHostStartProcedure = masterHostBuilder.build();
         masterHostStartProcedure.run();
         final SailingAnalyticsProcess<String> master = masterHostStartProcedure.getSailingAnalyticsProcess();
-        logger.info("Waiting for archive new candidate "+master+" to get ready with new release "+release.getName());
-        master.waitUntilReady(Optional.of(Duration.ONE_DAY.times(2))); // wait a little longer since archive candidate may need to load many races
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet =
-                landscape.getApplicationReplicaSet(region, replicaSetName, master, Collections.emptySet(),
+                landscape.getApplicationReplicaSet(region, replicaSetName, master, /* replicas */ Collections.emptySet(),
                         Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
-        final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
-                getLandscape().getCentralReverseProxy(region);
         final String privateIpAdress = master.getHost().getPrivateAddress().getHostAddress();
         logger.info("Adding reverse proxy rule for archive candidate with hostname "+ candidateHostname + " and private ip address " + privateIpAdress);
         reverseProxyCluster.setPlainRedirect(candidateHostname, master, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         sendMailAboutNewArchiveCandidate(replicaSet);
         final ScheduledExecutorService monitorTaskExecutor = ThreadPoolUtil.INSTANCE.getDefaultBackgroundTaskThreadPoolExecutor();
         final ArchiveCandidateMonitoringBackgroundTask monitoringTask = new ArchiveCandidateMonitoringBackgroundTask(
-                getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, reverseProxyCluster, optionalKeyName,
-                privateKeyEncryptionPassphrase, monitorTaskExecutor, bearerTokenUsedByReplicas);
+                getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, monitorTaskExecutor, bearerTokenUsedByReplicas);
         monitorTaskExecutor.execute(monitoringTask);
-        return replicaSet;
+    }
+    
+    private AwsAvailabilityZone getBestAvailabilityZoneForArchiveCandidate(AwsRegion region, AwsLandscape<String> landscape,
+            ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster) {
+        for (final AwsInstance<String> reverseProxyHost : reverseProxyCluster.getHosts()) {
+            final AwsAvailabilityZone az = reverseProxyHost.getAvailabilityZone();
+        }
+        // TODO bug6203: choose AZ such that ideally we have a reverse proxy in that AZ and the AZ differs from the current production ARCHIVE's AZ (which will become the failover later)
+        return null;
+    }
+
+    @Override
+    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String optionalDomainName) throws Exception {
+        final AwsLandscape<String> landscape = getLandscape();
+        final AwsRegion region = new AwsRegion(regionId, landscape);
+        final String candidateHostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> archiveReplicaSet = getApplicationReplicaSet(
+                region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
+                optionalKeyName, privateKeyEncryptionPassphrase);
+        if (archiveReplicaSet == null) {
+            throw new IllegalArgumentException("Couldn't find candidate replica set with name "+replicaSetName+" in region "+regionId);
+        }
+        final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
+                getLandscape().getCentralReverseProxy(region);
+        final String candidateHostname = archiveReplicaSet.getHostname();
+        logger.info("Removing reverse proxy rule for archive candidate with hostname "+ candidateHostname);
+        reverseProxyCluster.removePlainRedirect(candidateHostname);
+        final String archiveHostname = getHostname(SharedLandscapeConstants.ARCHIVE_SUBDOMAIN, Optional.empty());
+        logger.info("Adding reverse proxy rule for new archive server with hostname "+ archiveHostname);
+        reverseProxyCluster.setPlainRedirect(archiveHostname, archiveReplicaSet.getMaster(), Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
     }
     
     @Override

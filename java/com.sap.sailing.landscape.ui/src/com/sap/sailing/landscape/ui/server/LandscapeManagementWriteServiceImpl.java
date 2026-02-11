@@ -679,17 +679,18 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
     }
     
     @Override
-    public SailingApplicationReplicaSetDTO<String> createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> archiveReplicaSetToUpgrade,
+    public void createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> archiveReplicaSetToUpgrade,
             String instanceType, String releaseNameOrNullForLatestMaster, String optionalKeyName,
             byte[] privateKeyEncryptionPassphrase, String securityReplicationBearerToken,
-            String replicaReplicationBearerToken) throws Exception {
+            String replicaReplicationBearerToken, Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull) throws Exception {
+        // TODO bug6203: we also should provide a possibility to specify memory size; if not provided, we should clone the current archive's settings
         checkLandscapeManageAwsPermission();
         final String userSetOrArchiveServerSecurityReplicationBearerToken;
         final AwsRegion region = new AwsRegion(regionId, getLandscape());
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> awsReplicaSet =
                 convertFromApplicationReplicaSetDTO(region, archiveReplicaSetToUpgrade, optionalKeyName, privateKeyEncryptionPassphrase);
         final SailingAnalyticsProcess<String> master = awsReplicaSet.getMaster();
-        if(Util.hasLength(securityReplicationBearerToken)) {
+        if (Util.hasLength(securityReplicationBearerToken)) {
             userSetOrArchiveServerSecurityReplicationBearerToken = securityReplicationBearerToken;
         } else {
             userSetOrArchiveServerSecurityReplicationBearerToken = master.getEnvShValueFor(
@@ -697,24 +698,16 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
                     Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.of(optionalKeyName), privateKeyEncryptionPassphrase);
         }
         final String replicaSetName = SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME;
-        final String archiveCandidateSubDomain = SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN; 
         final String domainName = AwsLandscape.getHostedZoneName(archiveReplicaSetToUpgrade.getHostname());
-        final Release release = getLandscapeService().getRelease(releaseNameOrNullForLatestMaster);
         final Database databaseConfiguration = master.getDatabaseConfiguration(region,
                 Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName),
                 privateKeyEncryptionPassphrase);
-        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> result = getLandscapeService()
+        getLandscapeService()
                 .createArchiveReplicaSet(regionId, replicaSetName, instanceType, releaseNameOrNullForLatestMaster,
                         databaseConfiguration, optionalKeyName, privateKeyEncryptionPassphrase,
                         userSetOrArchiveServerSecurityReplicationBearerToken, replicaReplicationBearerToken, domainName,
-                        /* optionalMemoryInMegabytesOrNull */ null, /* optionalMemoryTotalSizeFactorOrNull */ null,
+                        /* optionalMemoryInMegabytesOrNull TODO bug6203 */ null, /* optionalMemoryTotalSizeFactorOrNull TODO bug6203 */ null,
                         /* optionalIgtimiRiotPort */ null);
-        return new SailingApplicationReplicaSetDTO<String>(result.getName(),
-                convertToSailingAnalyticsProcessDTO(result
-                .getMaster(), Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase), /* replicas */ Collections.emptySet(),
-                release.getName(), release.getReleaseNotesURL().toString(),
-                getLandscapeService().getFullyQualifiedHostname(archiveCandidateSubDomain, Optional.ofNullable(domainName)),
-                /* redirect rule */ null, /* autoScalingGroup */ null);
     }
     
     /**

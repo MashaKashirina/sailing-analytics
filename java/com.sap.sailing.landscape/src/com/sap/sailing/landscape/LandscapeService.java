@@ -157,7 +157,7 @@ public interface LandscapeService {
             Integer optionalIgtimiRiotPort, Optional<Integer> minimumAutoScalingGroupSize, Optional<Integer> maximumAutoScalingGroupSize)
             throws Exception;
     
-    AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> createArchiveReplicaSet(
+    void createArchiveReplicaSet(
             String regionId, String name, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration,
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken,
             String replicaReplicationBearerToken, String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,

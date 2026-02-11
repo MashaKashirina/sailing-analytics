@@ -192,7 +192,8 @@ public interface LandscapeManagementWriteServiceAsync {
     
     void createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade,
             String optionalSharedInstanceType, String releaseOrNullForLatestMaster, String optionalKeyName,
-            byte[] privateKeyEncryptionPassphrase, String securityReplicationBearerToken, String replicaReplicationBearerToken, AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
+            byte[] privateKeyEncryptionPassphrase, String securityReplicationBearerToken, String replicaReplicationBearerToken,
+            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull, AsyncCallback<Void> callback);
 
     /**
      * For the given replica set ensures there is at least one healthy replica, then stops replicating on all replicas and

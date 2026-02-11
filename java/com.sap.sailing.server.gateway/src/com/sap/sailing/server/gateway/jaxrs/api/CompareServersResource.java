@@ -51,8 +51,8 @@ public class CompareServersResource extends AbstractSailingServerResource {
 
     public static final Logger logger = Logger.getLogger(CompareServersResource.class.getName());
 
-    private static final String LEADERBOARDGROUPSPATH = "/sailingserver/api/v1/leaderboardgroups";
-    private static final String LEADERBOARDGROUPSIDENTIFIABLEPATH = LEADERBOARDGROUPSPATH+"/identifiable";
+    private static final String LEADERBOARDGROUPSPATH = "/sailingserver/api"+LeaderboardGroupsResource.V1_LEADERBOARDGROUPS;
+    private static final String LEADERBOARDGROUPSIDENTIFIABLEPATH = LEADERBOARDGROUPSPATH+LeaderboardGroupsResource.IDENTIFIABLE;
     public static final String SERVER1_FORM_PARAM = "server1";
     public static final String SERVER2_FORM_PARAM = "server2";
     public static final String USER1_FORM_PARAM = "user1";

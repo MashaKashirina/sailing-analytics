@@ -180,4 +180,5 @@ com.sap.sse.gwt.adminconsole.StringMessages {
     String privateIp();
     String igtimiRiotPort();
     String examplePort(int examplePort);
+    String successfullyLaunchedNewArchiveCandidate(String replicaSetName, String releaseName);
 }

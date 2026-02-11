@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -16,12 +17,11 @@ import com.sap.sailing.server.gateway.interfaces.SailingServer;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.Named;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.NamedImpl;
 import com.sap.sse.common.mail.MailException;
 import com.sap.sse.landscape.Landscape;
-import com.sap.sse.landscape.RotatingFileBasedLog;
 import com.sap.sse.landscape.aws.AwsApplicationReplicaSet;
-import com.sap.sse.landscape.aws.ReverseProxy;
 import com.sap.sse.security.shared.impl.User;
 
 /**
@@ -113,9 +113,6 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private final String candidateHostname;
     private final LandscapeService landscapeService;
     private final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet;
-    private final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster;
-    private final String optionalKeyName;
-    private final byte[] privateKeyEncryptionPassphrase;
     private final ScheduledExecutorService executor;
     
     /**
@@ -133,16 +130,12 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     public ArchiveCandidateMonitoringBackgroundTask(User currentUser, LandscapeService landscapeService,
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             String candidateHostname,
-            ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
-            String optionalKeyName,
-            byte[] privateKeyEncryptionPassphrase, ScheduledExecutorService executor, String effectiveBearerToken) {
+            ScheduledExecutorService executor,
+            String effectiveBearerToken) {
         this.currentUser = currentUser;
         this.landscapeService = landscapeService;
         this.replicaSet = replicaSet;
         this.candidateHostname = candidateHostname;
-        this.reverseProxyCluster = reverseProxyCluster;
-        this.optionalKeyName = optionalKeyName;
-        this.privateKeyEncryptionPassphrase = privateKeyEncryptionPassphrase;
         this.executor = executor;
         this.effectiveBearerToken = effectiveBearerToken;
         this.checks = Arrays.asList(
@@ -169,7 +162,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
                 } else {
                     // all checks passed; candidate is ready for production; nothing more to do here
                     logger.info("Done with all checks; candidate is ready for production.");
-                    notifyProcessOwnerCandidateIsReadyForProduction(); // this ends the re-scheduling loop
+                    notifyProcessOwnerCandidateIsReadyForSpotChecksAndRotation(); // this ends the re-scheduling loop
                 }
             } else {
                 rescheduleCurrentCheckAfterFailureOrTimeout();
@@ -281,7 +274,10 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
                         "Candidate server does not match production server according to REST API comparison."
                                 + "\nDifferences on candidate side: " + comparisonResult.getADiffs()
                                 + "\nDifferences on production side: " + comparisonResult.getBDiffs()
-                                + "\nNot proceeding further. You need to resolve the issues manually."); // TODO add link to running REST API comparison in browser
+                                + "\nNot proceeding further. You need to resolve the issues manually."
+                                + "\nCheck https://"+candidateHostname+"/sailingserver/v1/compareservers?server2="+replicaSet.getHostname()
+                                + "\nafter you have tried to resolve the differences."
+                                + "\nThen, run your smoke checks and trigger the rotation if everything looks good.");
             }
             return !comparisonResult.hasDiffs();
         }
@@ -293,12 +289,9 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
                 currentCheck.getLastFailureMessage());
     }
 
-    private void notifyProcessOwnerCandidateIsReadyForProduction() throws MailException {
-        // TODO send a mail to the process owner that the candidate is ready for production, comparisons were OK, remaining is an optional spot-checke (human in the loop). Include links for spot-checking and triggering the rotation
-    }
-
-    private void sendMailAboutNewArchiveCandidate() throws MailException {
-        landscapeService.sendMailToUser(currentUser, "StartingNewArchiveCandidateSubject", "StartingNewArchiveCandidateBody", replicaSet.getServerName());
-        landscapeService.sendMailToReplicaSetOwner(replicaSet, "RefrainFromArchivingSubject", "RefrainFromArchivingBody", Optional.empty());
+    private void notifyProcessOwnerCandidateIsReadyForSpotChecksAndRotation() throws MailException, InterruptedException, ExecutionException {
+        landscapeService.sendMailToUser(currentUser, "NewArchiveCandidateReadyForSpotChecksAndRotationSubject",
+                "NewArchiveCandidateReadyForSpotChecksAndRotationBody", replicaSet.getName(), candidateHostname,
+                replicaSet.getHostname(), Util.joinStrings("\n", Util.map(checks, Check::getName)));
     }
 }

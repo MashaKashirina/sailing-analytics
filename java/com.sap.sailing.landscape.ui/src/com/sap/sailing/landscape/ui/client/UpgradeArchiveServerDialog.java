@@ -3,64 +3,54 @@ package com.sap.sailing.landscape.ui.client;
 import com.google.gwt.user.client.ui.FocusWidget;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.Widget;
-import com.sap.sailing.landscape.common.SharedLandscapeConstants;
+import com.google.gwt.user.client.ui.SuggestBox;
 import com.sap.sailing.landscape.ui.client.i18n.StringMessages;
 import com.sap.sse.gwt.client.ErrorReporter;
 
-public class UpgradeArchiveServerDialog extends AbstractApplicationReplicaSetDialog<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions> {
+public class UpgradeArchiveServerDialog extends AbstractNewProcessDialog<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions> {
     
-    public static class UpgradeArchiveServerInstructions extends AbstractApplicationReplicaSetDialog.AbstractApplicationReplicaSetInstructions {
-        private final String optionalInstanceType;
-        public UpgradeArchiveServerInstructions(String releaseNameOrNullForLatestMaster, String masterReplicationBearerToken, String replicaReplicationBearerToken, String optionalInstanceType) {
-            super(releaseNameOrNullForLatestMaster, masterReplicationBearerToken, replicaReplicationBearerToken);
-            this.optionalInstanceType = optionalInstanceType;
+    public static class UpgradeArchiveServerInstructions extends AbstractNewProcessDialog.NewProcessInstructions {
+        private final String releaseNameOrNullForLatestMaster;
+
+        public UpgradeArchiveServerInstructions(String releaseNameOrNullForLatestMaster,
+                String masterReplicationBearerToken, String replicaReplicationBearerToken, String optionalInstanceType,
+                Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull) {
+            super(optionalInstanceType, masterReplicationBearerToken, replicaReplicationBearerToken, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull);
+            this.releaseNameOrNullForLatestMaster = releaseNameOrNullForLatestMaster;
         }
-        public String getOptionalInstanceType() {
-            return optionalInstanceType;
+
+        public String getReleaseNameOrNullForLatestMaster() {
+            return releaseNameOrNullForLatestMaster;
         }
     }
     
-    private final StringMessages stringMessages;
-    private final ListBox sharedInstanceTypeListBox;
+    private final SuggestBox releaseNameBox;
 
     public UpgradeArchiveServerDialog(LandscapeManagementWriteServiceAsync landscapeManagementService, Iterable<String> releaseNames,
             StringMessages stringMessages, ErrorReporter errorReporter, DialogCallback<UpgradeArchiveServerInstructions> callback) {
-        super(stringMessages.upgradeArchiveServer(), landscapeManagementService, releaseNames, stringMessages, errorReporter, /* validator */ null, callback);
-        this.stringMessages = stringMessages;
-        sharedInstanceTypeListBox = LandscapeDialogUtil.createInstanceTypeListBox(this, landscapeManagementService,
-                stringMessages, SharedLandscapeConstants.DEFAULT_SHARED_INSTANCE_TYPE_NAME, errorReporter, /* canBeDeployedInNlbInstanceBasedTargetGroup */ false);
-        
-    }
-    
-    protected ListBox getSharedInstanceTypeListBox() {
-        return sharedInstanceTypeListBox;
+        super(stringMessages.upgradeArchiveServer(), landscapeManagementService, stringMessages, errorReporter, callback);
+        releaseNameBox = LandscapeDialogUtil.createReleaseNameBox(stringMessages, releaseNames, this);
     }
     
     @Override
-    protected Widget getAdditionalWidget() {
-        final Grid result = new Grid(4, 2);
+    protected Grid getAdditionalWidget() {
+        final Grid result = super.getAdditionalWidget();
         int row=0;
+        result.insertRow(row);
         result.setWidget(row, 0, new Label(stringMessages.release()));
-        result.setWidget(row++, 1, getReleaseNameBox());
-        result.setWidget(row, 0, new Label(stringMessages.instanceType()));
-        result.setWidget(row++, 1, getSharedInstanceTypeListBox());
-        result.setWidget(row, 0, new Label(stringMessages.bearerTokenForSecurityReplication()));
-        result.setWidget(row++, 1, getMasterReplicationBearerTokenBox());
-        result.setWidget(row, 0, new Label(stringMessages.bearerTokenOrNullForArchive()));
-        result.setWidget(row++, 1, getReplicaReplicationBearerTokenBox());
+        result.setWidget(row++, 1, releaseNameBox);
         return result;
     }
 
     @Override
     public FocusWidget getInitialFocusWidget() {
-        return getReleaseNameBox().getValueBox();
+        return releaseNameBox.getValueBox();
     }
     
     @Override
     protected UpgradeArchiveServerInstructions getResult() {
-        return new UpgradeArchiveServerInstructions(getReleaseNameBoxValue(), getMasterReplicationBearerTokenBox().getValue(),
-                getReplicaReplicationBearerTokenBox().getValue(), getSharedInstanceTypeListBox().getSelectedValue()); 
+        return new UpgradeArchiveServerInstructions(LandscapeDialogUtil.getReleaseNameBoxValue(releaseNameBox, stringMessages), getMasterReplicationBearerTokenBox().getValue(),
+                getReplicaReplicationBearerTokenBox().getValue(), getInstanceTypeListBox().getSelectedValue(),
+                getMemoryInMegabytesBox().getValue(), getMemoryTotalSizeFactorBox().getValue()); 
     }
 }
