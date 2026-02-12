@@ -285,9 +285,11 @@ public class LandscapeServiceImpl implements LandscapeService {
         masterHostStartProcedure.run();
         final SailingAnalyticsProcess<String> master = masterHostStartProcedure.getSailingAnalyticsProcess();
         master.getHost().setTerminationProtection(true);
-        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet =
-                landscape.getApplicationReplicaSet(region, replicaSetName, master, /* replicas */ Collections.emptySet(),
-                        Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        master.waitUntilAlive(Optional.of(Landscape.WAIT_FOR_HOST_TIMEOUT.get().plus(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get())));
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet = landscape
+                .getApplicationReplicaSet(region, replicaSetName, master, /* replicas */ Collections.emptySet(),
+                        Optional.of(Landscape.WAIT_FOR_HOST_TIMEOUT.get().plus(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get())),
+                        Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         final String privateIpAdress = master.getHost().getPrivateAddress().getHostAddress();
         logger.info("Adding reverse proxy rule for archive candidate with hostname "+ candidateHostname + " and private ip address " + privateIpAdress);
         reverseProxyCluster.setPlainRedirect(candidateHostname, master, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
