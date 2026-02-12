@@ -83,6 +83,7 @@ import com.sap.sse.landscape.aws.AwsInstance;
 import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.AwsShard;
 import com.sap.sse.landscape.aws.HostSupplier;
+import com.sap.sse.landscape.aws.LandscapeConstants;
 import com.sap.sse.landscape.aws.ReverseProxy;
 import com.sap.sse.landscape.aws.ReverseProxyCluster;
 import com.sap.sse.landscape.aws.Tags;
@@ -264,7 +265,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 getLandscape().getCentralReverseProxy(region);
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
         masterHostBuilder
-            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, reverseProxyCluster))
+            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, reverseProxyCluster, optionalKeyName, privateKeyEncryptionPassphrase))
             .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
             .setInstanceType(InstanceType.valueOf(instanceType))
             .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
@@ -291,12 +292,39 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
     
     private AwsAvailabilityZone getBestAvailabilityZoneForArchiveCandidate(AwsRegion region, AwsLandscape<String> landscape,
-            ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster) {
+            ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> oldArchiveReplicaSet = getLandscape()
+                .getApplicationReplicaSetByTagValue(region,
+                        SharedLandscapeConstants.SAILING_ANALYTICS_APPLICATION_HOST_TAG,
+                        SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
+                        new SailingAnalyticsHostSupplier<String>(), Landscape.WAIT_FOR_PROCESS_TIMEOUT,
+                        Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        final SailingAnalyticsProcess<String> oldArchivePrimary = oldArchiveReplicaSet.getMaster();
+        final AwsAvailabilityZone oldArchiveAZ = oldArchivePrimary.getHost().getAvailabilityZone();
+        AwsAvailabilityZone result = null;
         for (final AwsInstance<String> reverseProxyHost : reverseProxyCluster.getHosts()) {
             final AwsAvailabilityZone az = reverseProxyHost.getAvailabilityZone();
+            if (!az.equals(oldArchiveAZ)) {
+                result = az;
+                break;
+            }
         }
-        // TODO bug6203: choose AZ such that ideally we have a reverse proxy in that AZ and the AZ differs from the current production ARCHIVE's AZ (which will become the failover later)
-        return null;
+        if (result == null) {
+            logger.warning(
+                    "Couldn't find a reverse proxy in an availabililty zone different from that of the current ARCHIVE server ("
+                            + oldArchiveAZ + "). Reverse proxies in AZs " + Util.joinStrings(", ",
+                                    Util.map(reverseProxyCluster.getHosts(), host -> host.getAvailabilityZone())));
+            // no AZ found that is not the same as for the current ARCHIVE server and also has a reverse proxy;
+            // now we have to choose between "a rock and a hard place:" either launch in an AZ where we don't have
+            // a reverse proxy and hence will see slightly less throughput and some additional cost for cross-AZ
+            // traffic; or launch in the same AZ the current ARCHIVE runs in; this will put the new failover (the
+            // current production ARCHIVE) and the new production ARCHIVE into the same AZ, not benefiting from
+            // the availability improvements incurred by running in multiple AZs.
+            result = Util.first(reverseProxyCluster.getHosts()).getAvailabilityZone();
+            logger.info("Choosing the AZ of the first reverse proxy to avoid cost and performance reduction by cross-AZ traffic: "+result);
+        }
+        return result;
     }
 
     @Override
