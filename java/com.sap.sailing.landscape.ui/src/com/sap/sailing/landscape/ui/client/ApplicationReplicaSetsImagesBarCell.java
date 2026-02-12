@@ -61,7 +61,7 @@ public class ApplicationReplicaSetsImagesBarCell extends ImagesBarCell {
         result.add(new ImageSpec(ACTION_LAUNCH_ANOTHER_REPLICA_SET_ON_THIS_MASTER,
                 stringMessages.launchAnotherReplicaSetOnThisMaster(),
                 IconResources.INSTANCE.launchAnotherReplicaSetOnThisMasterIcon()));
-        if (!applicationReplicaSet.isLocalReplicaSet(userService) && !applicationReplicaSet.isArchive()) {
+        if (!applicationReplicaSet.isLocalReplicaSet(userService)) {
             result.add(new ImageSpec(ACTION_UPGRADE, stringMessages.upgrade(), IconResources.INSTANCE.refreshIcon()));
         }
         if (applicationReplicaSet.isArchive()) {
@@ -97,9 +97,6 @@ public class ApplicationReplicaSetsImagesBarCell extends ImagesBarCell {
         if (applicationReplicaSet.getMaster().getHost().isShared()) {
             result.add(new ImageSpec(ACTION_MOVE_ALL_APPLICATION_PROCESSES_AWAY_FROM,
                     stringMessages.moveAllApplicationProcessesAwayFromMaster(), IconResources.INSTANCE.moveAway()));
-        }
-        if (applicationReplicaSet.isArchive()) {
-            result.add(new ImageSpec(ACTION_UPGRADE, stringMessages.upgrade(), IconResources.INSTANCE.refreshIcon()));
         }
         return result;
     }

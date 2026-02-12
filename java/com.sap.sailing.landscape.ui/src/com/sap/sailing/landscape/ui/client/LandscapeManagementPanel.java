@@ -1470,7 +1470,8 @@ public class LandscapeManagementPanel extends SimplePanel {
             
             @Override
             public void onSuccess(ArrayList<ReleaseDTO> releases) {
-                new UpgradeArchiveServerDialog(landscapeManagementService, releases.stream().map(r->r.getName())::iterator,
+                new UpgradeArchiveServerDialog(landscapeManagementService, archiveReplicaSet.getMaster().getHost().getInstanceType(),
+                        releases.stream().map(r->r.getName())::iterator,
                         stringMessages, errorReporter, new DialogCallback<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions>() {
                             @Override
                             public void ok(UpgradeArchiveServerInstructions upgradeInstructions) {

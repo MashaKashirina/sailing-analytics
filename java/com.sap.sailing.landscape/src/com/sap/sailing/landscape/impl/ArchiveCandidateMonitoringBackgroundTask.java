@@ -125,8 +125,6 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private Iterable<Check> checks;
     private Iterator<Check> checksIterator;
     private Check currentCheck;
-
-
     
     public ArchiveCandidateMonitoringBackgroundTask(User currentUser, LandscapeService landscapeService,
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
