@@ -271,7 +271,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 getLandscape().getCentralReverseProxy(region);
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
         masterHostBuilder
-            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, reverseProxyCluster, optionalKeyName, privateKeyEncryptionPassphrase))
+            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, oldArchiveReplicaSet.getMaster(), reverseProxyCluster, optionalKeyName, privateKeyEncryptionPassphrase))
             .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
             .setInstanceType(InstanceType.valueOf(instanceType))
             .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
@@ -300,13 +300,8 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
     
     private AwsAvailabilityZone getBestAvailabilityZoneForArchiveCandidate(AwsRegion region, AwsLandscape<String> landscape,
-            ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
+            SailingAnalyticsProcess<String> oldArchivePrimary, ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
-        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> oldArchiveReplicaSet = getApplicationReplicaSet(
-                region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
-                Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
-                optionalKeyName, privateKeyEncryptionPassphrase);
-        final SailingAnalyticsProcess<String> oldArchivePrimary = oldArchiveReplicaSet.getMaster();
         final AwsAvailabilityZone oldArchiveAZ = oldArchivePrimary.getHost().getAvailabilityZone();
         AwsAvailabilityZone result = null;
         for (final AwsInstance<String> reverseProxyHost : reverseProxyCluster.getHosts()) {

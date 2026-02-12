@@ -1493,10 +1493,16 @@ public class LandscapeManagementPanel extends SimplePanel {
                                     @Override
                                     public void onSuccess(Void result) {
                                         applicationReplicaSetsBusy.setBusy(false);
-                                        Notification.notify(stringMessages.successfullyLaunchedNewArchiveCandidate(
-                                                archiveReplicaSet.getName(), upgradeInstructions.getReleaseNameOrNullForLatestMaster()),
-                                                NotificationType.SUCCESS);
-                                    }
+                                                Notification.notify(
+                                                        stringMessages.successfullyLaunchedNewArchiveCandidate(
+                                                                archiveReplicaSet.getName(),
+                                                                upgradeInstructions
+                                                                        .getReleaseNameOrNullForLatestMaster() == null
+                                                                                ? "Default"
+                                                                                : upgradeInstructions
+                                                                                        .getReleaseNameOrNullForLatestMaster()),
+                                                        NotificationType.SUCCESS);
+                                            }
                                 });
                             }
 
