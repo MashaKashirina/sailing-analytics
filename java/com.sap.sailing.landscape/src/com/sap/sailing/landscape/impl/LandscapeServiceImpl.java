@@ -83,7 +83,6 @@ import com.sap.sse.landscape.aws.AwsInstance;
 import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.AwsShard;
 import com.sap.sse.landscape.aws.HostSupplier;
-import com.sap.sse.landscape.aws.LandscapeConstants;
 import com.sap.sse.landscape.aws.ReverseProxy;
 import com.sap.sse.landscape.aws.ReverseProxyCluster;
 import com.sap.sse.landscape.aws.Tags;
@@ -287,19 +286,18 @@ public class LandscapeServiceImpl implements LandscapeService {
         sendMailAboutNewArchiveCandidate(replicaSet);
         final ScheduledExecutorService monitorTaskExecutor = ThreadPoolUtil.INSTANCE.getDefaultBackgroundTaskThreadPoolExecutor();
         final ArchiveCandidateMonitoringBackgroundTask monitoringTask = new ArchiveCandidateMonitoringBackgroundTask(
-                getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, monitorTaskExecutor, bearerTokenUsedByReplicas);
+                getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, monitorTaskExecutor,
+                bearerTokenUsedByReplicas);
         monitorTaskExecutor.execute(monitoringTask);
     }
     
     private AwsAvailabilityZone getBestAvailabilityZoneForArchiveCandidate(AwsRegion region, AwsLandscape<String> landscape,
             ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
-        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> oldArchiveReplicaSet = getLandscape()
-                .getApplicationReplicaSetByTagValue(region,
-                        SharedLandscapeConstants.SAILING_ANALYTICS_APPLICATION_HOST_TAG,
-                        SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
-                        new SailingAnalyticsHostSupplier<String>(), Landscape.WAIT_FOR_PROCESS_TIMEOUT,
-                        Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> oldArchiveReplicaSet = getApplicationReplicaSet(
+                region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
+                optionalKeyName, privateKeyEncryptionPassphrase);
         final SailingAnalyticsProcess<String> oldArchivePrimary = oldArchiveReplicaSet.getMaster();
         final AwsAvailabilityZone oldArchiveAZ = oldArchivePrimary.getHost().getAvailabilityZone();
         AwsAvailabilityZone result = null;
@@ -307,6 +305,9 @@ public class LandscapeServiceImpl implements LandscapeService {
             final AwsAvailabilityZone az = reverseProxyHost.getAvailabilityZone();
             if (!az.equals(oldArchiveAZ)) {
                 result = az;
+                logger.info("Identified availability zone (AZ) " + result
+                        + " for new ARCHIVE server; it differs from current ARCHIVE's AZ " + oldArchiveAZ
+                        + " and has reverse proxy host " + reverseProxyHost.getInstanceId() + " in that AZ.");
                 break;
             }
         }
@@ -328,7 +329,9 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
 
     @Override
-    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String optionalDomainName) throws Exception {
+    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyName,
+            byte[] privateKeyEncryptionPassphrase, String optionalDomainName)
+            throws Exception {
         final AwsLandscape<String> landscape = getLandscape();
         final AwsRegion region = new AwsRegion(regionId, landscape);
         final String candidateHostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
@@ -337,15 +340,28 @@ public class LandscapeServiceImpl implements LandscapeService {
                 Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
                 optionalKeyName, privateKeyEncryptionPassphrase);
         if (archiveReplicaSet == null) {
-            throw new IllegalArgumentException("Couldn't find candidate replica set with name "+SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME+" in region "+regionId);
+            throw new IllegalArgumentException("Couldn't find candidate replica set with name "
+                    + SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME + " in region " + regionId);
         }
-        // TODO bug6203: update 000-macros.conf so that internal IP of candidate becomes ARCHIVE_IP, and ARCHIVE_IP becomes ARCHIVE_FAILOVER_IP, and maybe a backup copy of ARCHIVE_FAILOVER_COPY is kept as a comment
-        // TODO bug6203: then refresh the configuration...
-        int TODO;
+        final SailingAnalyticsProcess<String> candidate = archiveReplicaSet.getMaster();
         final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
                 getLandscape().getCentralReverseProxy(region);
+        final Pair<String, String> archiveAndFailoverIPs = reverseProxyCluster
+                .getArchiveAndFailoverIPs(Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        logger.info("Found new candidate " + candidate.getHost()
+                .getInstanceId() + " with internal IP "
+                + candidate.getHost().getPrivateAddress() + " and current production ARCHIVE "
+                + archiveAndFailoverIPs.getA() + ". Turning production into failover and candidate into production.");
+        reverseProxyCluster.setArchiveAndFailoverIPs(candidate.getHost().getPrivateAddress().getHostAddress(),
+                archiveAndFailoverIPs.getA(), Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        final SailingAnalyticsHost<String> oldFailover = getLandscape().getHostByPrivateDnsNameOrIpAddress(region,
+                archiveAndFailoverIPs.getB(), new SailingAnalyticsHostSupplier<>());
+        logger.info("Terminating old failover host " + oldFailover.getInstanceId() + " with internal IP "
+                + oldFailover.getPrivateAddress());
+        oldFailover.terminate();
         logger.info("Removing reverse proxy rule for archive candidate with hostname "+ candidateHostname);
         reverseProxyCluster.removeRedirect(candidateHostname, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        sendMailAboutNewArchiveServerLive(archiveReplicaSet);
     }
     
     @Override
@@ -1864,10 +1880,9 @@ public class LandscapeServiceImpl implements LandscapeService {
      * This is to be called after the rotation of candidate/production/failover ARCHIVE has happend, to inform
      */
     private void sendMailAboutNewArchiveServerLive(
-            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
-            Optional<Action> alsoSendToAllUsersWithThisPermissionOnReplicaSet) throws MailException {
+            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
         sendMailToReplicaSetOwner(replicaSet, "NewArchiveServerLiveSubject", "NewArchiveServerLiveBody",
-                alsoSendToAllUsersWithThisPermissionOnReplicaSet);
+                Optional.of(ServerActions.CONFIGURE_LOCAL_SERVER));
     }
 
     /**
