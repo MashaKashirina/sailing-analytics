@@ -334,7 +334,7 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
 
     @Override
-    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyName,
+    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyNameOrNull,
             byte[] privateKeyEncryptionPassphrase, String optionalDomainName)
             throws Exception {
         final AwsLandscape<String> landscape = getLandscape();
@@ -343,7 +343,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> archiveReplicaSet = getApplicationReplicaSet(
                 region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
                 Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
-                optionalKeyName, privateKeyEncryptionPassphrase);
+                optionalKeyNameOrNull, privateKeyEncryptionPassphrase);
         if (archiveReplicaSet == null) {
             throw new IllegalArgumentException("Couldn't find candidate replica set with name "
                     + SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME + " in region " + regionId);
@@ -351,14 +351,15 @@ public class LandscapeServiceImpl implements LandscapeService {
         final SailingAnalyticsProcess<String> candidate = archiveReplicaSet.getMaster();
         final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
                 getLandscape().getCentralReverseProxy(region);
+        final Optional<String> optionalKeyName = Optional.ofNullable(optionalKeyNameOrNull);
         final Pair<String, String> archiveAndFailoverIPs = reverseProxyCluster
-                .getArchiveAndFailoverIPs(Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+                .getArchiveAndFailoverIPs(optionalKeyName, privateKeyEncryptionPassphrase);
         logger.info("Found new candidate " + candidate.getHost()
                 .getInstanceId() + " with internal IP "
                 + candidate.getHost().getPrivateAddress() + " and current production ARCHIVE "
                 + archiveAndFailoverIPs.getA() + ". Turning production into failover and candidate into production.");
         reverseProxyCluster.setArchiveAndFailoverIPs(candidate.getHost().getPrivateAddress().getHostAddress(),
-                archiveAndFailoverIPs.getA(), Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+                archiveAndFailoverIPs.getA(), optionalKeyName, privateKeyEncryptionPassphrase);
         try {
             final SailingAnalyticsHost<String> oldProductionArchive = getLandscape().getHostByPrivateDnsNameOrIpAddress(region, archiveAndFailoverIPs.getA(), new SailingAnalyticsHostSupplier<>());
             getLandscape().setInstanceName(oldProductionArchive, SharedLandscapeConstants.ARCHIVE_SERVER_FAILOVER_INSTANCE_NAME);
@@ -367,14 +368,23 @@ public class LandscapeServiceImpl implements LandscapeService {
         }
         getLandscape().setInstanceName(candidate.getHost(), SharedLandscapeConstants.ARCHIVE_SERVER_INSTANCE_NAME);
         logger.info("Removing reverse proxy rule for archive candidate with hostname "+ candidateHostname);
-        reverseProxyCluster.removeRedirect(candidateHostname, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        reverseProxyCluster.removeRedirect(candidateHostname, optionalKeyName, privateKeyEncryptionPassphrase);
         try {
             final SailingAnalyticsHost<String> oldFailover = getLandscape().getHostByPrivateDnsNameOrIpAddress(region,
                     archiveAndFailoverIPs.getB(), new SailingAnalyticsHostSupplier<>());
-            logger.info("Terminating old failover host " + oldFailover.getInstanceId() + " with internal IP "
-                    + oldFailover.getPrivateAddress());
             oldFailover.setTerminationProtection(false);
-            oldFailover.terminate();
+            logger.info("Terminating old failover process, and hence probably host " + oldFailover.getInstanceId()
+                    + " with internal IP " + oldFailover.getPrivateAddress());
+            for (final SailingAnalyticsProcess<String> applicationProcessOnOldFailover : oldFailover
+                    .getApplicationProcesses(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName,
+                            privateKeyEncryptionPassphrase)) {
+                if (applicationProcessOnOldFailover
+                        .getServerName(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName,
+                                privateKeyEncryptionPassphrase)
+                        .equals(SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME)) {
+                    applicationProcessOnOldFailover.stopAndTerminateIfLast(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
+                }
+            }
         } catch (Exception e) {
             logger.warning("Issue trying to clean up old failover instance: "+e.getMessage());
         }

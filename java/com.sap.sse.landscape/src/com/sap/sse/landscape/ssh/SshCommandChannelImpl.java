@@ -37,10 +37,10 @@ public class SshCommandChannelImpl implements SshCommandChannel {
         final ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         try {
             sendCommandLineSynchronously(commandLine, stderr);
+            final String result = getStreamContentsAsString();
             if (stderrLogLevel != null && stderr.size() > 0) {
                 logger.log(stderrLogLevel, (stderrLogPrefix==null?"":(stderrLogPrefix+": "))+stderr.toString());
             }
-            final String result = getStreamContentsAsString();
             return result;
         } finally {
             disconnect();
