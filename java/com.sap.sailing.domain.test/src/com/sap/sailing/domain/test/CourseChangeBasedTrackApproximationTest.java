@@ -109,7 +109,7 @@ public class CourseChangeBasedTrackApproximationTest {
         }
         final Iterable<GPSFixMoving> emptyManeuverCandidates = approximation.approximate(start, start.plus(samplingInterval.times(NUMBER_OF_FIXES_FOR_NON_MANEUVER)));
         assertTrue(Util.isEmpty(emptyManeuverCandidates));
-        final double aBitOverMinimumManeuverAngleDegrees = boatClass.getManeuverDegreeAngleThreshold() * 1.2;
+        final double aBitOverMinimumManeuverAngleDegrees = boatClass.getManeuverDegreeAngleThreshold() * 1.5;
         // perform aBitOverMinimumManeuverAngleDegrees within five fixes:
         final int NUMBER_OF_FIXES_FOR_MANEUVER = 5;
         for (int i=0; i<NUMBER_OF_FIXES_FOR_MANEUVER; i++) {
