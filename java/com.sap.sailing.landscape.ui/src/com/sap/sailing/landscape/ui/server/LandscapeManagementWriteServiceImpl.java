@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -705,12 +706,14 @@ public class LandscapeManagementWriteServiceImpl extends ResultCachingProxiedRem
         final Database databaseConfiguration = master.getDatabaseConfiguration(region,
                 Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName),
                 privateKeyEncryptionPassphrase);
+        final URL requestURL = new URL(getThreadLocalRequest().getRequestURL().toString());
+        final URL continuationBaseURL = new URL(requestURL.getProtocol(), requestURL.getHost(), requestURL.getPort(), "/");
         getLandscapeService()
                 .createArchiveReplicaSet(regionId, replicaSetName, instanceType, releaseNameOrNullForLatestMaster,
                         databaseConfiguration, optionalKeyName, privateKeyEncryptionPassphrase,
-                        userSetOrArchiveServerSecurityReplicationBearerToken, replicaReplicationBearerToken, domainName,
-                        optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull,
-                        /* optionalIgtimiRiotPort */ null);
+                        replicaReplicationBearerToken, domainName, optionalMemoryInMegabytesOrNull,
+                        userSetOrArchiveServerSecurityReplicationBearerToken, optionalMemoryTotalSizeFactorOrNull,
+                        /* optionalIgtimiRiotPort */ null, continuationBaseURL);
     }
     
     @Override

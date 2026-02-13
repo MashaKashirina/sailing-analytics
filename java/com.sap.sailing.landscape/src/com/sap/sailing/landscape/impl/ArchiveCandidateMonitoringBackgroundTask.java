@@ -114,6 +114,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private final String candidateHostname;
     private final LandscapeService landscapeService;
     private final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet;
+    private final URL continuationBaseURL;
     private final ScheduledExecutorService executor;
     
     /**
@@ -130,9 +131,10 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             String candidateHostname,
             ScheduledExecutorService executor,
-            String effectiveBearerToken) {
+            String effectiveBearerToken, URL continuationBaseURL) {
         this.currentUser = currentUser;
         this.landscapeService = landscapeService;
+        this.continuationBaseURL = continuationBaseURL;
         this.replicaSet = replicaSet;
         this.candidateHostname = candidateHostname;
         this.executor = executor;
@@ -296,6 +298,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private void notifyProcessOwnerCandidateIsReadyForSpotChecksAndRotation() throws MailException, InterruptedException, ExecutionException {
         landscapeService.sendMailToUser(currentUser, "NewArchiveCandidateReadyForSpotChecksAndRotationSubject",
                 "NewArchiveCandidateReadyForSpotChecksAndRotationBody", replicaSet.getName(), candidateHostname,
-                replicaSet.getHostname(), " - "+Util.joinStrings("\n - ", Util.map(checks, Check::getName)));
+                replicaSet.getHostname(), " - "+Util.joinStrings("\n - ", Util.map(checks, Check::getName)),
+                continuationBaseURL.toString());
     }
 }

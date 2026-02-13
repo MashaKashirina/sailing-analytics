@@ -240,9 +240,9 @@ public class LandscapeServiceImpl implements LandscapeService {
     @Override
     public void createArchiveReplicaSet(
             String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration, 
-            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken, String replicaReplicationBearerToken,
-            String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception {
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicaReplicationBearerToken, String optionalDomainName,
+            Integer optionalMemoryInMegabytesOrNull, String securityServiceReplicationBearerToken,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, URL continuationBaseURL) throws Exception {
         assert getSecurityService().getCurrentUser() != null;
         final AwsLandscape<String> landscape = getLandscape();
         final String candidateHostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
@@ -297,7 +297,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         final ScheduledExecutorService monitorTaskExecutor = ThreadPoolUtil.INSTANCE.getDefaultBackgroundTaskThreadPoolExecutor();
         final ArchiveCandidateMonitoringBackgroundTask monitoringTask = new ArchiveCandidateMonitoringBackgroundTask(
                 getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, monitorTaskExecutor,
-                bearerTokenUsedByReplicas);
+                bearerTokenUsedByReplicas, continuationBaseURL);
         monitorTaskExecutor.execute(monitoringTask);
     }
     

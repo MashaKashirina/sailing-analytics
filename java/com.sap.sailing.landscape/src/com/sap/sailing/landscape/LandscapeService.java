@@ -2,6 +2,7 @@ package com.sap.sailing.landscape;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -166,12 +167,16 @@ public interface LandscapeService {
      * receives an e-mail that asks for manual spot checks and a confirmation about the rotation. A link embedded in the
      * e-mail grants the user easy access to the
      * {@link #makeCandidateArchiveServerGoLive(String, String, byte[], String)} method which then performs phase 2.
+     * 
+     * @param continuationBaseURL
+     *            the base URL to which to direct the user for continuation of the ARCHIVE upgrade process (phase 2)
+     *            after this first phase has completed successfully
      */
     void createArchiveReplicaSet(
             String regionId, String name, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration,
-            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String securityServiceReplicationBearerToken,
-            String replicaReplicationBearerToken, String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception;
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicaReplicationBearerToken,
+            String optionalDomainName, Integer optionalMemoryInMegabytesOrNull, String securityServiceReplicationBearerToken,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, URL continuationBaseURL) throws Exception;
 
     /**
      * Phase 2 of an ARCHIVE server upgrade. This is to be triggered ideally after a "human in the loop" step
