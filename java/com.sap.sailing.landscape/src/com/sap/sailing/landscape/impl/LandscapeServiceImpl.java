@@ -268,7 +268,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
                 inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
         final ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
-                getLandscape().getCentralReverseProxy(region);
+                getLandscape().getReverseProxyCluster(region);
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
         masterHostBuilder
             .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, oldArchiveReplicaSet.getMaster(), reverseProxyCluster, optionalKeyName, privateKeyEncryptionPassphrase))
