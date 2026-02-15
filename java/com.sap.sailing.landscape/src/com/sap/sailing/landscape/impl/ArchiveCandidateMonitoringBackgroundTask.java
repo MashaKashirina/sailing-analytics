@@ -101,7 +101,6 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private final static Duration LONG_TIMEOUT = Duration.ONE_DAY.times(3);
     private final static double MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE = 2.0;
     private final static int MAXIMUM_THREAD_POOL_QUEUE_SIZE = 10;
-    private final static Optional<Duration> TIMEOUT_FIRST_CONTACT = Optional.of(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get().plus(Landscape.WAIT_FOR_HOST_TIMEOUT.get()));
     private final static Duration SERVER_COMPARISON_TIMEOUT = Duration.ONE_MINUTE.times(10); // good for two or three attempts, usually
     private final static Duration DELAY_BETWEEN_COMPARISON_CHECKS = Duration.ONE_MINUTE;
     
@@ -193,7 +192,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
         private static final long serialVersionUID = -4265303532881568290L;
 
         private IsReady() {
-            super("is ready", TIMEOUT_FIRST_CONTACT.get(), DELAY_BETWEEN_CHECKS);
+            super("is ready", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
         }
 
         @Override
