@@ -101,6 +101,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
     private final static Duration LONG_TIMEOUT = Duration.ONE_DAY.times(3);
     private final static double MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE = 2.0;
     private final static int MAXIMUM_THREAD_POOL_QUEUE_SIZE = 10;
+    private final static Optional<Duration> TIMEOUT_FIRST_CONTACT = Optional.of(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get().plus(Landscape.WAIT_FOR_HOST_TIMEOUT.get()));
     private final static Duration SERVER_COMPARISON_TIMEOUT = Duration.ONE_MINUTE.times(10); // good for two or three attempts, usually
     private final static Duration DELAY_BETWEEN_COMPARISON_CHECKS = Duration.ONE_MINUTE;
     
@@ -183,7 +184,9 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
             logger.severe("Check "+currentCheck+" failed and has timed out; giving up on candidate "+replicaSet.getMaster().getHost().getHostname());
             notifyProcessOwnerCandidateFailedToBecomeReadyForProduction(); // this ends the re-scheduling loop
         } else {
-            logger.info("Check "+currentCheck+" failed but has not yet timed out; re-scheduling to check again after "+currentCheck.getDelayAfterFailure());
+            logger.info("Check " + currentCheck + " failed with message \"" + currentCheck.getLastFailureMessage()
+                    + "\" but has not yet timed out; re-scheduling to check again after "
+                    + currentCheck.getDelayAfterFailure());
             executor.schedule(this, currentCheck.getDelayAfterFailure().asMillis(), TimeUnit.MILLISECONDS);
         }
     }
@@ -192,14 +195,14 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
         private static final long serialVersionUID = -4265303532881568290L;
 
         private IsReady() {
-            super("is ready", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
+            super("is ready", TIMEOUT_FIRST_CONTACT.get(), DELAY_BETWEEN_CHECKS);
         }
 
         @Override
         public boolean runCheck() throws Exception {
             final boolean result = replicaSet.getMaster().isReady(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             if (!result) {
-                setLastFailureMessage("Candidate is not ready yet");
+                setLastFailureMessage("Candidate at "+replicaSet.getMaster().getHost().getPrivateAddress()+" not ready yet");
             }
             return result;
         }
@@ -217,8 +220,9 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
             final double lastMinuteSystemLoadAverage = replicaSet.getMaster().getLastMinuteSystemLoadAverage(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             final boolean result = lastMinuteSystemLoadAverage < MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE;
             if (!result) {
-                setLastFailureMessage("Candidate has too high system load average of "+lastMinuteSystemLoadAverage+
-                        " which is still above the maximum of "+MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE);
+                setLastFailureMessage("Candidate at " + replicaSet.getMaster().getHost().getPrivateAddress()
+                        + " has too high system load average of " + lastMinuteSystemLoadAverage
+                        + " which is still above the maximum of " + MAXIMUM_ONE_MINUTE_SYSTEM_LOAD_AVERAGE);
             }
             return result;
         }
@@ -236,7 +240,8 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
             final int defaultBackgroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultBackgroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             final boolean result = defaultBackgroundThreadPoolExecutorQueueSize < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
             if (!result) {
-                setLastFailureMessage("Candidate has too many tasks in default background thread pool executor queue: "+defaultBackgroundThreadPoolExecutorQueueSize+
+                setLastFailureMessage("Candidate at " + replicaSet.getMaster().getHost().getPrivateAddress()
+                        + " has too many tasks in default background thread pool executor queue: "+defaultBackgroundThreadPoolExecutorQueueSize+
                         " which is still above the maximum of "+MAXIMUM_THREAD_POOL_QUEUE_SIZE);
             }
             return result;
@@ -255,7 +260,8 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
             final int defaultForegroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultForegroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             final boolean result = defaultForegroundThreadPoolExecutorQueueSize < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
             if (!result) {
-                setLastFailureMessage("Candidate has too many tasks in default foreground thread pool executor queue: "+defaultForegroundThreadPoolExecutorQueueSize+
+                setLastFailureMessage("Candidate at "+replicaSet.getMaster().getHost().getPrivateAddress()
+                        + " has too many tasks in default foreground thread pool executor queue: "+defaultForegroundThreadPoolExecutorQueueSize+
                         " which is still above the maximum of "+MAXIMUM_THREAD_POOL_QUEUE_SIZE);
             }
             return result;
