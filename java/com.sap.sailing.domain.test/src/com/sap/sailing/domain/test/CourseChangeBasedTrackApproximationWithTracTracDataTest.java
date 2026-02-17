@@ -65,7 +65,9 @@ public class CourseChangeBasedTrackApproximationWithTracTracDataTest extends Onl
      */
     @Test
     public void testNoDiffBetweenEarlyAndLateInitialization() {
-        final DynamicGPSFixTrack<Competitor, GPSFixMoving> trackCopy = new DynamicGPSFixMovingTrackImpl<Competitor>(sampleCompetitor, /* millisecondsOverWhichToAverage */ 15000);
+        final DynamicGPSFixTrack<Competitor, GPSFixMoving> trackCopy = new DynamicGPSFixMovingTrackImpl<Competitor>(
+                sampleCompetitor,
+                /* millisecondsOverWhichToAverage */ boatClass.getApproximateManeuverDurationInMilliseconds());
         final CourseChangeBasedTrackApproximation earlyInitApproximation = new CourseChangeBasedTrackApproximation(trackCopy, sampleCompetitor.getBoat().getBoatClass());
         final TimePoint from = sampleTrack.getFirstRawFix().getTimePoint();
         final TimePoint to = sampleTrack.getLastRawFix().getTimePoint();

@@ -69,15 +69,22 @@ public class CourseChangeBasedTrackApproximationTest {
     @Test
     public void testDirectionChangeJustAboveThreshold() {
         final Duration samplingInterval = Duration.ONE_SECOND;
-        final double aBitOverMinimumManeuverAngleDegrees = boatClass.getManeuverDegreeAngleThreshold() * 1.2;
+        final double aBitOverMinimumManeuverAngleDegrees = boatClass.getManeuverDegreeAngleThreshold() * 1.5;
         final TimePoint start = TimePoint.of(10000l);
         final Speed speed = new KnotSpeedImpl(5.0);
         GPSFixMoving next = fix(start.asMillis(), 0, 0, speed.getKnots(), 0);
         track.add(next);
         // perform aBitOverMinimumManeuverAngleDegrees within five fixes:
         final int NUMBER_OF_FIXES_FOR_MANEUVER = 5;
+        double cog = 0.0;
         for (int i=0; i<NUMBER_OF_FIXES_FOR_MANEUVER; i++) {
-            next = travel(next, samplingInterval.asMillis(), speed.getKnots(), ((double) i+1.0)/((double) NUMBER_OF_FIXES_FOR_MANEUVER) * aBitOverMinimumManeuverAngleDegrees);
+            cog = ((double) i+1.0)/((double) NUMBER_OF_FIXES_FOR_MANEUVER) * aBitOverMinimumManeuverAngleDegrees;
+            next = travel(next, samplingInterval.asMillis(), speed.getKnots(), cog);
+            track.add(next);
+        }
+        // now go straight for the maneuver duration to ensure that the approximation has read buffered fixes up to and including the end of the maneuver:
+        for (int i=0; i<boatClass.getApproximateManeuverDurationInMilliseconds()/1000; i++) {
+            next = travel(next, Duration.ONE_SECOND.asMillis(), speed.getKnots(), cog);
             track.add(next);
         }
         final Iterable<GPSFixMoving> oneManeuverCandidate = approximation.approximate(start, start.plus(samplingInterval.times(NUMBER_OF_FIXES_FOR_MANEUVER)));
@@ -115,6 +122,11 @@ public class CourseChangeBasedTrackApproximationTest {
         for (int i=0; i<NUMBER_OF_FIXES_FOR_MANEUVER; i++) {
             cog += 1.0/((double) NUMBER_OF_FIXES_FOR_MANEUVER) * aBitOverMinimumManeuverAngleDegrees;
             next = travel(next, samplingInterval.asMillis(), speed.getKnots(), cog);
+            track.add(next);
+        }
+        // now go straight for the maneuver duration to ensure that the approximation has read buffered fixes up to and including the end of the maneuver:
+        for (int i=0; i<boatClass.getApproximateManeuverDurationInMilliseconds()/1000; i++) {
+            next = travel(next, Duration.ONE_SECOND.asMillis(), speed.getKnots(), cog);
             track.add(next);
         }
         final Iterable<GPSFixMoving> oneManeuverCandidate = approximation.approximate(start, start.plus(samplingInterval.times(NUMBER_OF_FIXES_FOR_NON_MANEUVER+NUMBER_OF_FIXES_FOR_MANEUVER)));

@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -105,6 +106,17 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
         private final LinkedList<GPSFixMoving> window;
         
         /**
+         * New fixes shall be inserted into the {@link FixWindow} only when it is unlikely that newer fixes will still
+         * influence the calculation of its {@link GPSFixMoving#getCachedEstimatedSpeed() estimated speed}. This way,
+         * the differences between seeing and not seeing newer fixes is reduced, and so it isn't so relevant anymore
+         * whether the approximation is updated incrementally as fixes arrive, or after a race has been fully loaded.
+         * <p>
+         * 
+         * See also bug 6209.
+         */
+        private final Deque<GPSFixMoving> queueOfNewFixes;
+        
+        /**
          * We need to remember the speed / bearing as we saw them when we inserted the fixes into the {@link #window}
          * collection. Based on more fixes getting added to the track, things may change. In particular, fixes that may have
          * had a valid speed when inserted may later have their cached speed/bearing invalidated, and computing it again
@@ -125,6 +137,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
         
         FixWindow() {
             this.window = new LinkedList<>();
+            this.queueOfNewFixes = new LinkedList<>();
             this.speedForFixesInWindow = new LinkedList<>();
             this.windowDuration = Duration.NULL;
             // use twice the maneuver duration to also catch slowly-executed gybes
@@ -160,6 +173,18 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
          *         or {@code null} if no maneuver candidate became available
          */
         GPSFixMoving add(GPSFixMoving next) {
+            final GPSFixMoving result;
+            queueOfNewFixes.add(next); // FIXME bug6209: the queueOfNewFixes needs to remain ordered by fix TimePoint!
+            final GPSFixMoving first = queueOfNewFixes.getFirst();
+            if (first.getTimePoint().until(next.getTimePoint()).asMillis() > track.getMillisecondsOverWhichToAverageSpeed()/2) {
+                result = addOldEnoughFix(queueOfNewFixes.removeFirst());
+            } else {
+                result = null;
+            }
+            return result;
+        }
+        
+        private GPSFixMoving addOldEnoughFix(GPSFixMoving next) {
             assert window.isEmpty() || !next.getTimePoint().before(window.peekFirst().getTimePoint());
             final GPSFixMoving result;
             final SpeedWithBearing nextSpeed = /* TODO this was the original code that can depend on fixes newer than next: */ next.isEstimatedSpeedCached() ? next.getCachedEstimatedSpeed() : track.getEstimatedSpeed(next.getTimePoint());
