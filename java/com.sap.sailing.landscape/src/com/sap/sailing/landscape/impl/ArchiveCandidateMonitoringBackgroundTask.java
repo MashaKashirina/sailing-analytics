@@ -140,6 +140,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
         this.executor = executor;
         this.effectiveBearerToken = effectiveBearerToken;
         this.checks = Arrays.asList(
+                new IsAlive(),
                 new IsReady(),
                 new HasLowEnoughSystemLoad(),
                 new HasShortEnoughDefaultBackgroundThreadPoolExecutorQueue(),
@@ -191,11 +192,28 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
         }
     }
 
+    private class IsAlive extends AbstractCheck {
+        private static final long serialVersionUID = -4265303532881568290L;
+
+        private IsAlive() {
+            super("is alive", TIMEOUT_FIRST_CONTACT.get(), DELAY_BETWEEN_CHECKS);
+        }
+
+        @Override
+        public boolean runCheck() throws Exception {
+            final boolean result = replicaSet.getMaster().isAlive(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
+            if (!result) {
+                setLastFailureMessage("Candidate at "+replicaSet.getMaster().getHost().getPrivateAddress()+" not alive yet");
+            }
+            return result;
+        }
+    }
+
     private class IsReady extends AbstractCheck {
         private static final long serialVersionUID = -4265303532881568290L;
 
         private IsReady() {
-            super("is ready", TIMEOUT_FIRST_CONTACT.get(), DELAY_BETWEEN_CHECKS);
+            super("is ready", LONG_TIMEOUT, DELAY_BETWEEN_CHECKS);
         }
 
         @Override
@@ -237,7 +255,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
 
         @Override
         public boolean runCheck() throws Exception {
-            final int defaultBackgroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultBackgroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
+            final int defaultBackgroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultBackgroundThreadPoolExecutorQueueSizeNondelayed(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             final boolean result = defaultBackgroundThreadPoolExecutorQueueSize < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
             if (!result) {
                 setLastFailureMessage("Candidate at " + replicaSet.getMaster().getHost().getPrivateAddress()
@@ -257,7 +275,7 @@ public class ArchiveCandidateMonitoringBackgroundTask implements Runnable {
 
         @Override
         public boolean runCheck() throws Exception {
-            final int defaultForegroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultForegroundThreadPoolExecutorQueueSize(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
+            final int defaultForegroundThreadPoolExecutorQueueSize = replicaSet.getMaster().getDefaultForegroundThreadPoolExecutorQueueSizeNondelayed(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
             final boolean result = defaultForegroundThreadPoolExecutorQueueSize < MAXIMUM_THREAD_POOL_QUEUE_SIZE;
             if (!result) {
                 setLastFailureMessage("Candidate at "+replicaSet.getMaster().getHost().getPrivateAddress()
