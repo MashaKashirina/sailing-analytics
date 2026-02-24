@@ -16,7 +16,6 @@ import com.sap.sailing.windestimation.aggregator.graph.DijkstraShortestPathFinde
 import com.sap.sailing.windestimation.aggregator.graph.DijsktraShortestPathFinder;
 import com.sap.sailing.windestimation.aggregator.graph.ElementAdjacencyQualityMetric;
 import com.sap.sailing.windestimation.aggregator.graph.InnerGraphSuccessorSupplier;
-import com.sap.sailing.windestimation.aggregator.hmm.GraphLevelInference;
 import com.sap.sailing.windestimation.aggregator.hmm.GraphNode;
 import com.sap.sailing.windestimation.aggregator.hmm.WindCourseRange;
 import com.sap.sailing.windestimation.aggregator.msthmm.MstManeuverGraphGenerator.MstManeuverGraphComponents;
@@ -104,6 +103,10 @@ public class MstGraphExporter {
         writer.write("      \"id\": " + nodeId + ",\n");
         writer.write("      \"depth\": " + depth + ",\n");
         writer.write("      \"timestamp\": \"" + DATE_FORMAT.format(maneuver.getManeuverTimePoint().asDate()) + "\",\n");
+        // Competitor info
+        if (maneuver.getCompetitorName() != null) {
+            writer.write("      \"competitorName\": \"" + escapeJson(maneuver.getCompetitorName()) + "\",\n");
+        }
         writer.write("      \"position\": {\"lat\": " + maneuver.getManeuverPosition().getLatDeg() + 
                      ", \"lon\": " + maneuver.getManeuverPosition().getLngDeg() + "},\n");
         // distanceToParent is actually the "compound distance" = sum of two predicted standard deviations
@@ -342,5 +345,33 @@ public class MstGraphExporter {
         for (final MstGraphLevel child : level.getChildren()) {
             assignNodeIds(child, levelToId, nodeIdCounter);
         }
+    }
+
+    /**
+     * Escapes special characters in a string for safe JSON encoding.
+     */
+    private static String escapeJson(String s) {
+        if (s == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < ' ') {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
     }
 }

@@ -117,6 +117,14 @@ def create_node_label_with_ports(node, best_type=None):
     # Get distance/time to parent (pass whole node for full info)
     dist_str = format_distance(node)
     
+    # Get competitor info
+    competitor_name = node.get('competitorName', '')
+    # Truncate long names for display
+    if competitor_name:
+        competitor_str = competitor_name[:12] + '...' if len(competitor_name) > 15 else competitor_name
+    else:
+        competitor_str = ''
+    
     # Build HTML table with PORT attributes
     html = '<<TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
     
@@ -158,11 +166,14 @@ def create_node_label_with_ports(node, best_type=None):
         html += f'<TD PORT="{port_name}"{border_attr}>{cell_content}</TD>'
     html += '</TR>'
     
-    # Footer row with timestamp/distance - spans all columns
+    # Footer row with competitor info, timestamp and distance - spans all columns
+    footer_parts = []
+    if competitor_str:
+        footer_parts.append(f'<FONT COLOR="purple"><B>{competitor_str}</B></FONT>')
+    footer_parts.append(time_part)
     if dist_str:
-        footer_content = f'{time_part}  <FONT COLOR="blue">↑{dist_str}</FONT>'
-    else:
-        footer_content = time_part
+        footer_parts.append(f'<FONT COLOR="blue">↑{dist_str}</FONT>')
+    footer_content = '  '.join(footer_parts)
     html += f'<TR><TD COLSPAN="4" BGCOLOR="white"><FONT POINT-SIZE="9">{footer_content}</FONT></TD></TR>'
     
     # Bottom row with path vote diagnostics AND ports for OUTGOING edges

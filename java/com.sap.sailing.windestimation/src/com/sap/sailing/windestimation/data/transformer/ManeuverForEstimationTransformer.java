@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.sap.sailing.domain.base.BoatClass;
+import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.windestimation.data.CompetitorTrackWithEstimationData;
 import com.sap.sailing.windestimation.data.ManeuverCategory;
 import com.sap.sailing.windestimation.data.ManeuverForEstimation;
@@ -150,6 +151,11 @@ public class ManeuverForEstimationTransformer
 
     public ManeuverForEstimation getManeuverForEstimation(ConvertableToManeuverForEstimation maneuver,
             double speedScalingDivisor, BoatClass boatClass) {
+        return getManeuverForEstimation(maneuver, speedScalingDivisor, boatClass, null);
+    }
+
+    public ManeuverForEstimation getManeuverForEstimation(ConvertableToManeuverForEstimation maneuver,
+            double speedScalingDivisor, BoatClass boatClass, Competitor competitor) {
         ManeuverCategory maneuverCategory = getManeuverCategory(maneuver);
         double speedLossRatio = maneuver.getSpeedWithBearingBefore().getKnots() > 0
                 ? maneuver.getLowestSpeed().getKnots() / maneuver.getSpeedWithBearingBefore().getKnots()
@@ -175,7 +181,8 @@ public class ManeuverForEstimationTransformer
                 maneuver.getCourseChangeInDegreesWithinTurningSection(), maneuver.getMaxTurningRateInDegreesPerSecond(),
                 deviationFromOptimalTackAngleInDegrees, deviationFromOptimalJibeAngleInDegrees, speedLossRatio,
                 speedGainRatio, lowestSpeedVsExitingSpeedRatio, clean, maneuverCategory, scaledSpeedBeforeInKnots,
-                scaledSpeedAfterInKnots, maneuver.isMarkPassing(), boatClass, markPassingDataAvailable);
+                scaledSpeedAfterInKnots, maneuver.isMarkPassing(), boatClass, markPassingDataAvailable,
+                competitor.getName());
         return maneuverForEstimation;
     }
 
