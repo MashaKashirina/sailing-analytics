@@ -7,10 +7,13 @@ large trees. It uses DOT language to create the graph and renders it with graphv
 
 Features:
 - Proper tree layout (top to bottom)
-- Each node shows 4 compartments as an HTML-like table
+- Each node shows 4 compartments as an HTML-like table with PORT attributes
+- Edges connect to specific compartments
 - Best path highlighted in red
+- All other edges shown in green (high prob) or gray (lower prob)
 - Edge labels with transition probabilities
-- Color-coded confidence levels
+- Color-coded compartments by maneuver type
+- Legend explaining colors
 
 Usage:
     python mst_graph_visualizer_graphviz.py <input_json_file> [output_file]
@@ -39,13 +42,12 @@ TYPE_ORDER = ['TACK', 'JIBE', 'HEAD_UP', 'BEAR_AWAY']
 TYPE_ABBREV = {'TACK': 'T', 'JIBE': 'J', 'HEAD_UP': 'H', 'BEAR_AWAY': 'B'}
 
 
-def confidence_to_intensity(confidence):
-    """Convert confidence [0,1] to color intensity for background."""
-    # Higher confidence = more saturated color
-    base_intensity = 40  # Minimum intensity (very light)
-    max_intensity = 200   # Maximum intensity
-    intensity = int(base_intensity + confidence * (max_intensity - base_intensity))
-    return intensity
+def blend_color_with_white(hex_color, factor):
+    """Blend a hex color with white based on factor (0=white, 1=full color)."""
+    r = int(int(hex_color[1:3], 16) * factor + 255 * (1 - factor))
+    g = int(int(hex_color[3:5], 16) * factor + 255 * (1 - factor))
+    b = int(int(hex_color[5:7], 16) * factor + 255 * (1 - factor))
+    return f"#{min(255, r):02x}{min(255, g):02x}{min(255, b):02x}"
 
 
 def format_wind(comp):
@@ -58,8 +60,11 @@ def format_wind(comp):
         return f"{wind_est:.0f}±{wind_width/2:.0f}°"
 
 
-def create_node_label(node, best_type=None):
-    """Create HTML-like label for a node with 4 compartments."""
+def create_node_label_with_ports(node, best_type=None):
+    """
+    Create HTML-like label for a node with 4 compartments.
+    Each compartment has a PORT attribute for edge connections.
+    """
     compartments = {c['type']: c for c in node['compartments']}
     
     # Extract time from timestamp
@@ -69,8 +74,8 @@ def create_node_label(node, best_type=None):
     else:
         time_part = timestamp[:8] if len(timestamp) >= 8 else timestamp
     
-    # Build HTML table
-    html = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="2">'
+    # Build HTML table with PORT attributes
+    html = '<<TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
     html += '<TR>'
     
     for type_name in TYPE_ORDER:
@@ -81,46 +86,72 @@ def create_node_label(node, best_type=None):
         confidence = comp['confidence']
         is_best = (best_type == type_name)
         
-        # Calculate background color
+        # Calculate background color - blend with white based on confidence
         base_color = TYPE_COLORS[type_name]
         if is_best:
-            # Highlight best with full color and border
+            # Best type: full saturation with red border
             bg_color = base_color
-            border = ' BGCOLOR="{}" COLOR="red"'.format(base_color)
+            border_attr = f' BGCOLOR="{bg_color}" BORDER="3" COLOR="red"'
         else:
-            # Fade color based on confidence
-            intensity = confidence_to_intensity(confidence)
-            # Make it lighter by blending with white
-            r = int(int(base_color[1:3], 16) * confidence + 255 * (1-confidence))
-            g = int(int(base_color[3:5], 16) * confidence + 255 * (1-confidence))
-            b = int(int(base_color[5:7], 16) * confidence + 255 * (1-confidence))
-            bg_color = f"#{min(255,r):02x}{min(255,g):02x}{min(255,b):02x}"
-            border = f' BGCOLOR="{bg_color}"'
+            # Other types: fade based on confidence (min 0.2 to keep some color visible)
+            blend_factor = max(0.2, confidence)
+            bg_color = blend_color_with_white(base_color, blend_factor)
+            border_attr = f' BGCOLOR="{bg_color}"'
         
         wind_str = format_wind(comp)
         abbrev = TYPE_ABBREV[type_name]
         
-        # Create cell content
-        cell_content = f'<B>{abbrev}</B><BR/><FONT POINT-SIZE="8">{confidence:.2f}</FONT><BR/><FONT POINT-SIZE="7">{wind_str}</FONT>'
+        # PORT attribute allows edges to connect to this specific cell
+        port_name = type_name
         
-        html += f'<TD{border}>{cell_content}</TD>'
+        # Create cell content with PORT
+        cell_content = (
+            f'<B>{abbrev}</B><BR/>'
+            f'<FONT POINT-SIZE="9">{confidence:.2f}</FONT><BR/>'
+            f'<FONT POINT-SIZE="8">{wind_str}</FONT>'
+        )
+        
+        html += f'<TD PORT="{port_name}"{border_attr}>{cell_content}</TD>'
     
     html += '</TR>'
-    html += f'<TR><TD COLSPAN="4"><FONT POINT-SIZE="8">{time_part}</FONT></TD></TR>'
+    # Footer row with timestamp
+    html += f'<TR><TD COLSPAN="4" BGCOLOR="white"><FONT POINT-SIZE="9">{time_part}</FONT></TD></TR>'
     html += '</TABLE>>'
     
     return html
 
 
-def visualize_mst_graph(data, output_file=None, max_nodes=100, show_low_prob_edges=False):
+def create_legend():
+    """Create a legend explaining the colors."""
+    html = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+    html += '<TR><TD COLSPAN="2" BGCOLOR="white"><B>Legend</B></TD></TR>'
+    
+    # Maneuver type colors
+    for type_name in TYPE_ORDER:
+        color = TYPE_COLORS[type_name]
+        abbrev = TYPE_ABBREV[type_name]
+        html += f'<TR><TD BGCOLOR="{color}">{abbrev}</TD><TD BGCOLOR="white">{type_name}</TD></TR>'
+    
+    # Edge colors
+    html += '<TR><TD COLSPAN="2" BGCOLOR="white"><B>Edges</B></TD></TR>'
+    html += '<TR><TD BGCOLOR="white"><FONT COLOR="red">━━</FONT></TD><TD BGCOLOR="white">Best Path</TD></TR>'
+    html += '<TR><TD BGCOLOR="white"><FONT COLOR="darkgreen">━━</FONT></TD><TD BGCOLOR="white">High Prob (&gt;1%)</TD></TR>'
+    html += '<TR><TD BGCOLOR="white"><FONT COLOR="gray50">━━</FONT></TD><TD BGCOLOR="white">Medium Prob</TD></TR>'
+    html += '<TR><TD BGCOLOR="white"><FONT COLOR="gray80">━━</FONT></TD><TD BGCOLOR="white">Low Prob</TD></TR>'
+    
+    html += '</TABLE>>'
+    return html
+
+
+def visualize_mst_graph(data, output_file=None, max_nodes=100, min_edge_prob=0.0):
     """
-    Create graphviz visualization of MST graph.
+    Create graphviz visualization of MST graph with edges connecting to specific compartments.
     
     Args:
         data: Parsed JSON data from MstGraphExporter
         output_file: Output file path (without extension; .pdf/.png will be added)
-        max_nodes: Maximum nodes to show
-        show_low_prob_edges: Whether to show edges with very low probability
+        max_nodes: Maximum number of nodes to show
+        min_edge_prob: Minimum edge probability to display (0 = show all)
     """
     nodes = {n['id']: n for n in data['nodes']}
     edges = data['edges']
@@ -130,28 +161,26 @@ def visualize_mst_graph(data, output_file=None, max_nodes=100, show_low_prob_edg
     dot = Digraph(comment='MST Maneuver Graph')
     dot.attr(rankdir='TB')  # Top to bottom
     dot.attr('node', shape='plaintext')  # Use HTML labels
+    dot.attr(splines='polyline')  # Use polyline for clearer edge routing
+    dot.attr(nodesep='0.5')  # Horizontal spacing between nodes
+    dot.attr(ranksep='1.0')  # Vertical spacing between ranks
     
     # Limit nodes
     nodes_to_draw = list(nodes.keys())[:max_nodes]
     nodes_set = set(nodes_to_draw)
     
+    # Add legend
+    dot.node('legend', create_legend())
+    dot.node('legend_spacer', '', shape='none', width='0', height='0')
+    
     # Add nodes
     for node_id in nodes_to_draw:
         node = nodes[node_id]
         best_type = best_paths.get(str(node_id))
-        label = create_node_label(node, best_type)
+        label = create_node_label_with_ports(node, best_type)
         dot.node(str(node_id), label)
     
-    # Collect best path edges for highlighting
-    best_edge_keys = set()
-    for edge in edges:
-        if edge.get('isBestPath', False):
-            key = (edge['from'], edge['to'], edge['fromType'], edge['toType'])
-            best_edge_keys.add(key)
-    
-    # Group edges by (from_node, to_node) for simplicity
-    # Only show best path edges and edges between same types
-    edge_groups = {}
+    # Process ALL edges
     for edge in edges:
         from_id = edge['from']
         to_id = edge['to']
@@ -161,61 +190,55 @@ def visualize_mst_graph(data, output_file=None, max_nodes=100, show_low_prob_edg
         
         is_best = edge.get('isBestPath', False)
         trans_prob = edge['transitionProbability']
+        from_type = edge['fromType']
+        to_type = edge['toType']
         
-        # Filter: show best path edges, same-type edges, or high probability edges
-        same_type = edge['fromType'] == edge['toType']
-        high_prob = trans_prob > 0.001
+        # Skip very low probability edges unless they're best path
+        if trans_prob < min_edge_prob and not is_best:
+            continue
         
-        if is_best or (same_type and high_prob) or show_low_prob_edges:
-            key = (from_id, to_id)
-            if key not in edge_groups:
-                edge_groups[key] = []
-            edge_groups[key].append(edge)
-    
-    # Add edges (simplified - one edge per node pair, prioritizing best path)
-    for (from_id, to_id), edge_list in edge_groups.items():
-        # Find best edge in this group
-        best_edge = None
-        for e in edge_list:
-            if e.get('isBestPath', False):
-                best_edge = e
-                break
-        
-        if best_edge is None:
-            # Use edge with highest probability
-            best_edge = max(edge_list, key=lambda x: x['transitionProbability'])
-        
-        is_best = best_edge.get('isBestPath', False)
-        trans_prob = best_edge['transitionProbability']
-        from_type = best_edge['fromType']
-        to_type = best_edge['toType']
-        
-        # Style based on best path
+        # Style based on best path and probability
         if is_best:
             color = 'red'
             penwidth = '2.5'
             style = 'bold'
-        else:
-            # Color based on probability
-            if trans_prob > 0.01:
-                color = 'darkgreen'
-            elif trans_prob > 0.001:
-                color = 'gray40'
-            else:
-                color = 'gray80'
-            penwidth = '1.0'
+            fontcolor = 'red'
+        elif trans_prob > 0.01:
+            color = 'darkgreen'
+            penwidth = '1.2'
             style = 'solid'
+            fontcolor = 'darkgreen'
+        elif trans_prob > 0.001:
+            color = 'gray50'
+            penwidth = '0.8'
+            style = 'solid'
+            fontcolor = 'gray50'
+        else:
+            color = 'gray80'
+            penwidth = '0.5'
+            style = 'dashed'
+            fontcolor = 'gray70'
         
-        # Label shows type transition and probability
-        label = f'{TYPE_ABBREV[from_type]}→{TYPE_ABBREV[to_type]}\\n{trans_prob:.1e}'
+        # Format probability label
+        if trans_prob >= 0.01:
+            prob_label = f'{trans_prob:.2f}'
+        elif trans_prob >= 0.001:
+            prob_label = f'{trans_prob:.3f}'
+        else:
+            prob_label = f'{trans_prob:.1e}'
         
-        dot.edge(str(from_id), str(to_id), 
-                label=label,
-                color=color, 
+        # Use PORT to connect to specific compartments
+        from_port = f'{from_id}:{from_type}:s'  # :s = south (bottom) of cell
+        to_port = f'{to_id}:{to_type}:n'        # :n = north (top) of cell
+        
+        dot.edge(from_port, to_port,
+                label=prob_label,
+                color=color,
                 penwidth=penwidth,
                 style=style,
-                fontsize='8',
-                fontcolor=color)
+                fontsize='7',
+                fontcolor=fontcolor,
+                arrowsize='0.6')
     
     # Render
     if output_file:
@@ -235,10 +258,10 @@ def visualize_mst_graph(data, output_file=None, max_nodes=100, show_low_prob_edg
     return dot
 
 
-def create_detailed_edge_graph(data, output_file=None, max_depth=10):
+def create_detailed_edge_graph(data, output_file=None, max_depth=10, min_edge_prob=0.0):
     """
     Create a more detailed graph showing all compartment-to-compartment edges.
-    Each node compartment becomes its own graphviz node.
+    Each node compartment becomes its own graphviz node, grouped by cluster.
     
     This is useful for small subtrees to see the full inner graph structure.
     """
@@ -252,43 +275,62 @@ def create_detailed_edge_graph(data, output_file=None, max_depth=10):
     
     dot = Digraph(comment='MST Detailed Inner Graph')
     dot.attr(rankdir='TB')
+    dot.attr(nodesep='0.3')
+    dot.attr(ranksep='0.8')
+    
+    # Add legend
+    dot.node('legend', create_legend())
     
     # Create subgraph for each tree node (to keep compartments together)
     for node in nodes_to_draw:
         node_id = node['id']
         best_type = best_paths.get(str(node_id))
         
+        # Extract time from timestamp for label
+        timestamp = node.get('timestamp', '')
+        if ' ' in timestamp:
+            time_part = timestamp.split(' ')[1][:8]
+        else:
+            time_part = str(node_id)
+        
         with dot.subgraph(name=f'cluster_{node_id}') as c:
-            c.attr(label=f"Node {node_id}")
-            c.attr(style='rounded')
+            c.attr(label=f'{time_part}')
+            c.attr(style='rounded,filled')
+            c.attr(fillcolor='white')
             
             for comp in node['compartments']:
                 type_name = comp['type']
                 comp_id = f"{node_id}_{type_name}"
                 
                 is_best = (best_type == type_name)
-                color = TYPE_COLORS[type_name]
+                base_color = TYPE_COLORS[type_name]
+                confidence = comp['confidence']
                 
                 if is_best:
-                    style = 'filled,bold'
-                    fillcolor = color
+                    fillcolor = base_color
                     fontcolor = 'white'
+                    penwidth = '3'
+                    pencolor = 'red'
                 else:
-                    style = 'filled'
-                    # Lighter version
-                    fillcolor = f"{color}40"  # 40 = 25% opacity in hex
+                    # Blend based on confidence
+                    blend_factor = max(0.3, confidence)
+                    fillcolor = blend_color_with_white(base_color, blend_factor)
                     fontcolor = 'black'
+                    penwidth = '1'
+                    pencolor = 'black'
                 
-                label = f"{TYPE_ABBREV[type_name]}\\n{comp['confidence']:.2f}\\n{format_wind(comp)}"
+                label = f"{TYPE_ABBREV[type_name]}\\n{confidence:.2f}\\n{format_wind(comp)}"
                 
                 c.node(comp_id, label,
                       shape='box',
-                      style=style,
+                      style='filled',
                       fillcolor=fillcolor,
                       fontcolor=fontcolor,
-                      fontsize='10')
+                      fontsize='9',
+                      penwidth=penwidth,
+                      color=pencolor)
     
-    # Add edges between compartments
+    # Add ALL edges between compartments
     for edge in edges:
         from_id = edge['from']
         to_id = edge['to']
@@ -302,31 +344,42 @@ def create_detailed_edge_graph(data, output_file=None, max_depth=10):
         is_best = edge.get('isBestPath', False)
         trans_prob = edge['transitionProbability']
         
-        # Only show significant edges
-        if trans_prob < 0.0001 and not is_best:
+        # Skip very low probability edges unless best path
+        if trans_prob < min_edge_prob and not is_best:
             continue
         
         if is_best:
             color = 'red'
-            penwidth = '2.0'
+            penwidth = '2.5'
+            fontcolor = 'red'
+        elif trans_prob > 0.01:
+            color = 'darkgreen'
+            penwidth = '1.2'
+            fontcolor = 'darkgreen'
+        elif trans_prob > 0.001:
+            color = 'gray50'
+            penwidth = '0.8'
+            fontcolor = 'gray50'
         else:
-            # Color by probability
-            if trans_prob > 0.01:
-                color = 'darkgreen'
-                penwidth = '1.5'
-            elif trans_prob > 0.001:
-                color = 'gray50'
-                penwidth = '1.0'
-            else:
-                color = 'gray80'
-                penwidth = '0.5'
+            color = 'gray80'
+            penwidth = '0.4'
+            fontcolor = 'gray70'
+        
+        # Format probability label
+        if trans_prob >= 0.01:
+            prob_label = f'{trans_prob:.2f}'
+        elif trans_prob >= 0.001:
+            prob_label = f'{trans_prob:.3f}'
+        else:
+            prob_label = f'{trans_prob:.1e}'
         
         dot.edge(from_comp_id, to_comp_id,
-                label=f'{trans_prob:.1e}',
+                label=prob_label,
                 color=color,
                 penwidth=penwidth,
                 fontsize='7',
-                fontcolor=color)
+                fontcolor=fontcolor,
+                arrowsize='0.5')
     
     if output_file:
         if '.' in output_file:
@@ -342,16 +395,40 @@ def create_detailed_edge_graph(data, output_file=None, max_depth=10):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python mst_graph_visualizer_graphviz.py <input_json_file> [output_file] [--detailed]")
+        print("Usage: python mst_graph_visualizer_graphviz.py <input_json_file> [output_file] [options]")
         print("\nOptions:")
-        print("  input_json_file  - JSON file exported from MstGraphExporter")
-        print("  output_file      - Output file (extension determines format: .pdf, .png, .svg)")
-        print("  --detailed       - Create detailed compartment-level graph (for small graphs)")
+        print("  input_json_file    - JSON file exported from MstGraphExporter")
+        print("  output_file        - Output file (extension determines format: .pdf, .png, .svg)")
+        print("  --detailed         - Create detailed compartment-level graph (for small graphs)")
+        print("  --min-prob=<value> - Minimum edge probability to show (default: 0 = show all)")
+        print("  --max-nodes=<n>    - Maximum number of nodes to display (default: 100)")
+        print("\nCompartment Colors:")
+        print("  T (TACK)      - Green")
+        print("  J (JIBE)      - Blue")
+        print("  H (HEAD_UP)   - Orange")
+        print("  B (BEAR_AWAY) - Purple")
+        print("\nEdge Colors:")
+        print("  Red       - Best path (selected by algorithm)")
+        print("  Dark Green - High probability (>1%)")
+        print("  Gray      - Medium/low probability")
         sys.exit(1)
     
     input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith('--') else None
-    detailed = '--detailed' in sys.argv
+    output_file = None
+    detailed = False
+    min_prob = 0.0
+    max_nodes = 100
+    
+    # Parse arguments
+    for arg in sys.argv[2:]:
+        if arg == '--detailed':
+            detailed = True
+        elif arg.startswith('--min-prob='):
+            min_prob = float(arg.split('=')[1])
+        elif arg.startswith('--max-nodes='):
+            max_nodes = int(arg.split('=')[1])
+        elif not arg.startswith('--'):
+            output_file = arg
     
     print(f"Loading graph from {input_file}...")
     with open(input_file, 'r') as f:
@@ -360,13 +437,14 @@ def main():
     num_nodes = len(data['nodes'])
     num_edges = len(data['edges'])
     print(f"Loaded {num_nodes} nodes, {num_edges} edges")
+    print(f"Minimum edge probability: {min_prob}")
     
     if detailed:
         print("Creating detailed compartment-level visualization...")
-        create_detailed_edge_graph(data, output_file, max_depth=10)
+        create_detailed_edge_graph(data, output_file, max_depth=10, min_edge_prob=min_prob)
     else:
-        print("Creating tree visualization...")
-        visualize_mst_graph(data, output_file, max_nodes=100)
+        print(f"Creating tree visualization (max {max_nodes} nodes)...")
+        visualize_mst_graph(data, output_file, max_nodes=max_nodes, min_edge_prob=min_prob)
 
 
 if __name__ == '__main__':
