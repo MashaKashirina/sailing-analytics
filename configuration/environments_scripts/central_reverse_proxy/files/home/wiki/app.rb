@@ -10,6 +10,9 @@ class App < Precious::App
   LOGGER = Logger.new("/home/wiki/wiki_log.txt") 
   CLIENT_ID = ""
   CLIENT_SECRET = ""
+  REDIRECT_URL = "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
+  REPO_OWNER = "SAP"
+  REPO_NAME = "sailing-analytics"
   before { check! }
   before '/gollum/(edit|create/rename)/*' do authorize_write end
   before do
@@ -35,9 +38,9 @@ class App < Precious::App
         redirect_uri: "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
     }
     uri = URI::HTTPS.build(
-    host: 'github.com',
-    path: '/login/oauth/authorize',
-    query: URI.encode_www_form(params)
+        host: 'github.com',
+        path: '/login/oauth/authorize',
+        query: URI.encode_www_form(params)
     )
     redirect uri.to_s()
   end
@@ -54,27 +57,19 @@ class App < Precious::App
             :client_id => CLIENT_ID,
             :client_secret => CLIENT_SECRET,
             :code => params[:code],
-            :redirect_uri => "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
+            :redirect_uri => REDIRECT_URL
         },
         :accept => :json))
-    LOGGER.debug(result)
     scopes = result['scope'].split(',')
     if scopes.include?('user:email') && scopes.include?('public_repo') && result['access_token']
         session[:access_token] = result['access_token']
-        LOGGER.debug(session[:access_token])
-        emails =  JSON.parse(RestClient.get('https://api.github.com/user/emails',
-            {
-            :Authorization => "Bearer #{session[:access_token]}"
-            }))
+        emails =  JSON.parse(github_api_get('/user/emails'))
         if emails[0] && emails[0]['email']
             session[:email] = emails[0]['email']
             LOGGER.debug("email is #{session[:email]}")
         end
 
-        user_details = JSON.parse(RestClient.get('https://api.github.com/user',
-            {
-            :Authorization => "Bearer #{session[:access_token]}"
-            }))
+        user_details = JSON.parse(github_api_get('/user'))
         if user_details['login'] && user_details['id']
             session[:user_id] = user_details['id']
             session[:name] = user_details['login']
@@ -89,9 +84,18 @@ class App < Precious::App
     redirect "/"
   end
 
-
-
   helpers do
+
+    def github_api_get(path) 
+        uri = URI::HTTPS.build(
+        host: 'api.github.com',
+        path: path)
+        RestClient.get(uri.to_s(),
+            {
+            :Authorization => "Bearer #{session[:access_token]}"
+            })
+    end
+
     def public_path?(path)
         if path == "/" 
           return true
@@ -129,10 +133,7 @@ class App < Precious::App
 
     def user_can_write() 
         return false unless session[:access_token]
-        result = JSON.parse(RestClient.get('https://api.github.com/repos/SAP/sailing-analytics',
-            {
-            :Authorization => "Bearer #{session[:access_token]}"
-            }))
+        result = JSON.parse(github_api_get("/repos/#{REPO_OWNER}/#{REPO_NAME}"))
         result.dig('permissions', 'push') == true
     rescue RestClient::ExceptionWithResponse
         false
