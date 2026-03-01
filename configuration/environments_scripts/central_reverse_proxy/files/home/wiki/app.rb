@@ -35,7 +35,7 @@ class App < Precious::App
         client_id: CLIENT_ID,
         scope: 'public_repo user:email',
         state: session[:oauth_state],
-        redirect_uri: "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
+        redirect_uri: REDIRECT_URL
     }
     uri = URI::HTTPS.build(
         host: 'github.com',
