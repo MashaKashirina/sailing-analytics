@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -131,13 +133,37 @@ public class IncrementalMstHmmWindEstimationForTrackedRaceTest extends OnlineTra
                 new URL("file:///" + new File("resources/event_20110609_KielerWoch-505_Race_2.txt").getCanonicalPath()),
                 /* liveUri */ null, /* storedUri */ storedUri,
                 new ReceiverType[] { ReceiverType.MARKPASSINGS, ReceiverType.RACECOURSE, ReceiverType.RAWPOSITIONS, ReceiverType.MARKPOSITIONS });
-        final Optional<String> polardataBearerToken = Optional.ofNullable(Optional.ofNullable(System.getProperty("polardata.source.bearertoken")).orElse(System.getenv("POLAR_DATA_BEARER_TOKEN")));
-        if (polardataBearerToken.isPresent()) {
+        String polarDataBearerToken = System.getProperty("polardata.source.bearertoken");
+        if (polarDataBearerToken == null) {
+            logger.info("Couldn't find polardata.source.bearertoken system property, trying environment variable POLAR_DATA_BEARER_TOKEN");
+            polarDataBearerToken = System.getenv("POLAR_DATA_BEARER_TOKEN");
+            if (polarDataBearerToken == null) {
+                logger.warning("Couldn't find POLAR_DATA_BEARER_TOKEN environment variable either, polar data service will not be available");
+            } else {
+                final byte[] digest = MessageDigest.getInstance("SHA-256").digest(polarDataBearerToken.getBytes(StandardCharsets.UTF_8));
+                final StringBuilder hexString = new StringBuilder();
+                for (byte b : digest) {
+                    String hex = Integer.toHexString(0xff & b);
+                    if (hex.length() == 1) {
+                        hexString.append('0');
+                    }
+                    hexString.append(hex);
+                }
+                logger.info("Found POLAR_DATA_BEARER_TOKEN environment variable, length "+polarDataBearerToken.length()
+                    +", SHA256 hash "+hexString.toString()
+                    +"; polar data service will be available");
+            }
+        } else {
+            logger.info("Found polardata.source.bearertoken system property, polar data service will be available");
+        }
+        final Optional<String> polardataBearerTokenOptional = Optional.ofNullable(polarDataBearerToken);
+        if (polardataBearerTokenOptional.isPresent()) {
             polarDataService = new PolarDataServiceImpl();
             final com.sap.sailing.domain.tractracadapter.DomainFactory domainFactoryImpl = getDomainFactory();
             final DomainFactory baseDomainFactory = domainFactoryImpl.getBaseDomainFactory();
             polarDataService.registerDomainFactory(baseDomainFactory);
-            new PolarDataClient(Optional.ofNullable(System.getenv("POLAR_DATA_BASE_URL")).orElse("https://sapsailing.com"), polarDataService, polardataBearerToken).updatePolarDataRegressions();
+            new PolarDataClient(Optional.ofNullable(System.getenv("POLAR_DATA_BASE_URL")).orElse("https://sapsailing.com"), polarDataService, polardataBearerTokenOptional)
+                .updatePolarDataRegressions();
         } else {
             polarDataService = new PolarDataServiceImpl();
         }

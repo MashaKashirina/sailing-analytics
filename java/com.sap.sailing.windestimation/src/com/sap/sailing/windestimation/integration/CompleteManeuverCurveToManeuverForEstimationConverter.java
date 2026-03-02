@@ -111,7 +111,7 @@ public class CompleteManeuverCurveToManeuverForEstimationConverter {
         // TODO compute scaledSpeedDivisor, recompute maneuverForEstimation, reclassify all maneuver instances if
         // scaledSpeedDivisor has significantly changed?
         ManeuverForEstimation maneuverForEstimation = maneuverForEstimationTransformer
-                .getManeuverForEstimation(convertableManeuver, 1.0, boatClass);
+                .getManeuverForEstimation(convertableManeuver, 1.0, boatClass, competitor);
         return maneuverForEstimation;
     }
 
