@@ -275,7 +275,8 @@ public abstract class GPSFixTrackImpl<ItemType, FixType extends GPSFix> extends 
         }
 
         @Override
-        public void cacheEstimatedSpeed(SpeedWithBearing estimatedSpeed) {
+        public SpeedWithBearing cacheEstimatedSpeed(SpeedWithBearing estimatedSpeed) {
+            return estimatedSpeed;
         }
     }
 
@@ -633,8 +634,7 @@ public abstract class GPSFixTrackImpl<ItemType, FixType extends GPSFix> extends 
                                 getMillisecondsOverWhichToAverageSpeed() / 2, /* minimumConfidence */ 0.00000001)); // half confidence if half averaging interval apart
                 if (estimatedSpeed != null) {
                     if (ceil != null && ceil.getTimePoint().equals(at)) {
-                        ceil.cacheEstimatedSpeed(estimatedSpeed.getObject());
-                        result = ceil.getCachedEstimatedSpeed(); // this way, should the fix apply compaction, we will still return consistent (compacted) results
+                        result = ceil.cacheEstimatedSpeed(estimatedSpeed.getObject()); // this way, should the fix apply compaction, we will still return consistent (compacted) results
                     } else {
                         result = estimatedSpeed.getObject();
                     }

@@ -11,6 +11,8 @@ import com.sap.sse.common.Position;
 import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.AbstractSpeedWithAbstractBearingImpl;
+import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 
 /**
  * A compact representation of a GPS fix which collects all primitive-typed attributes in one object to avoid
@@ -116,13 +118,17 @@ public class VeryCompactGPSFixImpl extends AbstractCompactGPSFixImpl {
      * uncached.
      */
     @Override
-    public void cacheEstimatedSpeed(SpeedWithBearing estimatedSpeed) {
+    public synchronized SpeedWithBearing cacheEstimatedSpeed(SpeedWithBearing estimatedSpeed) {
         try {
             cachedEstimatedSpeedInKnotsScaled = CompactPositionHelper.getKnotSpeedScaled(estimatedSpeed);
             cachedEstimatedSpeedBearingInDegreesScaled = CompactPositionHelper.getDegreeBearingScaled(estimatedSpeed.getBearing());
             super.cacheEstimatedSpeed(estimatedSpeed);
+            final SpeedWithBearing veryCompactEstimatedSpeed = getCachedEstimatedSpeed();
+            return new KnotSpeedWithBearingImpl(veryCompactEstimatedSpeed.getKnots(),
+                    new DegreeBearingImpl(veryCompactEstimatedSpeed.getBearing().getDegrees()));
         } catch (CompactionNotPossibleException e) {
             logger.log(Level.FINER, "Cannot cache estimated speed "+estimatedSpeed+" in compact fix:", e);
+            return estimatedSpeed;
         }
     }
 }
