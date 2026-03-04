@@ -209,12 +209,13 @@ public class MasterDataImportTest {
         SecurityManager securityManager = Mockito.mock(org.apache.shiro.mgt.SecurityManager.class);
         Subject fakeSubject = Mockito.mock(Subject.class);
         // Stub the mock BEFORE installing it as the global SecurityManager to avoid a race
-        // condition where a background thread (from RacingEventServiceImpl's static
-        // ScheduledExecutorService) calls SecurityUtils.getSubject(), which triggers
-        // createSubject() on the mock while Mockito is still in the middle of setting up
-        // the doReturn().when() stubbing. The background thread consumes/corrupts
-        // Mockito's doAnswer-style answers on the mock's InvocationContainer, causing
-        // an AssertionError in InvocationContainerImpl.setMethodForStubbing.
+        // condition: SecurityUtils.setSecurityManager() sets a JVM-wide static singleton.
+        // Any thread that calls SecurityUtils.getSubject() (when no Subject is bound to its
+        // ThreadContext) will trigger securityManager.createSubject(). If that happens between
+        // the .when(securityManager) call (which sets pending doAnswer-style answers on the
+        // mock's InvocationContainer) and the .createSubject() call (which completes the
+        // stubbing), the other thread's call consumes the pending answers first, causing an
+        // AssertionError in InvocationContainerImpl.setMethodForStubbing (line 123).
         Mockito.doReturn(fakeSubject).when(securityManager).createSubject(Mockito.any());
         SecurityUtils.setSecurityManager(securityManager);
         Mockito.doReturn(defaultTenant).when(securityService).getServerGroup();
