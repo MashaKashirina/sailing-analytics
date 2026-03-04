@@ -51,25 +51,26 @@ public class CourseChangeBasedTrackApproximationWithTracTracDataTest extends Onl
             // To pick a single competitor, e.g., for debugging, use the following line:
 //            sampleCompetitor = (CompetitorWithBoat) Util.first(Util.filter(competitors, c->c.getName().equals("Feldmann")));
             // To pick a random competitor, use the following line:
-            sampleCompetitor = (CompetitorWithBoat) Util.get(
-            Util.filter(competitors,
-                    c -> getTrackedRace().getMarkPassing(c,
-                            getTrackedRace().getRace().getCourse().getLastWaypoint()) != null),
-                    new Random().nextInt(Util.size(competitors)));
+            final Iterable<Competitor> validCompetitors = getValidCompetitors();
+            sampleCompetitor = (CompetitorWithBoat) Util.get(validCompetitors, new Random().nextInt(Util.size(validCompetitors)));
             sampleTrack = getTrackedRace().getTrack(sampleCompetitor);
         } while (sampleTrack.isEmpty());
     }
     
     @Test
     public void testAllCompetitorsThatFinished() {
-        for (final Competitor competitor : Util.filter(competitors,
-                c -> !c.getName().equals("Broise") &&
-                getTrackedRace().getMarkPassing(c, getTrackedRace().getRace().getCourse().getLastWaypoint()) != null)) {
+        for (final Competitor competitor : getValidCompetitors()) {
             sampleCompetitor = (CompetitorWithBoat) competitor;
             sampleTrack = getTrackedRace().getTrack(sampleCompetitor);
             logger.info("Testing competitor "+sampleCompetitor.getName());
             testNoDiffBetweenEarlyAndLateInitialization();
         }
+    }
+
+    private Iterable<Competitor> getValidCompetitors() {
+        return Util.filter(competitors,
+                c -> !c.getName().equals("Broise") && // Broise has major gaps in the track, leading to deviations, not relevant for production, so exclude them
+                getTrackedRace().getMarkPassing(c, getTrackedRace().getRace().getCourse().getLastWaypoint()) != null);
     }
     
     /**
