@@ -163,7 +163,6 @@ import com.sap.sailing.domain.common.NauticalSide;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.NotFoundException;
 import com.sap.sailing.domain.common.PathType;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RaceFetcher;
 import com.sap.sailing.domain.common.RankingMetrics;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
@@ -175,7 +174,6 @@ import com.sap.sailing.domain.common.RegattaScoreCorrections;
 import com.sap.sailing.domain.common.RegattaScoreCorrections.ScoreCorrectionForCompetitorInRace;
 import com.sap.sailing.domain.common.RegattaScoreCorrections.ScoreCorrectionsForRace;
 import com.sap.sailing.domain.common.ScoreCorrectionProvider;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
 import com.sap.sailing.domain.common.Wind;
@@ -203,10 +201,6 @@ import com.sap.sailing.domain.common.dto.RaceLogTrackingInfoDTO;
 import com.sap.sailing.domain.common.dto.SeriesCreationParametersDTO;
 import com.sap.sailing.domain.common.dto.TagDTO;
 import com.sap.sailing.domain.common.dto.TrackedRaceDTO;
-import com.sap.sailing.domain.common.impl.KilometersPerHourSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.domain.common.impl.WindSourceImpl;
 import com.sap.sailing.domain.common.media.MediaTrack;
 import com.sap.sailing.domain.common.orc.ImpliedWindSource;
@@ -463,8 +457,10 @@ import com.sap.sse.common.Duration;
 import com.sap.sse.common.MultiTimeRange;
 import com.sap.sse.common.NoCorrespondingServiceRegisteredException;
 import com.sap.sse.common.PairingListCreationException;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.RepeatablePart;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TimeRange;
 import com.sap.sse.common.Timed;
@@ -475,6 +471,9 @@ import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.common.WithID;
+import com.sap.sse.common.impl.KilometersPerHourSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.common.impl.RepeatablePartImpl;
 import com.sap.sse.common.impl.SecondsDurationImpl;
@@ -897,7 +896,7 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
                 // total distance traveled in meters has to be expanded for the test to work.
                 final boolean storeLeaderboardForTesting = false;
                 if (storeLeaderboardForTesting) {
-                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("../com.sap.sailing.domain.test/resources/IncrementalLeaderboardDTO.ser")));
+                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(File.createTempFile("IncrementalLeaderboardDTO", ".ser")));
                     oos.writeObject(leaderboardDTO);
                     oos.close();
                 }
@@ -2809,13 +2808,12 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
 
     @Override
     public Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>> getDouglasPoints(
-            RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges, double meters)
+            RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges)
             throws NoWindException {
         final Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>> result = new HashMap<>();
         final TrackedRace trackedRace = getExistingTrackedRace(raceIdentifier);
         getSecurityService().checkCurrentUserReadPermission(trackedRace);
         if (trackedRace != null) {
-            final MeterDistance maxDistance = new MeterDistance(meters);
             for (Competitor competitor : trackedRace.getRace().getCompetitors()) {
                 final CompetitorDTO competitorDTO = baseDomainFactory.convertToCompetitorDTO(competitor);
                 if (competitorTimeRanges.containsKey(competitorDTO)) {
@@ -2823,8 +2821,8 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
                     final GPSFixTrack<Competitor, GPSFixMoving> gpsFixTrack = trackedRace.getTrack(competitor);
                     // Distance for DouglasPeucker
                     final TimeRange timeRange = competitorTimeRanges.get(competitorDTO);
-                    final Iterable<GPSFixMoving> gpsFixApproximation = trackedRace.approximate(competitor, maxDistance,
-                            timeRange.from(), timeRange.to());
+                    final Iterable<GPSFixMoving> gpsFixApproximation = trackedRace.approximate(competitor, timeRange.from(),
+                            timeRange.to());
                     final List<GPSFixDTOWithSpeedWindTackAndLegType> gpsFixDouglasList = new ArrayList<>();
                     GPSFix fix = null;
                     for (GPSFix next : gpsFixApproximation) {
