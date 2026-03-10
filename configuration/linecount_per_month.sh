@@ -1,4 +1,5 @@
 #!/bin/bash
+cp "$( dirname ${0} )/linecount.sh" "${TMP}"
 for y in $( seq 2011 2026 ); do
     for m in $( seq 01 12 ); do
         d=$( printf '%04d-%02d-01\n' ${y} ${m} )
@@ -7,7 +8,7 @@ for y in $( seq 2011 2026 ); do
             echo -n "$d "
             git reset --hard >/dev/null 2>&1
             git checkout -f ${commit} >/dev/null 2>&1
-            ../linecount.sh
+            "${TMP}/linecount.sh"
             git reset --hard >/dev/null 2>&1
         fi
     done
