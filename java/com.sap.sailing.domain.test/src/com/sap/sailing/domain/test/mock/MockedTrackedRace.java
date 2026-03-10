@@ -53,6 +53,7 @@ import com.sap.sailing.domain.leaderboard.caching.LeaderboardDTOCalculationReuse
 import com.sap.sailing.domain.leaderboard.impl.CompetitorAndRankComparable;
 import com.sap.sailing.domain.leaderboard.impl.CompetitorProviderFromRaceColumnsAndRegattaLike;
 import com.sap.sailing.domain.leaderboard.impl.RankAndRankComparable;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.polars.PolarDataService;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
@@ -690,12 +691,13 @@ public class MockedTrackedRace implements DynamicTrackedRace {
 
             @Override
             public DynamicTrackedRace createTrackedRace(RaceDefinition raceDefinition, Iterable<Sideline> sidelines,
-                    WindStore windStore, long delayToLiveInMillis,
-                    long millisecondsOverWhichToAverageWind, long millisecondsOverWhichToAverageSpeed,
-                    DynamicRaceDefinitionSet raceDefinitionSetToUpdate, boolean useMarkPassingcalculator,
-                    RaceLogAndTrackedRaceResolver raceLogResolver,
+                    WindStore windStore, long delayToLiveInMillis, long millisecondsOverWhichToAverageWind,
+                    long millisecondsOverWhichToAverageSpeed, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
+                    boolean useMarkPassingcalculator, RaceLogAndTrackedRaceResolver raceLogResolver,
                     Optional<ThreadLocalTransporter> threadLocalTransporter,
-                    TrackingConnectorInfo trackingConnectorInfo, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) {
+                    TrackingConnectorInfo trackingConnectorInfo,
+                    MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+                    ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
                 return null;
             }
 

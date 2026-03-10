@@ -604,6 +604,7 @@ public class MarkPassingCalculator {
                             if (markPassingRaceFingerprintRegistry != null) {
                                 initializationExecutor.submit(()->{
                                     final Map<Competitor, Map<Waypoint, MarkPassing>> markPassings = race.getMarkPassings(/* waitForLatestUpdates */ true);
+                                    // TODO bug6182: do we need to store when we can assume that the race is still live? How to find out reliably?
                                     markPassingRaceFingerprintRegistry.storeMarkPassings(race.getRaceIdentifier(),
                                             MarkPassingRaceFingerprintFactory.INSTANCE.createFingerprint(race),
                                             markPassings, race.getRace().getCourse());
