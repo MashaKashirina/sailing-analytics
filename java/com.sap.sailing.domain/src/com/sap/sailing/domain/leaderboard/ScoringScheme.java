@@ -335,8 +335,9 @@ public interface ScoringScheme extends Serializable {
     }
     
     /**
-     * Compares by the number of races won in the medal series. This default implementation simply compares the two numbers, and
-     * the competitor with the greater number is scored better ("less").
+     * Compares by the number of races won in the medal series. This default implementation simply compares the two
+     * numbers, and the competitor with the greater number is scored better ("less"). It is used if
+     * {@link #isMedalWinAmountCriteria()} returns {@code true} (which by default it doesn't).
      */
     default int compareByMedalRacesWon(int numberOfMedalRacesWonO1, int numberOfMedalRacesWonO2) {
         return Integer.compare(numberOfMedalRacesWonO2, numberOfMedalRacesWonO1);
