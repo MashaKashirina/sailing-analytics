@@ -215,20 +215,22 @@ public class LeaderboardScoringAndRankingForLowPointsTest extends LeaderboardSco
         // in favor of C2 because C2 must have performed better in the medal races F1/F2 due to the worse
         // carried score
         assertEquals(raceColumnNames.size(), leaderboard.getNetPoints(competitors.get(0), carryColumn, now), EPSILON);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(0), f1, 5.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(0), f2, 3.0); // medal series: 3 (Carry) + 5 + 3 = 11
+        leaderboard.getScoreCorrection().correctScore(competitors.get(0), f1, 7.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(0), f2, 3.0); // medal series: 5 (Carry) + 7 + 3 = 15
         assertEquals(2*raceColumnNames.size(), leaderboard.getNetPoints(competitors.get(1), carryColumn, now), EPSILON);
         leaderboard.getScoreCorrection().correctScore(competitors.get(1), f1, 1.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(1), f2, 4.0); // medal series: 6 (Carry) + 1 + 4 = 11
+        leaderboard.getScoreCorrection().correctScore(competitors.get(1), f2, 4.0); // medal series: 10 (Carry) + 1 + 4 = 15
+        assertEquals(leaderboard.getNetPoints(competitors.get(0), now), leaderboard.getNetPoints(competitors.get(1), now), EPSILON);
         // construct a tie between C9 and C10 (index 8 and 9, respectively); the tie is expected to be broken
         // in favor of C9 because although both carried the same number of points from the open series due
         // to the "reduced points" rule, and both scores equal points in total in F1 and F2, C9 had the better
         // best score.
         assertEquals(leaderboard.getNetPoints(competitors.get(8), carryColumn, now), leaderboard.getNetPoints(competitors.get(9), carryColumn, now), EPSILON);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f1, 6.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f2, 8.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(9), f1, 7.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(9), f2, 7.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f1, 5.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f2, 7.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(9), f1, 6.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(9), f2, 6.0);
+        assertEquals(leaderboard.getNetPoints(competitors.get(8), now), leaderboard.getNetPoints(competitors.get(9), now), EPSILON);
         // construct a tie between C7 and C8 (index 6 and 7, respectively); the tie is based on
         // equal carried points and equal medal series points throughout (both DNF in F1 and F2),
         // but C7 is expected to be ranked better because of the better rank in the opening series,
@@ -251,7 +253,7 @@ public class LeaderboardScoringAndRankingForLowPointsTest extends LeaderboardSco
         leaderboard.getScoreCorrection().correctScore(competitors.get(2), f2, 1.0);
         leaderboard.getScoreCorrection().correctScore(competitors.get(3), f2, 2.0);
         leaderboard.getScoreCorrection().correctScore(competitors.get(4), f2, 5.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(5), f2, 6.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(5), f2, 8.0);
         final Iterable<Competitor> ranking = leaderboard.getCompetitorsFromBestToWorst(now);
         assertTrue(Util.indexOf(ranking, competitors.get(6)) < Util.indexOf(ranking, competitors.get(7)));
         assertTrue(Util.indexOf(ranking, competitors.get(8)) < Util.indexOf(ranking, competitors.get(9)));
