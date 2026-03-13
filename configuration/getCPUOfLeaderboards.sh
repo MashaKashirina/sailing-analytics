@@ -26,4 +26,4 @@ JSON_OUTPUT='['`curl -L "${BASE_URL}/sailingserver/api/v1/leaderboards" 2>/dev/n
     FIRST=1
   fi
 done`']'
-echo "${JSON_OUTPUT}"
+echo "${JSON_OUTPUT}" | jq -C 'sort_by(.cpu.totals.cpuTotalMillis) | reverse' | less -R
