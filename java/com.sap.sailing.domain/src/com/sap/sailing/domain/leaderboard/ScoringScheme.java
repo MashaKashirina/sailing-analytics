@@ -366,13 +366,16 @@ public interface ScoringScheme extends Serializable {
             BiFunction<Competitor, RaceColumn, Double> totalPointsSupplier, boolean nullScoresAreBetter,
             WindLegTypeAndLegBearingAndORCPerformanceCurveCache cache) {
         assert o1MedalRaceScore != null || o2MedalRaceScore == null;
-        final int result;
+        int result;
         if (o1MedalRaceScore != null) {
             result = getScoreComparator(nullScoresAreBetter).compare(o1MedalRaceScore, o2MedalRaceScore);
+            if (result == 0) {
+                result = compareByBetterScore(o1, o1ScoringMedalRaces, o2, o2ScoringMedalRaces,
+                        Util.map(o1ScoringMedalRaces, Pair::getA), nullScoresAreBetter, timePoint, leaderboard,
+                        discardedRaceColumnsPerCompetitor, totalPointsSupplier, cache);
+            }
         } else {
-            result = compareByBetterScore(o1, o1ScoringMedalRaces, o2, o2ScoringMedalRaces, Util.map(o1ScoringMedalRaces, Pair::getA),
-                    nullScoresAreBetter, timePoint, leaderboard, discardedRaceColumnsPerCompetitor, totalPointsSupplier,
-                    cache);
+            result = 0;
         }
         return result;
     }

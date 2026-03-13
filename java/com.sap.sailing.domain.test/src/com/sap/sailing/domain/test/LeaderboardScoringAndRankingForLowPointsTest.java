@@ -226,8 +226,8 @@ public class LeaderboardScoringAndRankingForLowPointsTest extends LeaderboardSco
         // to the "reduced points" rule, and both scores equal points in total in F1 and F2, C9 had the better
         // best score.
         assertEquals(leaderboard.getNetPoints(competitors.get(8), carryColumn, now), leaderboard.getNetPoints(competitors.get(9), carryColumn, now), EPSILON);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f1, 5.0);
-        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f2, 7.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f1, 7.0);
+        leaderboard.getScoreCorrection().correctScore(competitors.get(8), f2, 5.0);
         leaderboard.getScoreCorrection().correctScore(competitors.get(9), f1, 6.0);
         leaderboard.getScoreCorrection().correctScore(competitors.get(9), f2, 6.0);
         assertEquals(leaderboard.getNetPoints(competitors.get(8), now), leaderboard.getNetPoints(competitors.get(9), now), EPSILON);
