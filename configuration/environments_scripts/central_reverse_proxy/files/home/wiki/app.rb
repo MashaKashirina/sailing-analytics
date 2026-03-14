@@ -14,7 +14,7 @@ class App < Precious::App
   REPO_OWNER = "SAP"
   REPO_NAME = "sailing-analytics"
   before { check! }
-  before '/gollum/(edit|create/rename)/*' do authorize_write end
+  before '/gollum/(edit|create|rename)/*' do authorize_write end
   before do
     if session[:email] && session[:name] 
         session['gollum.author'] = {
@@ -105,16 +105,16 @@ class App < Precious::App
         public_patterns = [ %r{\A/gollum/(assets|commit|history|last_commit_info).*}, %r{\A/gollum/search}, %r{\A/gollum/latest_changes\z}]
         public_patterns.any? {|pattern| pattern.match(path)}
     end
-
+    
     def auth_path?(path)
-      auth_paths = [%r{\A/gollum/(edit|create|rename)/.*\z}, %r{\A/gollum/overview}]  
+        auth_paths = [%r{\A/gollum/(edit|create|rename|preview)/.*\z}, %r{\A/gollum/overview}]  
       auth_paths.any? {|pattern| pattern.match(path)}
     end
 
     def login_path?(path)
         %r{\A/(login|callback|logout)\z}.match?(path)
     end
-
+    
     def check!
       path = self.env['PATH_INFO']
       return if login_path?(path)
@@ -124,11 +124,11 @@ class App < Precious::App
     end
 
     def authorize_write
-      LOGGER.debug("Checking auth before writing")
-      if !session[:access_token]
-        redirect '/login'
-      end
-      halt 403, "Forbidden" unless user_can_write()
+        LOGGER.debug("Checking auth before writing")
+        if !session[:access_token]
+            redirect '/login'
+        end
+        halt 403, "Forbidden" unless user_can_write()
     end
 
     def user_can_write() 
