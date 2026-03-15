@@ -36,6 +36,7 @@ else
   # Allow guest login from non-localhost IPs:
   sudo su - -c "cat <<EOF >>/etc/rabbitmq/rabbitmq.conf
 loopback_users = none
+heartbeat = 0
 EOF
 "
   sudo systemctl restart rabbitmq-server.service
