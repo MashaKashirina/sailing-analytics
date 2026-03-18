@@ -3121,6 +3121,48 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
     public RaceMapSettings getSettings() {
         return settings;
     }
+    private boolean selectionDependentRefreshScheduled;
+    private boolean selectionDependentRefreshPending;
+    
+    private void scheduleSelectionDependentTailAndMapStateRefresh() {
+        selectionDependentRefreshPending = true;
+
+        if (!selectionDependentRefreshScheduled) {
+            selectionDependentRefreshScheduled = true;
+            Scheduler.get().scheduleFinally(new Scheduler.ScheduledCommand() {
+                @Override
+                public void execute() {
+                    selectionDependentRefreshScheduled = false;
+
+                    if (selectionDependentRefreshPending) {
+                        selectionDependentRefreshPending = false;
+                        refreshSelectionDependentTailAndMapState();
+                    }
+                }
+            });
+        }
+    }
+    private void refreshSelectionDependentTailAndMapState() {
+        if (selectedDetailType != null && !selectedDetailTypeChanged) {
+            // assumes that the detail values have already been loaded, as the detail type hasn't changed
+            fixesAndTails.updateDetailValueBoundaries(competitorSelection.getSelectedCompetitors());
+        }
+        // update tails for all competitors because selection change may also affect all unselected competitors
+        for (CompetitorDTO oneOfAllCompetitors : competitorSelection.getAllCompetitors()) {
+            Colorline tail = fixesAndTails.getTail(oneOfAllCompetitors);
+            if (tail != null) {
+                ColorlineOptions newOptions =
+                        createTailStyle(oneOfAllCompetitors, displayHighlighted(oneOfAllCompetitors));
+                tail.setOptions(newOptions); // depends on the min/max boundaries computed above
+            }
+        }
+        // Trigger auto-zoom if needed
+        final RaceMapZoomSettings zoomSettings = settings.getZoomSettings();
+        if (!zoomSettings.containsZoomType(ZoomTypes.NONE) && zoomSettings.isZoomToSelectedCompetitors()) {
+            zoomMapToNewBounds(zoomSettings.getNewBounds(this));
+        }
+        redraw();
+    }
 
     @Override
     public void addedToSelection(CompetitorDTO competitor) {
@@ -3148,24 +3190,7 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
                 showCompetitorInfoOnMap(timer.getTime(), -1, competitorSelection.getSelectedFilteredCompetitors());
             }
         }
-        if (selectedDetailType != null && !selectedDetailTypeChanged) {
-            // assumes that the detail values have already been loaded, as the detail type hasn't changed
-            fixesAndTails.updateDetailValueBoundaries(competitorSelection.getSelectedCompetitors());
-        }
-        // update tails for all competitors because selection change may also affect all unselected competitors
-        for (CompetitorDTO oneOfAllCompetitors : competitorSelection.getAllCompetitors()) {
-            Colorline tail = fixesAndTails.getTail(oneOfAllCompetitors);
-            if (tail != null) {
-                ColorlineOptions newOptions = createTailStyle(oneOfAllCompetitors, displayHighlighted(oneOfAllCompetitors));
-                tail.setOptions(newOptions); // depends on the min/max boundaries computed above
-            }
-        }
-        // Trigger auto-zoom if needed
-        final RaceMapZoomSettings zoomSettings = settings.getZoomSettings();
-        if (!zoomSettings.containsZoomType(ZoomTypes.NONE) && zoomSettings.isZoomToSelectedCompetitors()) {
-            zoomMapToNewBounds(zoomSettings.getNewBounds(this));
-        }
-        redraw(); 
+        scheduleSelectionDependentTailAndMapStateRefresh();
     }
     
     @Override
@@ -3173,13 +3198,13 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
         if (isShowAnyHelperLines()) {
             // helper lines depend on which competitor is visible, because the *visible* leader is used for
             // deciding which helper lines to show:
-            redraw();
+            //redraw();
         } else {
             // try a more incremental update otherwise
             if (settings.isShowOnlySelectedCompetitors()) {
                 // if selection is now empty, show all competitors
                 if (Util.isEmpty(competitorSelection.getSelectedCompetitors())) {
-                    redraw();
+                    //redraw();
                 } else {
                     // otherwise remove only deselected competitor's boat images and tail
                     final BoatOverlay removedBoatOverlay = boatOverlaysByCompetitorIdsAsStrings.remove(competitor.getIdAsString());
@@ -3200,21 +3225,7 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
             }
         }
         // Now update tails for all competitors because selection change may also affect all unselected competitors
-        if (selectedDetailType != null && !selectedDetailTypeChanged) {
-            fixesAndTails.updateDetailValueBoundaries(competitorSelection.getSelectedCompetitors());
-        }
-        for (CompetitorDTO oneOfAllCompetitors : competitorSelection.getAllCompetitors()) {
-            Colorline tail = fixesAndTails.getTail(oneOfAllCompetitors);
-            if (tail != null) {
-                ColorlineOptions newOptions = createTailStyle(oneOfAllCompetitors, displayHighlighted(oneOfAllCompetitors));
-                tail.setOptions(newOptions);
-            }
-        }
-        // Trigger auto-zoom if needed
-        RaceMapZoomSettings zoomSettings = settings.getZoomSettings();
-        if (!zoomSettings.containsZoomType(ZoomTypes.NONE) && zoomSettings.isZoomToSelectedCompetitors()) {
-            zoomMapToNewBounds(zoomSettings.getNewBounds(this));
-        }
+        scheduleSelectionDependentTailAndMapStateRefresh();
     }
 
     private boolean isShowAnyHelperLines() {
