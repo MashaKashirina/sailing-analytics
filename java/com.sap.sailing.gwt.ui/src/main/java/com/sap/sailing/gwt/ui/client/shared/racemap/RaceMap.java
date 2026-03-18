@@ -283,6 +283,26 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
      * The leeward of two Polylines representing a triangle between startline and first mark.
      */
     private Polyline leewardStartLineMarkToFirstMarkLine;
+    
+    /**
+     * True once a selection-dependent tail/map refresh has already been scheduled for the current
+     * event cycle. This is used to coalesce many add/remove selection callbacks into one final refresh
+     * instead of running the expensive refresh logic once per competitor.
+     */
+    private boolean selectionDependentRefreshScheduled;
+
+    /**
+     * True when at least one selection change occurred and a selection-dependent refresh is still
+     * needed. The scheduled command clears this flag after performing the consolidated refresh.
+     */
+    private boolean selectionDependentRefreshPending;
+
+    /**
+     * Remembers the last tail display mode applied per competitor id. This allows us to skip
+     * reapplying tail styles for competitors whose visual tail state did not change between two
+     * refreshes. The optimization is especially useful when no detail-based tail coloring is active.
+     */
+    private final Map<String, DisplayMode> lastAppliedTailDisplayModes = new HashMap<>();
 
     private class AdvantageLineMouseOverMapHandler implements MouseOverMapHandler {
         private double trueWindAngle;
@@ -3121,12 +3141,23 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
     public RaceMapSettings getSettings() {
         return settings;
     }
-    private boolean selectionDependentRefreshScheduled;
-    private boolean selectionDependentRefreshPending;
     
+    /**
+     * Schedules a single consolidated refresh of selection-dependent tail and map state.
+     *
+     * <p>Selection changes are delivered per competitor, so bulk selection can trigger many
+     * added/removed callbacks in the same event cycle. Running the expensive tail/map refresh
+     * immediately in every callback caused repeated redraw and restyling work. This method batches
+     * those callbacks by marking a refresh as pending and scheduling exactly one final refresh via
+     * {@link Scheduler#scheduleFinally(Scheduler.ScheduledCommand)}.</p>
+     *
+     * <p>If multiple selection events arrive before the scheduled command runs, they only set the
+     * pending flag again; no additional scheduled refresh is created. When the scheduled command
+     * executes, it performs one call to {@code refreshSelectionDependentTailAndMapState()} if a
+     * refresh is still pending.</p>
+     */
     private void scheduleSelectionDependentTailAndMapStateRefresh() {
         selectionDependentRefreshPending = true;
-
         if (!selectionDependentRefreshScheduled) {
             selectionDependentRefreshScheduled = true;
             Scheduler.get().scheduleFinally(new Scheduler.ScheduledCommand() {
@@ -3151,9 +3182,17 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
         for (CompetitorDTO oneOfAllCompetitors : competitorSelection.getAllCompetitors()) {
             Colorline tail = fixesAndTails.getTail(oneOfAllCompetitors);
             if (tail != null) {
-                ColorlineOptions newOptions =
-                        createTailStyle(oneOfAllCompetitors, displayHighlighted(oneOfAllCompetitors));
-                tail.setOptions(newOptions); // depends on the min/max boundaries computed above
+                final DisplayMode newDisplayMode = displayHighlighted(oneOfAllCompetitors);
+                if (selectedDetailType == null) {
+                    final String competitorId = oneOfAllCompetitors.getIdAsString();
+                    final DisplayMode previousDisplayMode = lastAppliedTailDisplayModes.get(competitorId);
+                    if (previousDisplayMode == newDisplayMode) {
+                        continue;
+                    }
+                    lastAppliedTailDisplayModes.put(competitorId, newDisplayMode);
+                }
+                ColorlineOptions newOptions = createTailStyle(oneOfAllCompetitors, newDisplayMode);
+                tail.setOptions(newOptions);
             }
         }
         // Trigger auto-zoom if needed
@@ -3176,6 +3215,7 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
                         CanvasOverlayV3 boatOverlay = next.getValue();
                         boatOverlay.removeFromMap();
                         fixesAndTails.removeTail(next.getKey());
+                        lastAppliedTailDisplayModes.remove(next.getKey());
                         i.remove(); // only this way a ConcurrentModificationException while looping can be avoided
                     }
                 }
@@ -3212,6 +3252,7 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
                         removedBoatOverlay.removeFromMap();
                     }
                     fixesAndTails.removeTail(competitor.getIdAsString());
+                    lastAppliedTailDisplayModes.remove(competitor.getIdAsString());
                     showCompetitorInfoOnMap(timer.getTime(), -1, competitorSelection.getSelectedFilteredCompetitors());
                 }
             } else {
@@ -3558,7 +3599,27 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
             }
         }
     }
-
+    /**
+     * Creates the visual style for one competitor tail based on the current display mode.
+     *
+     * <p>The three display modes are:</p>
+     * <ul>
+     *   <li><b>DEFAULT</b>: normal competitor-colored tail with standard stroke width</li>
+     *   <li><b>SELECTED</b>: highlighted tail with thicker stroke</li>
+     *   <li><b>NOT_SELECTED</b>: lowlighted grey tail for competitors that are currently not selected</li>
+     * </ul>
+     *
+     * <p>A selected tail uses {@link ColorlineMode#POLYCHROMATIC} only when detail-based coloring is
+     * actually active and detail values are available. Otherwise it stays
+     * {@link ColorlineMode#MONOCHROMATIC}. This avoids unnecessary switching between monochromatic and
+     * polychromatic rendering, which would force {@code Colorline.setOptions(...)} to rebuild the tail
+     * polyline structure via {@code setPath(...)} and was identified as a significant performance cost
+     * during selection updates.</p>
+     *
+     * @param competitor the competitor whose tail is being styled
+     * @param displayMode the desired display mode for this competitor tail
+     * @return the configured {@link ColorlineOptions} for the tail
+     */
     @Override
     public ColorlineOptions createTailStyle(CompetitorDTO competitor, DisplayMode displayMode) {
         final ColorlineOptions options = new ColorlineOptions();
@@ -3572,19 +3633,21 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
             options.setStrokeWeight(1);
             break;
         case SELECTED:
-            options.setColorMode(ColorlineMode.POLYCHROMATIC);
-            options.setColorProvider(fixIndexInTail -> {
-                final String resultColor;
-                final Double detailValue;
-                // If a DetailType has been selected and we are not currently waiting for the first update with the new values
-                if (selectedDetailType != null && !selectedDetailTypeChanged && (detailValue = fixesAndTails.getDetailValueAt(competitor, fixIndexInTail)) != null) {
-                    resultColor = tailColorMapper.getColor(detailValue);
-                } else {
-                    resultColor = competitorSelection.getColor(competitor, raceIdentifier).getAsHtml();
-                }
-                return resultColor;
-            });
             options.setStrokeWeight(2);
+            if (selectedDetailType != null && !selectedDetailTypeChanged) {
+                options.setColorMode(ColorlineMode.POLYCHROMATIC);
+                options.setColorProvider(fixIndexInTail -> {
+                    final Double detailValue = fixesAndTails.getDetailValueAt(competitor, fixIndexInTail);
+                    if (detailValue != null) {
+                        return tailColorMapper.getColor(detailValue);
+                    }
+                    return competitorSelection.getColor(competitor, raceIdentifier).getAsHtml();
+                });
+            } else {
+                options.setColorMode(ColorlineMode.MONOCHROMATIC);
+                final String selectedColor = competitorSelection.getColor(competitor, raceIdentifier).getAsHtml();
+                options.setColorProvider(fixIndexInTail -> selectedColor);
+            }
             break;
         case NOT_SELECTED:
             options.setColorMode(ColorlineMode.MONOCHROMATIC);
