@@ -13,6 +13,8 @@ public interface SuggestedMultiSelectionPresenter<T, D extends Display<T>> exten
     
     void clearSelection();
     
+    Collection<T> getSelection();
+    
     void getSuggestionItems(Iterable<String> queryTokens, int limit, final SuggestionItemsCallback<T> callback);
     
     String createSuggestionKeyString(T value);

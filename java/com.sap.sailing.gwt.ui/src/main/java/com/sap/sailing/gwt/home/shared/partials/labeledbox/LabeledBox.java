@@ -6,7 +6,7 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
-import com.sap.sailing.gwt.home.shared.partials.checkboxtile.CheckboxTileResources;
+import com.sap.sailing.gwt.home.shared.partials.checkboxtile.CheckBoxTileResources;
 
 public class LabeledBox extends Composite {
     @UiField
@@ -20,7 +20,7 @@ public class LabeledBox extends Composite {
     }
 
     public LabeledBox(final String title, final Widget childUi) {
-        CheckboxTileResources.INSTANCE.css().ensureInjected();
+        CheckBoxTileResources.INSTANCE.css().ensureInjected();
         this.childUi = childUi;
         initWidget(uiBinder.createAndBindUi(this));
         headerTitleUi.setInnerText(title);

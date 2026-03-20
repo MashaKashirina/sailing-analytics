@@ -5,11 +5,14 @@ import java.util.function.BiConsumer;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.HasValue;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
 import com.sap.sse.gwt.dispatch.shared.commands.VoidResult;
@@ -18,14 +21,14 @@ import com.sap.sse.gwt.dispatch.shared.commands.VoidResult;
  * @param onToggle
  *            if null, toggle will be disabled
  */
-public final class CheckBoxTile extends Composite {
+public final class CheckBoxTile extends Composite implements HasValue<Boolean> {
     private static CheckBoxTileUiBinder uiBinder = GWT.create(CheckBoxTileUiBinder.class);
 
     interface CheckBoxTileUiBinder extends UiBinder<Widget, CheckBoxTile> {
     }
 
     @UiField
-    CheckboxTileResources res;
+    CheckBoxTileResources res;
     @UiField
     Label labelUi;
     @UiField
@@ -47,14 +50,28 @@ public final class CheckBoxTile extends Composite {
             toggleButtonUi.setEnabled(false);
         }
         toggleButtonUi.getElement().getStyle().setProperty("position", "relative");
-        toggleButtonUi.addValueChangeHandler(value -> {
+        final ValueChangeHandler<Boolean> loadingHandler = value -> {
             final Boolean newlyToggledValue = value.getValue();
             overlayLoadingSpinner();
-            onToggle.accept(newlyToggledValue, callback());
-        });
+            final AsyncCallback<VoidResult> callback = new AsyncCallback<VoidResult>() {
+                @Override
+                public void onFailure(Throwable caught) {
+                    // undo failed toggle, false arg enforces silence of change handlers on this call
+                    toggleButtonUi.setValue(!newlyToggledValue, false);
+                    hideLoadingSpinner();
+                }
+
+                @Override
+                public void onSuccess(VoidResult result) {
+                    hideLoadingSpinner();
+                }
+            };
+            onToggle.accept(newlyToggledValue, callback);
+        };
+        toggleButtonUi.addValueChangeHandler(loadingHandler);
     }
 
-    public void overlayLoadingSpinner() {
+    private void overlayLoadingSpinner() {
         toggleButtonUi.setEnabled(false);
         if (loadingOverlay == null) {
             initLoadingOverlay();
@@ -73,29 +90,30 @@ public final class CheckBoxTile extends Composite {
         toggleButtonUi.getElement().appendChild(loadingOverlay);
     }
 
-    public void hideLoadingSpinner() {
+    private void hideLoadingSpinner() {
         if (loadingOverlay != null) {
             loadingOverlay.getStyle().setProperty("display", "none");
             toggleButtonUi.setEnabled(true);
         }
     }
 
-    public void setValue(final boolean b) {
+    @Override
+    public void setValue(Boolean b) {
         toggleButtonUi.setValue(b);
     }
 
-    public AsyncCallback<VoidResult> callback() {
-        return new AsyncCallback<VoidResult>() {
-            @Override
-            public void onFailure(Throwable caught) {
-                toggleButtonUi.setValue(!toggleButtonUi.getValue(), false); // undo failed toggle
-                hideLoadingSpinner();
-            }
+    @Override
+    public Boolean getValue() {
+        return toggleButtonUi.getValue();
+    }
 
-            @Override
-            public void onSuccess(VoidResult result) {
-                hideLoadingSpinner();
-            }
-        };
+    @Override
+    public HandlerRegistration addValueChangeHandler(ValueChangeHandler<Boolean> handler) {
+        return toggleButtonUi.addValueChangeHandler(handler);
+    }
+    
+    @Override
+    public void setValue(Boolean value, boolean fireEvents) {
+        toggleButtonUi.setValue(value, fireEvents);
     }
 }

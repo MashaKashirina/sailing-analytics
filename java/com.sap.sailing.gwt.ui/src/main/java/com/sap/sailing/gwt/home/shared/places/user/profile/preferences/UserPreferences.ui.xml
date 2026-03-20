@@ -21,10 +21,10 @@
             <lb:LabeledBox ui:field="miscUi"/>
         </div>
         <div class="{res.mediaCss.column} {res.mediaCss.small12} {res.mediaCss.medium6} {res.mainCss.spacermargintopmediumsmall}">
-            <ms:SuggestedMultiSelection ui:field="favoriteCompetitorsSelctionUi"/>
+            <lb:LabeledBox ui:field="favoriteCompetitorsSelctionUi"/>
         </div>
-        <div class="{res.mediaCss.column} {res.mediaCss.small12} {res.mediaCss.medium6} {res.mainCss.spacermargintopmediumsmall}">
-            <ms:SuggestedMultiSelection ui:field="favoriteBoatClassesSelctionUi"/>
-        </div> 
+        <!-- <div class="{res.mediaCss.column} {res.mediaCss.small12} {res.mediaCss.medium6} {res.mainCss.spacermargintopmediumsmall}">
+            <lb:LabeledBox ui:field="favoriteBoatClassesSelctionUi"/>
+        </div> -->
     </g:HTMLPanel>
 </ui:UiBinder> 

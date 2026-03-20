@@ -2561,4 +2561,13 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String youWillNowReceiveFeatureAndCommunityUpdates();
     String youWillNotReceiveFeatureAndCommunityUpdatesAnymore();
     String failedToSetStatusOfFeatureAndCommunityUpdates();
+    String youWillNowReceiveNotificationsForFavoriteCompetitors();
+    String youWillNotReceiveNotificationsForFavoriteCompetitorsAnymore();
+    String failedToSetStatusOfNotificationsForFavoriteCompetitors();
+    String youWillNowReceiveNotificationsForFavoriteBoatClassUpcomingRaces();
+    String youWillNotReceiveUpdatesOnUpcomingRacesForYourFavoredBoatClassesAnymore();
+    String failedToSetStatusOfUpdatesOnUpcomingRacesForYourFavoredBoatClasses();
+    String youWillNowReceiveUpdatesOnNewResultsForYourFavoredBoatClasses();
+    String youWillNotReceiveNotificationsForFavoriteBoatClassNewResultsAnymore();
+    String failedToSetStatusOfUpdatesOnNewResultsForYourFavoredBoatClasses();
 }

@@ -4,11 +4,11 @@ import com.google.gwt.core.shared.GWT;
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
 
-public interface CheckboxTileResources extends ClientBundle {
+public interface CheckBoxTileResources extends ClientBundle {
     
-    public static final CheckboxTileResources INSTANCE = GWT.create(CheckboxTileResources.class);
+    public static final CheckBoxTileResources INSTANCE = GWT.create(CheckBoxTileResources.class);
 
-    @Source("CheckboxTile.gss")
+    @Source("CheckBoxTile.gss")
     LocalCss css();
     
     public interface LocalCss extends CssResource {

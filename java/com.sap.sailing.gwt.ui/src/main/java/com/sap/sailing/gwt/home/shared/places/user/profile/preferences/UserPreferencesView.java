@@ -31,11 +31,11 @@ public interface UserPreferencesView extends IsWidget {
 
         BoatClassSelectionPresenter getFavoriteBoatClassesDataProvider();
 
-        CompetitorSelectionPresenter getFavoriteCompetitorsDataProvider();
-
         void setIsSubscribedToFeatureAndCommunityUpdates(final boolean b, final AsyncCallback<VoidResult> callback);
 
         void initIsSubscribedToFeatureAndCommunityUpdates(final CheckBoxTile featureAndCommunityUpdates);
+
+        CompetitorSelectionPresenter getFavoriteCompetitorsDataProvider();
     }
 
 }
