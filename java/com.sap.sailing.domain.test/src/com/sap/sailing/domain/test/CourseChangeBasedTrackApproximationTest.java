@@ -52,7 +52,7 @@ public class CourseChangeBasedTrackApproximationTest {
      * would be thrown.
      */
     @Test
-    public void testInsertWithEqualTimePoints() {
+    public void testForcingFixOlderThanFixWindowIntoQueue() {
         final GPSFixMoving fix1 = fix(10000l, 49, 8, 5, 2);
         final GPSFixMoving fix2 = travel(fix1, 1000l, 5, 4);
         final GPSFixMoving fix3 = travel(fix2, 1000l, 5, 6);
