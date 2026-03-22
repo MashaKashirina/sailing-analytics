@@ -29,7 +29,6 @@ import com.google.gwt.dom.client.Style.FontWeight;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.resources.client.ImageResource;
 import com.google.gwt.safecss.shared.SafeStyles;
@@ -331,14 +330,6 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
      */
     private final Handler selectionChangeHandler;
 
-    /**
-     * While the {@link #selectionChangeHandler} is registered as a selection change handler on the
-     * {@link #leaderboardTable}'s selection model, this field holds the registration which can be used to remove the
-     * registration again. We'll use this to temporarily suspend selection events when actively modifying / adjusting
-     * the table selection to match the {@link #competitorSelectionProvider}.
-     */
-    private HandlerRegistration leaderboardAsTableSelectionModelRegistration;
-
     private final FlowPanel contentPanel = new FlowPanel();
     protected final PaywallResolver paywallResolver;
 
@@ -524,7 +515,7 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
         leaderboardTable.ensureDebugId("LeaderboardCellTable");
         selectionCheckboxColumn = new LeaderboardSelectionCheckboxColumn(competitorSelectionProvider);
         leaderboardTable.setWidth("100%");
-        leaderboardSelectionModel = new MultiSelectionModel<LeaderboardRowDTO>();
+        leaderboardSelectionModel = selectionCheckboxColumn.getSelectionModel();
         // remember handler registration so we can temporarily remove it and re-add it to suspend selection events while
         // we're actively changing it
         selectionChangeHandler = new Handler() {
@@ -542,8 +533,7 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
                 }
             }
         };
-        leaderboardAsTableSelectionModelRegistration = leaderboardSelectionModel
-                .addSelectionChangeHandler(selectionChangeHandler);
+        leaderboardSelectionModel.addSelectionChangeHandler(selectionChangeHandler);
         leaderboardTable.setSelectionModel(leaderboardSelectionModel, selectionCheckboxColumn.getSelectionManager());
 
         SimplePanel mainPanel = new SimplePanel();
@@ -2115,8 +2105,7 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
     }
 
     private class LeaderboardSelectionCheckboxColumn
-            extends com.sap.sse.gwt.client.celltable.SelectionCheckboxColumn<LeaderboardRowDTO>
-            implements CompetitorSelectionChangeListener {
+            extends com.sap.sse.gwt.client.celltable.SelectionCheckboxColumn<LeaderboardRowDTO> {
         protected LeaderboardSelectionCheckboxColumn(final CompetitorSelectionProvider competitorSelectionProvider) {
             super(style.getTableresources().cellTableStyle().cellTableCheckboxSelected(),
                     style.getTableresources().cellTableStyle().cellTableCheckboxDeselected(),
@@ -2132,49 +2121,13 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
                             return t.competitor.getIdAsString().hashCode();
                         }
                     }, getData(), leaderboardTable);
-            competitorSelectionProvider.addCompetitorSelectionChangeListener(this);
         }
 
         @Override
         public Boolean getValue(LeaderboardRowDTO row) {
             return competitorSelectionProvider.isSelected(row.competitor);
         }
-
-        @Override
-        public void competitorsListChanged(Iterable<CompetitorDTO> competitors) {
-        }
-
-        @Override
-        public void filterChanged(FilterSet<CompetitorDTO, ? extends Filter<CompetitorDTO>> oldFilterSet,
-                FilterSet<CompetitorDTO, ? extends Filter<CompetitorDTO>> newFilterSet) {
-        }
-
-        @Override
-        public void filteredCompetitorsListChanged(Iterable<CompetitorDTO> filteredCompetitors) {
-        }
-
-        /**
-         * Ensure that the checkbox is redrawn when the competitor selection changes
-         */
-        @Override
-        public void addedToSelection(CompetitorDTO competitor) {
-            final LeaderboardRowDTO row = getRow(competitor.getIdAsString());
-            if (row != null) {
-                getSelectionModel().setSelected(row, true);
-            }
-        }
-
-        /**
-         * Ensure that the checkbox is redrawn when the competitor selection changes
-         */
-        @Override
-        public void removedFromSelection(CompetitorDTO competitor) {
-            final LeaderboardRowDTO row = getRow(competitor.getIdAsString());
-            if (row != null) {
-                getSelectionModel().setSelected(row, false);
-            }
-        }
-
+        
         @Override
         public void updateMinMax() {
         }
@@ -2642,15 +2595,10 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
                     }
                 }
                 for (Entry<Integer, LeaderboardRowDTO> updateEntry : rowsToUpdate.entrySet()) {
-                    LeaderboardRowDTO oldElement = getData().getList().set(updateEntry.getKey(),
-                            updateEntry.getValue());
-                    leaderboardSelectionModel.setSelected(oldElement, false); // make sure the old element is no longer
-                                                                              // part of the selection
-                    updateSelection(updateEntry.getValue());
+                    getData().getList().set(updateEntry.getKey(), updateEntry.getValue());
                 }
                 for (LeaderboardRowDTO rowToAdd : rowsToAdd) {
                     getData().getList().add(rowToAdd);
-                    updateSelection(rowToAdd);
                 }
             }
             RaceColumn<?> lastRaceColumn = null;
@@ -2699,26 +2647,6 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
     protected abstract void processAutoExpands(AbstractSortableColumnWithMinMax<?, ?> c, RaceColumn<?> lastRaceColumn);
 
     protected abstract void applyTop30FilterIfCompetitorSizeGreaterEqual40(LeaderboardDTO leaderboard);
-
-    /**
-     * Adjusts the row's selection in the {@link #leaderboardSelectionModel} so it matches its selection state in the
-     * {@link #competitorSelectionProvider}.
-     */
-    private void updateSelection(LeaderboardRowDTO row) {
-        final boolean shallBeSelected = competitorSelectionProvider.isSelected(row.competitor);
-        if (leaderboardAsTableSelectionModelRegistration != null) {
-            // suspend selection events while actively adjusting the leaderboardSelectionModel to match the
-            // competitorSelectionProvider
-            leaderboardAsTableSelectionModelRegistration.removeHandler();
-            leaderboardAsTableSelectionModelRegistration = null;
-        }
-        if (leaderboardSelectionModel.isSelected(row) != shallBeSelected) {
-            leaderboardSelectionModel.setSelected(row, shallBeSelected);
-        }
-        // register the selection change handler again
-        leaderboardAsTableSelectionModelRegistration = leaderboardTable.getSelectionModel()
-                .addSelectionChangeHandler(selectionChangeHandler);
-    }
 
     /**
      * The race columns hold a now outdated copy of a {@link RaceColumnDTO} which needs to be updated from the
