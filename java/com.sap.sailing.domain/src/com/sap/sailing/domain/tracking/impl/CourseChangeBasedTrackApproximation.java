@@ -366,6 +366,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
          */
         private void removeFirst(int howManyElementsToRemove) {
             assert !window.isEmpty();
+            final int oldSize = window.size();
             for (int i=0; i<howManyElementsToRemove; i++) {
                 window.removeFirst();
                 speedForFixesInWindow.removeFirst();
@@ -374,7 +375,11 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
             // adjust totalCourseChangeFromBeginningOfWindow by subtracting the first course change from all others
             // and shifting all by one position to the "left"
             if (!courseChangeBetweenFixesInWindow.isEmpty()) {
-                courseChangeBetweenFixesInWindow.removeFirst(howManyElementsToRemove);
+                // when removing the last element from the window, we have no "between fixes" anymore;
+                // courseChangeBetweenFixesInWindow contains one element fewer than window, unless window is
+                // empty in which case courseChangeBetweenFixesInWindow is also empty.
+                courseChangeBetweenFixesInWindow.removeFirst(howManyElementsToRemove==oldSize?
+                        howManyElementsToRemove-1:howManyElementsToRemove);
             }
         }
 
@@ -412,7 +417,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
                     final double absoluteCourseChangeInDegrees = courseChange.divide(maximumCourseChangeToStarboard >= maximumCourseChangeToPort ? 1 : -1); 
                     if (absoluteCourseChangeInDegrees > maximumAbsoluteCourseChangeInCorrectDirection) {
                         maximumAbsoluteCourseChangeInCorrectDirection = absoluteCourseChangeInDegrees;
-                        indexOfMaximumAbsoluteCourseChangeInCorrectDirection = i;
+                        indexOfMaximumAbsoluteCourseChangeInCorrectDirection = i+1; // the course change is to the next fix in window
                     }
                     i++;
                 }
@@ -420,6 +425,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
             } else {
                 result = null;
             }
+            assert indexOfMaximumAbsoluteCourseChangeInCorrectDirection < window.size();
             return result == null ? null : new Pair<>(result, indexOfMaximumAbsoluteCourseChangeInCorrectDirection);
         }
 
