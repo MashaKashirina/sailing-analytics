@@ -1,5 +1,6 @@
 package com.sap.sse.security.ui.server;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -14,12 +15,15 @@ import java.util.logging.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
 
+import com.sap.sse.ServerInfo;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.common.mail.MailException;
+import com.sap.sse.common.media.TakedownNoticeRequestContext;
 import com.sap.sse.security.Action;
 import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
+import com.sap.sse.security.shared.IPAddress;
 import com.sap.sse.security.shared.PermissionChecker;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.RoleDefinition;
@@ -40,6 +44,7 @@ import com.sap.sse.security.shared.impl.Ownership;
 import com.sap.sse.security.shared.impl.PermissionAndRoleAssociation;
 import com.sap.sse.security.shared.impl.Role;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
+import com.sap.sse.security.shared.impl.SecuredSecurityTypes.ServerActions;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes.UserActions;
 import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.security.shared.impl.UserGroup;
@@ -48,6 +53,7 @@ import com.sap.sse.security.ui.client.UserManagementWriteService;
 import com.sap.sse.security.ui.oauth.client.CredentialDTO;
 import com.sap.sse.security.ui.oauth.shared.OAuthException;
 import com.sap.sse.security.ui.shared.SuccessInfo;
+import com.sap.sse.util.HttpRequestUtils;
 
 public class UserManagementWriteServiceImpl extends UserManagementServiceImpl implements UserManagementWriteService {
     private static final long serialVersionUID = -8123229851467370537L;
@@ -263,7 +269,8 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
     public UserDTO createSimpleUser(final String username, final String email, final String password,
             final String fullName, final String company, final String localeName, final String validationBaseURL)
             throws UserManagementException, MailException, UnauthorizedException {
-        User user = getSecurityService().checkPermissionForObjectCreationAndRevertOnErrorForUserCreation(username,
+        final String clientIP = HttpRequestUtils.getClientIP(getThreadLocalRequest());
+        User user = getSecurityService().checkPermissionForUserCreationAndRevertOnErrorForUserCreation(username,
                 new Callable<User>() {
                     @Override
                     public User call() throws Exception {
@@ -274,10 +281,14 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
                         try {
                             User newUser = getSecurityService().createSimpleUser(username, email, password, fullName,
                                     company, getLocaleFromLocaleName(localeName), validationBaseURL,
-                                    getSecurityService().getDefaultTenantForCurrentUser());
+                                    getSecurityService().getDefaultTenantForCurrentUser(), clientIP,
+                                    /* enforce strong password */ true);
                             return newUser;
-                        } catch (UserManagementException | UserGroupManagementException e) {
-                            logger.log(Level.SEVERE, "Error creating user " + username, e);
+                        } catch (UserManagementException e) {
+                            logger.severe("Error creating user " + username+": "+e.getMessage());
+                            throw e;
+                        } catch (UserGroupManagementException e) {
+                            logger.severe("Error creating user " + username+": "+e.getMessage());
                             throw new UserManagementException(e.getMessage());
                         }
                     }
@@ -363,6 +374,38 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
         } else {
             return new SuccessInfo(false, "Could not delete user.", /* redirectURL */ null, null);
         }
+    }
+
+    @Override
+    public SuccessInfo unlockUser(String username) throws UnauthorizedException {
+        User user = getSecurityService().getUserByName(username);
+        if (user != null) {
+            if (!getSecurityService().hasCurrentUserExplicitPermissions(user, UserActions.MANAGE_LOCK)) {
+                logger.info("You are not permitted to manage locking on user " + username);
+                return new SuccessInfo(false, "You are not permitted to manage locking on user " + username,
+                        /* redirectURL */ null, null, username);
+            }
+            try {
+                getSecurityService().resetUserTimedLock(username);
+                logger.info("Reset lock on user: " + username + ".");
+                return new SuccessInfo(true, "Reset lock on user: " + username + ".", /* redirectURL */ null, null, username);
+            } catch (UserManagementException e) {
+                logger.info("Could not reset lock on user: " + username + ".");
+                return new SuccessInfo(false, "Could not reset lock on user " + username, /* redirectURL */ null, null, username);
+            }
+        } else {
+            logger.info("Could not reset lock on user: " + username + ".");
+            return new SuccessInfo(false, "Could not reset lock on user " + username, /* redirectURL */ null, null, username);
+        }
+    }
+    
+    @Override
+    public Set<SuccessInfo> unlockUsers(Set<String> usernames) throws UnauthorizedException {
+        final Set<SuccessInfo> result = new HashSet<>();
+        for (String username : usernames) {
+            result.add(unlockUser(username));
+        }
+        return result;
     }
     
     @Override
@@ -665,8 +708,7 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
             AccessControlListDTO acl) throws UnauthorizedException {
         if (SecurityUtils.getSubject()
                 .isPermitted(idOfAccessControlledObject.getStringPermission(DefaultActions.CHANGE_ACL))) {
-            
-            Map<UserGroup, Set<String>> aclActionsByGroup = new HashMap<>();
+            final Map<UserGroup, Set<String>> aclActionsByGroup = new HashMap<>();
             for (Entry<StrippedUserGroupDTO, Set<String>> entry : acl.getActionsByUserGroup().entrySet()) {
                 final StrippedUserGroupDTO groupDTO = entry.getKey();
                 final UserGroup userGroup;
@@ -677,11 +719,47 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
                 }
                 aclActionsByGroup.put(userGroup, entry.getValue());
             }
-
             return securityDTOFactory.createAccessControlListDTO(getSecurityService()
                     .overrideAccessControlList(idOfAccessControlledObject, aclActionsByGroup));
         } else {
             throw new UnauthorizedException("Not permitted to update the ACL for a user");
         }
+    }
+
+    @Override
+    public void setCORSFilterConfigurationToWildcard() {
+        getSecurityService().checkCurrentUserServerPermission(ServerActions.CONFIGURE_CORS_FILTER);
+        getSecurityService().setCORSFilterConfigurationToWildcard(ServerInfo.getName());
+    }
+
+    @Override
+    public void setCORSFilterConfigurationAllowedOrigins(ArrayList<String> allowedOrigins) {
+        getSecurityService().checkCurrentUserServerPermission(ServerActions.CONFIGURE_CORS_FILTER);
+        getSecurityService().setCORSFilterConfigurationAllowedOrigins(ServerInfo.getName(), allowedOrigins.toArray(new String[0]));
+    }
+    
+    @Override
+    public void fileTakedownNotice(TakedownNoticeRequestContext takedownNoticeRequestContext) throws MailException {
+        getSecurityService().fileTakedownNotice(takedownNoticeRequestContext);
+    }
+
+    @Override
+    public void releaseUserCreationLockOnIp(String ip) throws UnauthorizedException {
+        final SecurityService securityService = getSecurityService();
+        final WildcardPermission deletePermission = SecuredSecurityTypes.LOCKED_IP
+                .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
+        // throws exception if not permitted
+        SecurityUtils.getSubject().checkPermission(deletePermission.toString());
+        securityService.releaseUserCreationLockOnIp(ip);
+    }
+
+    @Override
+    public void releaseBearerTokenLockOnIp(String ip) throws UnauthorizedException {
+        final SecurityService securityService = getSecurityService();
+        final WildcardPermission deletePermission = SecuredSecurityTypes.LOCKED_IP
+                .getPermissionForObject(DefaultActions.DELETE, new IPAddress(ip));
+        // throws exception if not permitted
+        SecurityUtils.getSubject().checkPermission(deletePermission.toString());
+        securityService.releaseBearerTokenLockOnIp(ip);
     }
 }

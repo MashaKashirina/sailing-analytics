@@ -8,6 +8,7 @@ import java.text.ParseException;
 
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.base.Regatta;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.RaceLogStore;
@@ -59,16 +60,16 @@ public interface SwissTimingFactory {
     SailMasterTransceiver createSailMasterTransceiver();
 
     SwissTimingConfiguration createSwissTimingConfiguration(String name, String jsonURL, String hostname, Integer port,
-            String updateURL, String updateUsername, String updatePassword, String creatorName);
+            String updateURL, String apiToken, String creatorName);
     
     SwissTimingRaceTracker createRaceTracker(RaceLogStore raceLogStore, RegattaLogStore regattaLogStore, WindStore windStore,
             DomainFactory domainFactory, TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver, SwissTimingTrackingConnectivityParameters connectivityParams,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry)
+            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry)
             throws InterruptedException, UnknownHostException, IOException, ParseException, URISyntaxException;
 
     RaceTracker createRaceTracker(Regatta regatta, WindStore windStore, DomainFactory domainFactory, TrackedRegattaRegistry trackedRegattaRegistry,
             RaceLogAndTrackedRaceResolver raceLogResolver, RaceLogStore raceLogStore, RegattaLogStore regattaLogStore, SwissTimingTrackingConnectivityParameters connectivityParams,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry)
+            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry)
             throws UnknownHostException, InterruptedException, IOException, ParseException, URISyntaxException;
 
     Race createRace(String raceId, String raceName, String description, BoatClass boatClass);

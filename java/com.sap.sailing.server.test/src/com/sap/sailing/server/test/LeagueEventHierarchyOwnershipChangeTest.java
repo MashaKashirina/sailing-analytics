@@ -1,7 +1,8 @@
 package com.sap.sailing.server.test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.util.Collections;
 import java.util.Locale;
@@ -14,10 +15,10 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.SubjectThreadState;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.mongodb.WriteConcern;
@@ -56,17 +57,17 @@ public class LeagueEventHierarchyOwnershipChangeTest {
     private static SecurityService securityService;
     private CourseArea defaultCourseArea;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         MongoDBConfiguration.getDefaultTestConfiguration().getService().getDB().withWriteConcern(WriteConcern.JOURNALED).drop();
         service = Mockito.spy(new RacingEventServiceImpl());
         securityService = new SecurityBundleTestWrapper().initializeSecurityServiceForTesting();
         Mockito.doReturn(securityService).when(service).getSecurityService();
         securityService.createSimpleUser(USERNAME, "a@b.c", PASSWORD, "The User", "SAP SE",
-                /* validation URL */ Locale.ENGLISH, null, null);
+                /* validation URL */ Locale.ENGLISH, null, null, /* clientIP */ null, /* enforce strong password */ false);
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         event = service.addEvent("Test", "Test Event", TimePoint.now(), TimePoint.now().plus(Duration.ONE_WEEK), "Here",
                 /* isPublic */ true, UUID.randomUUID());
@@ -142,8 +143,50 @@ public class LeagueEventHierarchyOwnershipChangeTest {
         final OwnershipAnnotation eventOwnership = securityService.getOwnership(event.getIdentifier());
         assertSame(eventOwnership.getAnnotation().getTenantOwner(), lg2Ownership.getAnnotation().getTenantOwner());
     }
+
+    @Test
+    public void testCyclicLeagueHierarchyOwnershipChangeStartingAtEventTerminatesWithNewCourseArea() {
+        final CourseArea otherCourseArea = new CourseAreaImpl("Other", UUID.randomUUID(), /* centerPosition */ null, /* radius */ null);
+        testCyclicLeagueHierarchyOwnershipChangeStartingAtEventTerminates(otherCourseArea);
+    }
     
-    @After
+    @Test
+    public void testCyclicLeagueHierarchyOwnershipChangeStartingAtEventTerminatesWithSharedCourseArea() {
+        testCyclicLeagueHierarchyOwnershipChangeStartingAtEventTerminates(defaultCourseArea);
+    }
+    
+    private void testCyclicLeagueHierarchyOwnershipChangeStartingAtEventTerminates(CourseArea courseAreaForSharedLeaderboard) {
+        final Event otherEvent = service.addEvent("Test2", "Test Event 2", TimePoint.now(), TimePoint.now().plus(Duration.ONE_WEEK), "There",
+                /* isPublic */ true, UUID.randomUUID());
+        otherEvent.getVenue().addCourseArea(courseAreaForSharedLeaderboard);
+        try {
+            final LeaderboardGroup sharedLeaderboardGroup = new LeaderboardGroupImpl("LG-shared", "LGDesc-shared",
+                    "The shared LG", /* displayGroupsInReverseOrder */ false, Collections.emptyList());
+            final Leaderboard sharedOverallLeaderboard = new LeaderboardGroupMetaLeaderboard(sharedLeaderboardGroup, new LowPoint(),
+                    new ThresholdBasedResultDiscardingRuleImpl(new int[0]));
+            sharedLeaderboardGroup.setOverallLeaderboard(sharedOverallLeaderboard);
+            sharedLeaderboardGroup.addLeaderboard(new FlexibleLeaderboardImpl("SharedFlexibleLeaderboard",
+                    new ThresholdBasedResultDiscardingRuleImpl(new int[0]), new LowPoint(), defaultCourseArea));
+            event.addLeaderboardGroup(sharedLeaderboardGroup);
+            otherEvent.addLeaderboardGroup(sharedLeaderboardGroup);
+            assertTimeoutPreemptively(java.time.Duration.ofSeconds(5), () -> SailingHierarchyOwnershipUpdater
+                    .createOwnershipUpdater(/* createNewGroup */ true, /* existingGroupIdOrNull */ null,
+                            THE_NEW_OWNING_GROUP_NAME, /* migrateCompetitors */ true, /* migrateBoats */ true,
+                            /* copyMembersAndRoles */ true, service)
+                    .updateGroupOwnershipForEventHierarchy(event));
+            final OwnershipAnnotation eventOwnership = securityService.getOwnership(event.getIdentifier());
+            final OwnershipAnnotation otherEventOwnership = securityService.getOwnership(otherEvent.getIdentifier());
+            assertSame(eventOwnership.getAnnotation().getTenantOwner(), otherEventOwnership.getAnnotation().getTenantOwner());
+            final OwnershipAnnotation overallLeaderboardOwnership = securityService.getOwnership(overallLeaderboard.getIdentifier());
+            assertSame(eventOwnership.getAnnotation().getTenantOwner(), overallLeaderboardOwnership.getAnnotation().getTenantOwner());
+            final OwnershipAnnotation sharedOverallLeaderboardOwnership = securityService.getOwnership(sharedOverallLeaderboard.getIdentifier());
+            assertSame(eventOwnership.getAnnotation().getTenantOwner(), sharedOverallLeaderboardOwnership.getAnnotation().getTenantOwner());
+        } finally {
+            service.removeEvent(otherEvent.getId());
+        }
+    }
+    
+    @AfterEach
     public void tearDown() {
         if (service != null && event != null) {
             service.removeEvent(event.getId());

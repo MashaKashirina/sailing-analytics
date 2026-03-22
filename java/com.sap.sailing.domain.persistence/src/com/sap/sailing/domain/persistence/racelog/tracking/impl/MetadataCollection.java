@@ -2,6 +2,8 @@ package com.sap.sailing.domain.persistence.racelog.tracking.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 import org.bson.Document;
@@ -44,7 +46,7 @@ import com.sap.sse.common.TypeBasedServiceFinder;
 public class MetadataCollection extends MongoFixHandler {
     private static final Logger logger = Logger.getLogger(MetadataCollection.class.getName());
     private final MongoCollection<Document> metadataCollection;
-    private final Map<DeviceIdentifier, MetadataUpdater> metadataUpdaters;
+    private final ConcurrentMap<DeviceIdentifier, MetadataUpdater> metadataUpdaters;
     private final WriteConcern writeConcern;
     private final ReadConcern readConcern;
 
@@ -60,7 +62,7 @@ public class MetadataCollection extends MongoFixHandler {
             WriteConcern writeConcern, ClientSession clientSession) {
         super(fixServiceFinder, deviceServiceFinder);
         this.metadataCollection = mongoOF.getGPSFixMetadataCollection();
-        this.metadataUpdaters = new HashMap<>();
+        this.metadataUpdaters = new ConcurrentHashMap<>();
         this.readConcern = readConcern;
         this.writeConcern = writeConcern;
         this.clientSession = clientSession;

@@ -18,7 +18,6 @@ public interface MongoObjectFactory {
      * and the {@code serialNumber} to identify the device.
      * 
      * @param serialNumber if {@code null}, the message won't be stored
-     * @param clientSessionOrNull TODO
      */
     void storeMessage(String serialNumber, Msg message, ClientSession clientSessionOrNull);
     void clear(ClientSession clientSessionOrNull);

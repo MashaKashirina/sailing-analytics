@@ -53,22 +53,23 @@ import com.sap.sailing.domain.base.impl.SidelineImpl;
 import com.sap.sailing.domain.base.impl.TeamImpl;
 import com.sap.sailing.domain.common.CompetitorRegistrationType;
 import com.sap.sailing.domain.common.PassingInstruction;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RankingMetrics;
 import com.sap.sailing.domain.common.ScoringSchemeType;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
 import com.sap.sailing.domain.leaderboard.Leaderboard;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroup;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
 import com.sap.sailing.domain.leaderboard.RegattaLeaderboard;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.RaceLogStore;
 import com.sap.sailing.domain.ranking.RankingMetricConstructor;
 import com.sap.sailing.domain.ranking.RankingMetricsFactory;
 import com.sap.sailing.domain.regattalog.RegattaLogStore;
+import com.sap.sailing.domain.shared.tracking.TrackingConnectorInfo;
+import com.sap.sailing.domain.shared.tracking.impl.TrackingConnectorInfoImpl;
 import com.sap.sailing.domain.tracking.DynamicRaceDefinitionSet;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
 import com.sap.sailing.domain.tracking.DynamicTrackedRegatta;
@@ -78,13 +79,11 @@ import com.sap.sailing.domain.tracking.RaceTrackingConnectivityParameters;
 import com.sap.sailing.domain.tracking.RaceTrackingHandler;
 import com.sap.sailing.domain.tracking.TrackedRegatta;
 import com.sap.sailing.domain.tracking.TrackedRegattaRegistry;
-import com.sap.sailing.domain.tracking.TrackingConnectorInfo;
 import com.sap.sailing.domain.tracking.WindStore;
 import com.sap.sailing.domain.tracking.WindTrack;
 import com.sap.sailing.domain.tracking.impl.FinishTimeUpdateHandler;
 import com.sap.sailing.domain.tracking.impl.RaceAbortedHandler;
 import com.sap.sailing.domain.tracking.impl.StartTimeUpdateHandler;
-import com.sap.sailing.domain.tracking.impl.TrackingConnectorInfoImpl;
 import com.sap.sailing.domain.tractracadapter.DomainFactory;
 import com.sap.sailing.domain.tractracadapter.JSONService;
 import com.sap.sailing.domain.tractracadapter.MetadataParser;
@@ -96,12 +95,14 @@ import com.sap.sailing.domain.tractracadapter.TracTracConfiguration;
 import com.sap.sailing.domain.tractracadapter.TracTracRaceTracker;
 import com.sap.sse.common.Color;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.common.impl.AbstractColor;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.shared.util.WeakIdentityHashMap;
@@ -535,13 +536,16 @@ public class DomainFactoryImpl implements DomainFactory {
     
     @Override
     public Iterable<Receiver> getUpdateReceivers(DynamicTrackedRegatta trackedRegatta, IRace tractracRace,
-            WindStore windStore, long delayToLiveInMillis, Simulator simulator, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
-            TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, 
-            LeaderboardGroupResolver leaderboardGroupResolver, URI updateURI, String tracTracUsername,
-            String tracTracPassword, IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber,
-            boolean useInternalMarkPassingAlgorithm, long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler,
-            RaceAndCompetitorStatusWithRaceLogReconciler raceAndCompetitorStatusWithRaceLogReconciler, ReceiverType... types) {
+            WindStore windStore, long delayToLiveInMillis, Simulator simulator,
+            DynamicRaceDefinitionSet raceDefinitionSetToUpdate, TrackedRegattaRegistry trackedRegattaRegistry,
+            RaceLogAndTrackedRaceResolver raceLogResolver,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry,
+            LeaderboardGroupResolver leaderboardGroupResolver, URI updateURI, String tracTracApiToken,
+            IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber, boolean useInternalMarkPassingAlgorithm,
+            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler,
+            RaceAndCompetitorStatusWithRaceLogReconciler raceAndCompetitorStatusWithRaceLogReconciler,
+            ReceiverType... types) {
         IEvent tractracEvent = tractracRace.getEvent();
         Collection<Receiver> result = new ArrayList<Receiver>();
         for (ReceiverType type : types) {
@@ -550,9 +554,9 @@ public class DomainFactoryImpl implements DomainFactory {
                 result.add(new RaceCourseReceiver(this, trackedRegatta, tractracEvent, tractracRace, windStore,
                         raceDefinitionSetToUpdate, delayToLiveInMillis,
                         WindTrack.DEFAULT_MILLISECONDS_OVER_WHICH_TO_AVERAGE_WIND, simulator, updateURI,
-                        tracTracUsername, tracTracPassword, eventSubscriber, raceSubscriber,
+                        tracTracApiToken, eventSubscriber, raceSubscriber,
                         useInternalMarkPassingAlgorithm, raceLogResolver, leaderboardGroupResolver, timeoutInMilliseconds,
-                        raceTrackingHandler, markPassingRaceFingerprintRegistry));
+                        raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry));
                 break;
             case MARKPOSITIONS:
                 result.add(new MarkPositionReceiver(
@@ -585,14 +589,16 @@ public class DomainFactoryImpl implements DomainFactory {
     }
 
     @Override
-    public Iterable<Receiver> getUpdateReceivers(DynamicTrackedRegatta trackedRegatta,
-            long delayToLiveInMillis, Simulator simulator, WindStore windStore,
-            DynamicRaceDefinitionSet raceDefinitionSetToUpdate, TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver,
-            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, LeaderboardGroupResolver leaderboardGroupResolver, IRace tractracRace,
-            URI updateURI, String tracTracUsername, String tracTracPassword,
-            IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber, boolean useInternalMarkPassingAlgorithm,
-            long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler, RaceAndCompetitorStatusWithRaceLogReconciler raceAndCompetitorStatusWithRaceLogReconciler) {
+    public Iterable<Receiver> getUpdateReceivers(DynamicTrackedRegatta trackedRegatta, long delayToLiveInMillis,
+            Simulator simulator, WindStore windStore, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
+            TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry,
+            LeaderboardGroupResolver leaderboardGroupResolver, IRace tractracRace, URI updateURI,
+            String tracTracApiToken, IEventSubscriber eventSubscriber, IRaceSubscriber raceSubscriber,
+            boolean useInternalMarkPassingAlgorithm, long timeoutInMilliseconds,
+            RaceTrackingHandler raceTrackingHandler,
+            RaceAndCompetitorStatusWithRaceLogReconciler raceAndCompetitorStatusWithRaceLogReconciler) {
         final List<ReceiverType> receiverTypes = new ArrayList<>();
         receiverTypes.addAll(Arrays.asList(ReceiverType.RACECOURSE, ReceiverType.MARKPASSINGS, ReceiverType.MARKPOSITIONS, ReceiverType.RACESTARTFINISH,
                 ReceiverType.RAWPOSITIONS, ReceiverType.SENSORDATA));
@@ -600,8 +606,8 @@ public class DomainFactoryImpl implements DomainFactory {
             receiverTypes.add(ReceiverType.COMPETITOR);
         }
         return getUpdateReceivers(trackedRegatta, tractracRace, windStore, delayToLiveInMillis, simulator,
-                raceDefinitionSetToUpdate, trackedRegattaRegistry, raceLogResolver, markPassingRaceFingerprintRegistry, leaderboardGroupResolver,
-                updateURI, tracTracUsername, tracTracPassword, eventSubscriber,
+                raceDefinitionSetToUpdate, trackedRegattaRegistry, raceLogResolver, markPassingRaceFingerprintRegistry,maneuverRaceFingerprintRegistry, leaderboardGroupResolver,
+                updateURI, tracTracApiToken, eventSubscriber,
                 raceSubscriber, useInternalMarkPassingAlgorithm, timeoutInMilliseconds, raceTrackingHandler,
                 raceAndCompetitorStatusWithRaceLogReconciler, receiverTypes.toArray(new ReceiverType[receiverTypes.size()]));
     }
@@ -656,10 +662,11 @@ public class DomainFactoryImpl implements DomainFactory {
             String raceName, BoatClass boatClass, Map<Competitor, Boat> competitorsAndBoats, Course course,
             Iterable<Sideline> sidelines, WindStore windStore, long delayToLiveInMillis,
             long millisecondsOverWhichToAverageWind, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
-            URI tracTracUpdateURI, UUID tracTracEventUuid, String tracTracUsername, String tracTracPassword,
-            boolean ignoreTracTracMarkPassings, RaceLogAndTrackedRaceResolver raceLogResolver,
-            Consumer<DynamicTrackedRace> runBeforeExposingRace, IRace tractracRace,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) {
+            URI tracTracUpdateURI, UUID tracTracEventUuid, String tracTracApiToken, boolean ignoreTracTracMarkPassings,
+            RaceLogAndTrackedRaceResolver raceLogResolver, Consumer<DynamicTrackedRace> runBeforeExposingRace,
+            IRace tractracRace, RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
         synchronized (raceCache) {
             RaceDefinition raceDefinition = raceCache.get(raceId);
             if (raceDefinition == null) {
@@ -690,13 +697,13 @@ public class DomainFactoryImpl implements DomainFactory {
                         }
                         trackedRace = createTrackedRace(trackedRegatta, raceDefinition, sidelines, windStore,
                                 delayToLiveInMillis, millisecondsOverWhichToAverageWind, raceDefinitionSetToUpdate, ignoreTracTracMarkPassings,
-                                raceLogResolver, raceTrackingHandler, trackingConnectorInfo, markPassingRaceFingerprintRegistry);
+                                raceLogResolver, raceTrackingHandler, trackingConnectorInfo, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
                         logger.info("Added race " + raceDefinition + " to regatta " + trackedRegatta.getRegatta());
                         if (runBeforeExposingRace != null) {
                             logger.fine("Running callback for tracked race creation for "+trackedRace.getRace());
                             runBeforeExposingRace.accept(trackedRace);
                         }
-                        addTracTracUpdateHandlers(tracTracUpdateURI, tracTracEventUuid, tracTracUsername, tracTracPassword,
+                        addTracTracUpdateHandlers(tracTracUpdateURI, tracTracEventUuid, tracTracApiToken,
                                 raceDefinition, trackedRace, tractracRace);
                         raceCache.put(raceId, raceDefinition);
                         // the following unblocks waiters in DomainFactory.getAndWaitForRaceDefinition(...)
@@ -757,18 +764,18 @@ public class DomainFactoryImpl implements DomainFactory {
     }
     
     @Override
-    public void addTracTracUpdateHandlers(URI tracTracUpdateURI, UUID tracTracEventUuid, String tracTracUsername,
-            String tracTracPassword, RaceDefinition raceDefinition, DynamicTrackedRace trackedRace, IRace tractracRace) {
+    public void addTracTracUpdateHandlers(URI tracTracUpdateURI, UUID tracTracEventUuid, String tracTracApiToken,
+            RaceDefinition raceDefinition, DynamicTrackedRace trackedRace, IRace tractracRace) {
         final TracTracCourseDesignUpdateHandler courseDesignHandler = new TracTracCourseDesignUpdateHandler(
-                tracTracUpdateURI, tracTracUsername, tracTracPassword, tracTracEventUuid,
+                tracTracUpdateURI, tracTracApiToken, tracTracEventUuid,
                 raceDefinition.getId(), tractracRace, this);
         final StartTimeUpdateHandler startTimeHandler = new StartTimeUpdateHandler(
-                tracTracUpdateURI, tracTracUsername, tracTracPassword, tracTracEventUuid,
+                tracTracUpdateURI, tracTracApiToken, tracTracEventUuid,
                 raceDefinition.getId(), trackedRace.getTrackedRegatta().getRegatta());
         final RaceAbortedHandler raceAbortedHandler = new RaceAbortedHandler(
-                tracTracUpdateURI, tracTracUsername, tracTracPassword, tracTracEventUuid,
+                tracTracUpdateURI, tracTracApiToken, tracTracEventUuid,
                 raceDefinition.getId());
-        final FinishTimeUpdateHandler finishTimeUpdateHandler = new FinishTimeUpdateHandler(tracTracUpdateURI, tracTracUsername, tracTracPassword, tracTracEventUuid,
+        final FinishTimeUpdateHandler finishTimeUpdateHandler = new FinishTimeUpdateHandler(tracTracUpdateURI, tracTracApiToken, tracTracEventUuid,
                 raceDefinition.getId(), trackedRace.getTrackedRegatta().getRegatta());
         baseDomainFactory.addUpdateHandlers(trackedRace, courseDesignHandler, startTimeHandler, raceAbortedHandler,
                 finishTimeUpdateHandler);
@@ -778,12 +785,15 @@ public class DomainFactoryImpl implements DomainFactory {
             Iterable<Sideline> sidelines, WindStore windStore, long delayToLiveInMillis,
             long millisecondsOverWhichToAverageWind, DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
             boolean useMarkPassingCalculator, RaceLogAndTrackedRaceResolver raceLogResolver,
-            RaceTrackingHandler raceTrackingHandler, TrackingConnectorInfo trackingConnectorInfo, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) {
-        return raceTrackingHandler.createTrackedRace(trackedRegatta, race, sidelines,
+            RaceTrackingHandler raceTrackingHandler, TrackingConnectorInfo trackingConnectorInfo,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
+        return raceTrackingHandler
+                .createTrackedRace(trackedRegatta, race, sidelines,
                 windStore, delayToLiveInMillis, millisecondsOverWhichToAverageWind,
                 /* time over which to average speed: */ race.getBoatClass().getApproximateManeuverDurationInMilliseconds(),
                 raceDefinitionSetToUpdate, useMarkPassingCalculator, raceLogResolver, Optional.empty(),
-                trackingConnectorInfo, markPassingRaceFingerprintRegistry);
+                trackingConnectorInfo, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
     }
 
     /**
@@ -1031,10 +1041,10 @@ public class DomainFactoryImpl implements DomainFactory {
             WindStore windStore, TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver,
             LeaderboardGroupResolver leaderboardGroupResolver,
             RaceTrackingConnectivityParametersImpl connectivityParams, long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry)
+            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry)
             throws URISyntaxException, SubscriberInitializationException, IOException, InterruptedException, CreateModelException, TimeOutException {
         return new TracTracRaceTrackerImpl(this, raceLogStore, regattaLogStore, windStore, trackedRegattaRegistry,
-                raceLogResolver, leaderboardGroupResolver, connectivityParams, timeoutInMilliseconds, raceTrackingHandler, markPassingRaceFingerprintRegistry);
+                raceLogResolver, leaderboardGroupResolver, connectivityParams, timeoutInMilliseconds, raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
     }
 
     @Override
@@ -1042,50 +1052,50 @@ public class DomainFactoryImpl implements DomainFactory {
             WindStore windStore, TrackedRegattaRegistry trackedRegattaRegistry, RaceLogAndTrackedRaceResolver raceLogResolver,
             LeaderboardGroupResolver leaderboardGroupResolver,
             RaceTrackingConnectivityParametersImpl connectivityParams, long timeoutInMilliseconds,
-            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) throws URISyntaxException, CreateModelException,
+            RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws URISyntaxException, CreateModelException,
             SubscriberInitializationException, IOException, InterruptedException, TimeOutException {
         return new TracTracRaceTrackerImpl(regatta, this, raceLogStore, regattaLogStore, windStore, trackedRegattaRegistry,
-                raceLogResolver, leaderboardGroupResolver, connectivityParams, timeoutInMilliseconds, raceTrackingHandler, markPassingRaceFingerprintRegistry);
+                raceLogResolver, leaderboardGroupResolver, connectivityParams, timeoutInMilliseconds, raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
     }
 
     @Override
-    public JSONService parseJSONURLWithRaceRecords(URL jsonURL, boolean loadClientParams) throws IOException, ParseException, org.json.simple.parser.ParseException, URISyntaxException {
-        return new JSONServiceImpl(jsonURL, loadClientParams);
+    public JSONService parseJSONURLWithRaceRecords(URL jsonURL, boolean loadClientParams, String tracTracApiToken)
+            throws IOException, ParseException, org.json.simple.parser.ParseException, URISyntaxException {
+        return new JSONServiceImpl(jsonURL, loadClientParams, tracTracApiToken);
     }
 
     @Override
     public TracTracConfiguration createTracTracConfiguration(String creatorName, String name, String jsonURL,
-            String liveDataURI, String storedDataURI, String courseDesignUpdateURI, String tracTracUsername,
-            String tracTracPassword) {
+            String liveDataURI, String storedDataURI, String courseDesignUpdateURI, String tracTracApiToken) {
         return new TracTracConfigurationImpl(creatorName, name, jsonURL, liveDataURI, storedDataURI,
-                courseDesignUpdateURI, tracTracUsername, tracTracPassword);
+                courseDesignUpdateURI, tracTracApiToken);
     }
 
     @Override
     public RaceTrackingConnectivityParameters createTrackingConnectivityParameters(URL paramURL, URI liveURI,
             URI storedURI, URI courseDesignUpdateURI, TimePoint startOfTracking, TimePoint endOfTracking,
             long delayToLiveInMillis, Duration offsetToStartTimeOfSimulatedRace, boolean useInternalMarkPassingAlgorithm, RaceLogStore raceLogStore,
-            RegattaLogStore regattaLogStore, String tracTracUsername, String tracTracPassword, String raceStatus,
+            RegattaLogStore regattaLogStore, String tracTracApiToken, String raceStatus,
             String raceVisibility, boolean trackWind, boolean correctWindDirectionByMagneticDeclination, boolean preferReplayIfAvailable, int timeoutInMillis,
             boolean useOfficialEventsToUpdateRaceLog, URI liveURIFromConfiguration, URI storedURIFromConfiguration) throws Exception {
         return new RaceTrackingConnectivityParametersImpl(paramURL, liveURI, storedURI, courseDesignUpdateURI,
                 startOfTracking, endOfTracking, delayToLiveInMillis, offsetToStartTimeOfSimulatedRace, useInternalMarkPassingAlgorithm, raceLogStore,
-                regattaLogStore, this, tracTracUsername, tracTracPassword, raceStatus, raceVisibility, trackWind, correctWindDirectionByMagneticDeclination,
+                regattaLogStore, this, tracTracApiToken, raceStatus, raceVisibility, trackWind, correctWindDirectionByMagneticDeclination,
                 preferReplayIfAvailable, timeoutInMillis, useOfficialEventsToUpdateRaceLog, liveURIFromConfiguration, storedURIFromConfiguration);
     }
 
     @Override
-    public JSONService parseJSONURLForOneRaceRecord(URL jsonURL, String raceId, boolean loadClientParams)
+    public JSONService parseJSONURLForOneRaceRecord(URL jsonURL, String raceId, boolean loadClientParams, String tracTracApiToken)
             throws IOException, ParseException, org.json.simple.parser.ParseException, URISyntaxException {
-        return new JSONServiceImpl(jsonURL, raceId, loadClientParams);
+        return new JSONServiceImpl(jsonURL, raceId, loadClientParams, tracTracApiToken);
     }
 
     @Override
-    public IEventSubscriber getOrCreateEventSubscriber(IEvent tractracEvent, URI liveURI, URI storedURI) {
+    public IEventSubscriber getOrCreateEventSubscriber(IEvent tractracEvent, URI liveURI, URI storedURI, String tracTracApiToken) {
         return eventSubscriberCache.computeIfAbsent(new Triple<>(tractracEvent, liveURI, storedURI), key->
             {
                 try {
-                    return new EventSubscriberWrapper(key.getA(), key.getB(), key.getC());
+                    return new EventSubscriberWrapper(key.getA(), key.getB(), key.getC(), tracTracApiToken);
                 } catch (SubscriberInitializationException e) {
                     throw new RuntimeException(e);
                 }

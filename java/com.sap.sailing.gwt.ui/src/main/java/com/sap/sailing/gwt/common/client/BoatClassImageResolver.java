@@ -23,6 +23,7 @@ public class BoatClassImageResolver {
         boatClassIconsMap.put(BoatClassMasterdata.ORC.getDisplayName(), imageResources.ORCIcon());
         boatClassIconsMap.put(BoatClassMasterdata.ORC_CLUB.getDisplayName(), imageResources.ORCClubIcon());
         boatClassIconsMap.put(BoatClassMasterdata.ORC_INTERNATIONAL.getDisplayName(), imageResources.ORCInternationalIcon());
+        boatClassIconsMap.put(BoatClassMasterdata.ORC_MULTIHULL.getDisplayName(), imageResources.ORCMultihullIcon());
         boatClassIconsMap.put(BoatClassMasterdata.PHRF.getDisplayName(), imageResources.PHRFIcon());
         boatClassIconsMap.put(BoatClassMasterdata._12M.getDisplayName(), imageResources._12mRIcon());
         boatClassIconsMap.put(BoatClassMasterdata._18Footer.getDisplayName(), imageResources._18FooterIcon());
@@ -45,6 +46,7 @@ public class BoatClassImageResolver {
         boatClassIconsMap.put(BoatClassMasterdata.BAVARIA_CRUISER_46.getDisplayName(), imageResources.BavariaCruiser46Icon());
         boatClassIconsMap.put(BoatClassMasterdata.BB10M.getDisplayName(), imageResources.BB10MIcon());
         boatClassIconsMap.put(BoatClassMasterdata.BENETEAU_FIRST_35.getDisplayName(), imageResources.BeneteauFirst35Icon());
+        boatClassIconsMap.put(BoatClassMasterdata.BENETEAU_FIRST_36.getDisplayName(), imageResources.BeneteauFirst36Icon());
         boatClassIconsMap.put(BoatClassMasterdata.BENETEAU_FIRST_45.getDisplayName(), imageResources.BeneteauFirst45Icon());
         boatClassIconsMap.put(BoatClassMasterdata.BRASSFAHRT_I.getDisplayName(), imageResources.Brassfahrt1Icon());
         boatClassIconsMap.put(BoatClassMasterdata.BRASSFAHRT_II.getDisplayName(), imageResources.Brassfahrt2Icon());
@@ -62,6 +64,7 @@ public class BoatClassImageResolver {
         boatClassIconsMap.put(BoatClassMasterdata.DRAGON_INT.getDisplayName(), imageResources.DragonIcon());
         boatClassIconsMap.put(BoatClassMasterdata.DYAS.getDisplayName(), imageResources.DyasIcon());
         boatClassIconsMap.put(BoatClassMasterdata.ELAN350.getDisplayName(), imageResources.Elan350Icon());
+        boatClassIconsMap.put(BoatClassMasterdata.ELAN_E4.getDisplayName(), imageResources.ElanE4Icon());
         boatClassIconsMap.put(BoatClassMasterdata.ELLIOTT_6M.getDisplayName(), imageResources.Elliott6mIcon());
         boatClassIconsMap.put(BoatClassMasterdata.EUROPE_INT.getDisplayName(), imageResources.EuropeIcon());
         boatClassIconsMap.put(BoatClassMasterdata.EXTREME_40.getDisplayName(), imageResources.Extreme40Icon());
@@ -69,6 +72,7 @@ public class BoatClassImageResolver {
         boatClassIconsMap.put(BoatClassMasterdata.D_35.getDisplayName(), imageResources.D35Icon());
         boatClassIconsMap.put(BoatClassMasterdata.F_16.getDisplayName(), imageResources.F16Icon());
         boatClassIconsMap.put(BoatClassMasterdata.F_18.getDisplayName(), imageResources.F18Icon());
+        boatClassIconsMap.put(BoatClassMasterdata.FAREAST28R.getDisplayName(), imageResources.Fareast28RIcon());
         boatClassIconsMap.put(BoatClassMasterdata.FARR_30.getDisplayName(), imageResources.Farr30Icon());
         boatClassIconsMap.put(BoatClassMasterdata.FARR_280.getDisplayName(), imageResources.Farr280Icon());
         boatClassIconsMap.put(BoatClassMasterdata.FINN.getDisplayName(), imageResources.FinnIcon());
@@ -150,6 +154,7 @@ public class BoatClassImageResolver {
         boatClassIconsMap.put(BoatClassMasterdata.SPLASH_RED.getDisplayName(), imageResources.SplashRedIcon());
         boatClassIconsMap.put(BoatClassMasterdata.SPLASH_GREEN.getDisplayName(), imageResources.SplashGreenIcon());
         boatClassIconsMap.put(BoatClassMasterdata.STAR.getDisplayName(), imageResources.StarIcon());
+        boatClassIconsMap.put(BoatClassMasterdata.SRS.getDisplayName(), imageResources.SRSIcon());
         boatClassIconsMap.put(BoatClassMasterdata.STREAMLINE.getDisplayName(), imageResources.StreamlineIcon());
         boatClassIconsMap.put(BoatClassMasterdata.SUNBEAM_22.getDisplayName(), imageResources.Sunbeam22Icon());
         boatClassIconsMap.put(BoatClassMasterdata.SWAN_45.getDisplayName(), imageResources.Swan45Icon());

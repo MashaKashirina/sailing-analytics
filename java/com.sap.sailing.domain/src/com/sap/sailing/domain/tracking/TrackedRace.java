@@ -13,6 +13,9 @@ import java.util.SortedSet;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.MaxIterationsExceededException;
+
 import com.sap.sailing.domain.abstractlog.orc.RaceLogORCImpliedWindSourceEvent;
 import com.sap.sailing.domain.abstractlog.race.RaceLog;
 import com.sap.sailing.domain.abstractlog.race.RaceLogRaceStatusEvent;
@@ -36,9 +39,7 @@ import com.sap.sailing.domain.base.Waypoint;
 import com.sap.sailing.domain.common.LegType;
 import com.sap.sailing.domain.common.MaxPointsReason;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.TargetTimeInfo;
 import com.sap.sailing.domain.common.TimingConstants;
@@ -66,6 +67,8 @@ import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.tracking.SensorFixStore;
 import com.sap.sailing.domain.ranking.RankingMetric;
 import com.sap.sailing.domain.ranking.RankingMetric.RankingInfo;
+import com.sap.sailing.domain.shared.tracking.LineDetails;
+import com.sap.sailing.domain.shared.tracking.TrackingConnectorInfo;
 import com.sap.sailing.domain.tracking.impl.NonCachingMarkPositionAtTimePointCache;
 import com.sap.sailing.domain.tracking.impl.TrackedRaceImpl;
 import com.sap.sailing.domain.windestimation.IncrementalWindEstimation;
@@ -73,7 +76,9 @@ import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.IsManagedByCache;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
@@ -130,7 +135,7 @@ public interface TrackedRace
      * Tells how ranks are to be assigned to the competitors at any time during the race. For one-design boat classes
      * this will usually happen by projecting the competitors to the wind direction for upwind and downwind legs or to
      * the leg's rhumb line for reaching legs, then comparing positions. For handicap races using a time-on-time,
-     * time-on-distance, combination thereof or a more complicated scheme such as ORC Performance Curve, the ranking
+     * time-on-distance, combination thereof or a more complicated scheme such as ORC Polar Curve, the ranking
      * process needs to take into account the competitor-specific correction factors defined in the measurement
      * certificate.
      */
@@ -654,7 +659,7 @@ public interface TrackedRace
      * If the precondition that the {@code competitor} must be {@link RaceDefinition#getCompetitors() part of} the
      * {@link #getRace() race} isn't met, a {@code NullPointerException} will result.
      */
-    Iterable<GPSFixMoving> approximate(Competitor competitor, Distance maxDistance, TimePoint from, TimePoint to);
+    Iterable<GPSFixMoving> approximate(Competitor competitor, TimePoint from, TimePoint to);
 
     /**
      * @return a non-<code>null</code> but perhaps empty list of the maneuvers that <code>competitor</code> performed in
@@ -1413,7 +1418,7 @@ public interface TrackedRace
     }
 
     /**
-     * A so-called "implied wind" speed is determined in ORC Performance Curve Scoring (PCS) by inverting the
+     * A so-called "implied wind" speed is determined in ORC Polar Curve Scoring (PCS) by inverting the
      * performance curve functions of the competitors that maps a wind speed to the time allowance for a course that the
      * competitor gets for that wind speed. This way, a virtual wind speed can be calculated based on the time the
      * competitor actually took to complete that course.
@@ -1482,4 +1487,15 @@ public interface TrackedRace
      * {@link SharedDomainFactory#getExistingCourseAreaById(Serializable)} method.
      */
     UUID getCourseAreaId();
+
+    /**
+     * Computes the {@code competitor}'s current boat speed's percentage of the target boat speed at time point
+     * {@code timePoint}. For one-design classes with a one-design ranking metric, the {@link PolarDataService} is used
+     * to tell the target boat speed. For an ORC Polar Curve Scoring ranking metric we can assume that
+     * boat-specific measurement {@link ORCCertificate}s exist from which we can obtain a target boat speed for the
+     * current conditions and point of sail.
+     */
+    Double getPercentTargetBoatSpeed(Competitor competitor, TimePoint timePoint,
+            WindLegTypeAndLegBearingAndORCPerformanceCurveCache cache)
+            throws NotEnoughDataHasBeenAddedException, MaxIterationsExceededException, FunctionEvaluationException;
 }

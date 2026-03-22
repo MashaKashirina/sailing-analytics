@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -43,6 +44,7 @@ import com.sap.sse.security.shared.impl.Role;
 import com.sap.sse.security.shared.impl.SecuredSecurityTypes;
 import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.security.shared.impl.UserGroup;
+import com.sap.sse.util.HttpRequestUtils;
 import com.sun.jersey.api.client.ClientResponse.Status;
 
 @Path(SecurityResource.RESTSECURITY)
@@ -108,7 +110,7 @@ public class SecurityResource extends AbstractSecurityResource {
                     usernames.add(userWithPermission.getName());
                 }
             }
-            logger.info("Request for users with permission took "+start.until(TimePoint.now()));
+            logger.fine(()->"Request for users with permission took "+start.until(TimePoint.now()));
             return Response.status(Status.OK).entity(streamingOutput(usernames)).build();
         } catch (Exception e) {
             return Response.status(Status.PRECONDITION_FAILED).entity(e.getMessage()).build();
@@ -185,9 +187,11 @@ public class SecurityResource extends AbstractSecurityResource {
             @QueryParam(EMAIL) String queryEmail, @FormParam(EMAIL) String formEmail,
             @QueryParam(PASSWORD) String queryPassword, @FormParam(PASSWORD) String formPassword,
             @QueryParam(FULL_NAME) String queryFullName, @FormParam(FULL_NAME) String formFullName,
-            @QueryParam(COMPANY) String queryCompany, @FormParam(COMPANY) String formCompany) {
+            @QueryParam(COMPANY) String queryCompany, @FormParam(COMPANY) String formCompany,
+            @Context HttpServletRequest request) {
         try {
-            User user = getSecurityService().checkPermissionForObjectCreationAndRevertOnErrorForUserCreation(queryUsername,
+            final String clientIP = HttpRequestUtils.getClientIP(request);
+            User user = getSecurityService().checkPermissionForUserCreationAndRevertOnErrorForUserCreation(queryUsername,
                     new Callable<User>() {
                         @Override
                         public User call() throws Exception {
@@ -198,7 +202,7 @@ public class SecurityResource extends AbstractSecurityResource {
                             final String fullNameToUse = preferFirstIfNotNullOrElseSecond(formFullName, queryFullName);
                             final String companyToUse = preferFirstIfNotNullOrElseSecond(formCompany, queryCompany);
                             User newUser = getSecurityService().createSimpleUser(usernameToUse, emailToUse, passwordToUse, fullNameToUse, companyToUse,
-                                    Locale.ENGLISH, validationBaseURL, getSecurityService().getDefaultTenantForCurrentUser());
+                                    Locale.ENGLISH, validationBaseURL, getSecurityService().getDefaultTenantForCurrentUser(), clientIP, /* enforce strong password */ true);
                             SecurityUtils.getSubject().login(new UsernamePasswordToken(usernameToUse, passwordToUse));
                             return newUser;
                         }

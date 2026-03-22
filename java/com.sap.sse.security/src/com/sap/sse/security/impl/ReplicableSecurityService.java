@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.apache.shiro.session.Session;
 
+import com.sap.sse.common.TimedLock;
 import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.shared.Account;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
@@ -68,6 +69,8 @@ public interface ReplicableSecurityService extends SecurityService {
 
     Void internalUpdateUserProperties(String username, String fullName, String company, Locale locale);
 
+    Void internalResetUserTimedLock(String username);
+
     Boolean internalValidateEmail(String username, String validationSecret);
 
     Void internalSetPreference(String username, String key, String value);
@@ -117,4 +120,21 @@ public interface ReplicableSecurityService extends SecurityService {
     
     Void internalUpdateSubscriptionPlanPrices(Map<String, BigDecimal> updatedItemPrices);
 
+    Void internalSetCORSFilterConfigurationToWildcard(String serverName);
+
+    Void internalSetCORSFilterConfigurationAllowedOrigins(String serverName, String... allowedOrigins);
+
+    TimedLock internalFailedPasswordAuthentication(String username);
+
+    Boolean internalSuccessfulPasswordAuthentication(String username);
+
+    Boolean internalSuccessfulBearerTokenAuthentication(String clientIP);
+
+    TimedLock internalFailedBearerTokenAuthentication(String clientIP);
+
+    TimedLock internalRecordUserCreationFromClientIP(String clientIP);
+
+    void internalReleaseUserCreationLockOnIp(String ip);
+
+    void internalReleaseBearerTokenLockOnIp(String ip);
 }

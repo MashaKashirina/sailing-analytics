@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.server.trackfiles.impl.ExpeditionExtendedDataImporterImpl;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 
 public class WindLogParser {
     /**
@@ -86,13 +86,14 @@ public class WindLogParser {
     public static Iterable<Wind> importWind(InputStream windStream) throws IOException {
         BufferedReader csvReader = new BufferedReader(new InputStreamReader(windStream));
         String headerLine = csvReader.readLine();
-        final Map<String, Integer> headers = ExpeditionExtendedDataImporterImpl.parseHeader(headerLine);
+        final ExpeditionExtendedDataImporterImpl importer = new ExpeditionExtendedDataImporterImpl();
+        final Map<String, Integer> headers = importer.parseHeader(headerLine);
         List<Wind> result = new ArrayList<Wind>();
         WindBuffer windBuffer = new WindBuffer();
         final AtomicInteger lineNr = new AtomicInteger(1);
         csvReader.lines().forEach(line->{
             if (!line.trim().isEmpty()) {
-                ExpeditionExtendedDataImporterImpl.parseLine(lineNr.incrementAndGet(), "Expedition Wind Import",
+                importer.parseLine(lineNr.incrementAndGet(), "Expedition Wind Import",
                         line, headers, (timePoint, columnValues, headerDefinitions)->{
                             windBuffer.updateTime(timePoint);
                             final String trueWindSpeedData = headerDefinitions.containsKey(COL_NAME_TRUE_WIND_SPEED) &&

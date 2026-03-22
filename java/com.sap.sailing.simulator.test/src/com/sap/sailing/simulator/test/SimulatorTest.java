@@ -6,13 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.common.PathType;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.simulator.Path;
 import com.sap.sailing.simulator.PolarDiagram;
 import com.sap.sailing.simulator.SimulationParameters;
@@ -27,7 +24,9 @@ import com.sap.sailing.simulator.windfield.WindFieldGenerator;
 import com.sap.sailing.simulator.windfield.impl.WindFieldGeneratorBlastImpl;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
@@ -67,8 +66,8 @@ public class SimulatorTest {
         paths.put(PathType.OMNISCIENT, pathOmniscient);
         paths.put(PathType.OPPORTUNIST_LEFT, pathOpportunist);
         
-        Assert.assertNotNull(paths.get(PathType.OPPORTUNIST_LEFT).getPathPoints());
-        Assert.assertNotNull(paths.get(PathType.OMNISCIENT).getPathPoints());
+        Assertions.assertNotNull(paths.get(PathType.OPPORTUNIST_LEFT).getPathPoints());
+        Assertions.assertNotNull(paths.get(PathType.OMNISCIENT).getPathPoints());
     }
 
 }

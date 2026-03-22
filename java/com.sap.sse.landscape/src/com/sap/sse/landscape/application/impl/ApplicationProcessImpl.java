@@ -36,7 +36,6 @@ import com.sap.sse.landscape.RotatingFileBasedLog;
 import com.sap.sse.landscape.application.ApplicationProcess;
 import com.sap.sse.landscape.application.ApplicationProcessMetrics;
 import com.sap.sse.landscape.impl.ProcessImpl;
-import com.sap.sse.landscape.impl.ReleaseImpl;
 import com.sap.sse.landscape.ssh.SshCommandChannel;
 import com.sap.sse.shared.util.Wait;
 import com.sap.sse.util.HttpUrlConnectionHelper;
@@ -106,7 +105,7 @@ implements ApplicationProcess<ShardingKey, MetricsT, ProcessT> {
         } else {
             final Matcher matcher = pattern.matcher(versionTxt);
             if (matcher.find()) {
-                result = new ReleaseImpl(matcher.group(1), releaseRepository);
+                result = releaseRepository.getRelease(matcher.group(1));
             } else {
                 result = null;
             }
@@ -163,6 +162,15 @@ implements ApplicationProcess<ShardingKey, MetricsT, ProcessT> {
         return telnetPortToOSGiConsole;
     }
     
+    @Override
+    public int[] getAllTCPPorts(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final int[] superTCPPorts = super.getAllTCPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        final int[] result = new int[superTCPPorts.length + 1];
+        System.arraycopy(superTCPPorts, 0, result, 0, superTCPPorts.length);
+        result[result.length-1] = getTelnetPortToOSGiConsole(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        return result;
+    }
+
     /**
      * Obtains the last definition of the process configuration variable specified, or {@code null} if that variable isn't set
      * by evaluating the {@code env.sh} file on the {@link #getHost() host} or the connection to the host timed out.

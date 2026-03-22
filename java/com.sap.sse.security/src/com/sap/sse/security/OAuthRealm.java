@@ -33,6 +33,7 @@ import org.scribe.model.Verb;
 import org.scribe.model.Verifier;
 import org.scribe.oauth.OAuthService;
 
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.security.interfaces.Credential;
 import com.sap.sse.security.interfaces.OAuthToken;
 import com.sap.sse.security.interfaces.Social;
@@ -188,7 +189,7 @@ public class OAuthRealm extends AbstractCompositeAuthorizingRealm {
             try {
                 UserGroup tenant = getUserStore().createUserGroup(UUID.randomUUID(), socialname + SecurityService.TENANT_SUFFIX);
                 getAccessControlStore().setOwnership(tenant.getIdentifier(), user, tenant, tenant.getName());
-                user = getUserStore().createUser(socialname, socialUser.getProperty(Social.EMAIL.name()), socialUser);
+                user = getUserStore().createUser(socialname, socialUser.getProperty(Social.EMAIL.name()), new TimedLockImpl(), socialUser);
                 tenant.add(user);
                 getUserStore().updateUserGroup(tenant);
             } catch (UserManagementException | UserGroupManagementException e) {

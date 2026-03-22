@@ -24,8 +24,6 @@ import com.mongodb.client.MongoDatabase;
 import com.sap.sailing.domain.common.DeviceIdentifier;
 import com.sap.sailing.domain.common.MarkType;
 import com.sap.sailing.domain.common.PassingInstruction;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.coursetemplate.ControlPointTemplate;
 import com.sap.sailing.domain.coursetemplate.CourseTemplate;
 import com.sap.sailing.domain.coursetemplate.MarkProperties;
@@ -44,11 +42,13 @@ import com.sap.sailing.shared.persistence.device.DeviceIdentifierMongoHandler;
 import com.sap.sailing.shared.persistence.device.impl.PlaceHolderDeviceIdentifierMongoHandler;
 import com.sap.sse.common.Color;
 import com.sap.sse.common.NoCorrespondingServiceRegisteredException;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.RepeatablePart;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TypeBasedServiceFinder;
 import com.sap.sse.common.TypeBasedServiceFinderFactory;
 import com.sap.sse.common.impl.AbstractColor;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.common.impl.RepeatablePartImpl;
 import com.sap.sse.common.TransformationException;
@@ -252,14 +252,13 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
         final List<CourseTemplate> result = new ArrayList<>();
         final MongoCollection<Document> configurationCollection = database
                 .getCollection(CollectionNames.COURSE_TEMPLATES.name());
-        try {
-            for (final Document dbObject : configurationCollection.find()) {
+        for (final Document dbObject : configurationCollection.find()) {
+            try {
                 final CourseTemplate entry = loadCourseTemplateEntry(dbObject, markTemplateResolver, markRoleResolver);
                 result.add(entry);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error connecting to MongoDB, unable to load a course template. Continuing with other course templates...", e);
             }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error connecting to MongoDB, unable to load course templates.");
-            logger.log(Level.SEVERE, "loadAllCourseTemplates", e);
         }
         return result;
     }

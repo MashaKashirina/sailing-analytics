@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -35,11 +36,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.MaxIterationsExceededException;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.json.simple.JSONArray;
@@ -85,7 +89,6 @@ import com.sap.sailing.domain.common.ManeuverType;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.RegattaName;
 import com.sap.sailing.domain.common.RegattaNameAndRaceName;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.TargetTimeInfo;
 import com.sap.sailing.domain.common.WindSource;
@@ -111,9 +114,9 @@ import com.sap.sailing.domain.racelogtracking.DeviceMappingWithRegattaLogEvent;
 import com.sap.sailing.domain.racelogtracking.impl.SmartphoneUUIDIdentifierImpl;
 import com.sap.sailing.domain.ranking.RankingMetric.RankingInfo;
 import com.sap.sailing.domain.sharding.ShardingContext;
+import com.sap.sailing.domain.shared.tracking.LineDetails;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
 import com.sap.sailing.domain.tracking.GPSFixTrack;
-import com.sap.sailing.domain.tracking.LineDetails;
 import com.sap.sailing.domain.tracking.Maneuver;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tracking.RaceWindCalculator;
@@ -176,6 +179,7 @@ import com.sap.sse.common.Color;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TimeRange;
 import com.sap.sse.common.Util;
@@ -198,6 +202,7 @@ import com.sap.sse.security.shared.impl.User;
 import com.sap.sse.shared.json.JsonDeserializationException;
 import com.sap.sse.shared.json.JsonSerializer;
 import com.sap.sse.shared.util.impl.UUIDHelper;
+import com.sap.sse.util.HttpRequestUtils;
 import com.sap.sse.util.SingleCalculationPerSubjectCache;
 import com.sap.sse.util.ThreadPoolUtil;
 
@@ -992,8 +997,11 @@ public class RegattasResource extends AbstractSailingServerResource {
             @QueryParam("competitorId") Set<String> competitorIds,
             @DefaultValue("false") @QueryParam("lastknown") boolean addLastKnown,
             @DefaultValue("false") @QueryParam("raw") boolean raw,
-            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken) {
+            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken,
+            @Context HttpServletRequest request) {
         Response response;
+        final String clientIP = HttpRequestUtils.getClientIP(request);
+        final String userAgent = HttpRequestUtils.getUserAgent(request);
         Regatta regatta = findRegattaByName(regattaName);
         if (regatta == null) {
             response = getBadRegattaErrorResponse(regattaName);
@@ -1004,7 +1012,7 @@ public class RegattasResource extends AbstractSailingServerResource {
             } else {
                 TrackedRace trackedRace = findTrackedRace(regattaName, raceName);
                 getSecurityService().checkCurrentUserReadPermission(trackedRace);
-                checkExportPermission(trackedRace, secondaryUserBearerToken);
+                checkExportPermission(trackedRace, secondaryUserBearerToken, clientIP, userAgent);
                 TimePoint from;
                 TimePoint to;
                 try {
@@ -1113,11 +1121,11 @@ public class RegattasResource extends AbstractSailingServerResource {
         return response;
     }
 
-    private void checkExportPermission(TrackedRace trackedRace, String secondaryUserBearerToken) {
+    private void checkExportPermission(TrackedRace trackedRace, String secondaryUserBearerToken, String clientIP, String userAgent) {
         if (Util.hasLength(secondaryUserBearerToken)) {
             logger.info("Found secondary user bearer token");
             final Subject secondarySubject = new Subject.Builder().buildSubject();
-            secondarySubject.login(new BearerAuthenticationToken(secondaryUserBearerToken));
+            secondarySubject.login(new BearerAuthenticationToken(secondaryUserBearerToken, clientIP, userAgent));
             logger.info("Authenticated secondary subject for export permission: "+secondarySubject.getPrincipal());
             secondarySubject.checkPermission(trackedRace.getPermissionType().getStringPermissionForObject(SecuredDomainType.TrackedRaceActions.EXPORT, trackedRace));
             logger.info("Secondary subject has export permission for "+trackedRace);
@@ -1161,7 +1169,10 @@ public class RegattasResource extends AbstractSailingServerResource {
             @QueryParam("fromtimeasmillis") Long fromtimeasmillis, @QueryParam("totime") String totime,
             @QueryParam("totimeasmillis") Long totimeasmillis,
             @DefaultValue("false") @QueryParam("lastknown") boolean addLastKnown,
-            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken) {
+            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken,
+            @Context HttpServletRequest request) {
+        final String clientIP = HttpRequestUtils.getClientIP(request);
+        final String userAgent = HttpRequestUtils.getUserAgent(request);
         Regatta regatta = findRegattaByName(regattaName);
         if (regatta == null) {
             return getBadRegattaErrorResponse(regattaName);
@@ -1173,7 +1184,7 @@ public class RegattasResource extends AbstractSailingServerResource {
         }
         TrackedRace trackedRace = findTrackedRace(regattaName, raceName);
         getSecurityService().checkCurrentUserReadPermission(trackedRace);
-        checkExportPermission(trackedRace, secondaryUserBearerToken);
+        checkExportPermission(trackedRace, secondaryUserBearerToken, clientIP, userAgent);
         TimePoint from;
         TimePoint to;
         try {
@@ -1497,7 +1508,7 @@ public class RegattasResource extends AbstractSailingServerResource {
     public Response getStartAnalysis(@PathParam("regattaname") String regattaName, @PathParam("racename") String raceName,
             @QueryParam("secret") String regattaSecret) {
         Response response = null;
-        Regatta regatta = findRegattaByName(regattaName);
+        final Regatta regatta = findRegattaByName(regattaName);
         if (regatta == null) {
             response = getBadRegattaErrorResponse(regattaName);
         } else {
@@ -1509,7 +1520,7 @@ public class RegattasResource extends AbstractSailingServerResource {
                 response = getBadRaceErrorResponse(regattaName, raceName);
             } else {
                 try {
-                    JSONObject jsonStartAnalysis = getStartAnalysis(trackedRace, regatta);
+                    final JSONObject jsonStartAnalysis = getStartAnalysis(trackedRace, regatta);
                     response = Response.ok(streamingOutput(jsonStartAnalysis)).build();
                 } catch (NoWindException | InterruptedException | ExecutionException e) {
                     response = Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -1558,6 +1569,7 @@ public class RegattasResource extends AbstractSailingServerResource {
                                 competitorStartAnalysisJson.put("speedOverGroundAtStartOfRaceInKnots", entry.speedOverGroundAtStartOfRaceInKnots);
                                 competitorStartAnalysisJson.put("speedOverGroundFiveSecondsBeforeStartInKnots", entry.speedOverGroundFiveSecondsBeforeStartInKnots);
                                 competitorStartAnalysisJson.put("timeBetweenRaceStartAndCompetitorStartInSeconds", entry.timeBetweenRaceStartAndCompetitorStartInSeconds);
+                                competitorStartAnalysisJson.put("startTack", entry.startTack);
                                 competitorStartAnalysis.add(competitorStartAnalysisJson);
                             }
                         }
@@ -1734,8 +1746,11 @@ public class RegattasResource extends AbstractSailingServerResource {
     @Path("{regattaname}/races/{racename}/highQualityWindFixes")
     public Response getHighQualityWindFixes(@PathParam("regattaname") String regattaName,
             @PathParam("racename") String raceName,
-            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken) {
+            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken,
+            @Context HttpServletRequest request) {
         Response response;
+        final String clientIP = HttpRequestUtils.getClientIP(request);
+        final String userAgent = HttpRequestUtils.getUserAgent(request);
         Regatta regatta = findRegattaByName(regattaName);
         if (regatta == null) {
             response = Response.status(Status.NOT_FOUND)
@@ -1751,7 +1766,7 @@ public class RegattasResource extends AbstractSailingServerResource {
                 TrackedRace trackedRace = findTrackedRace(regattaName, raceName);
                 getSecurityService().checkCurrentUserReadPermission(regatta);
                 getSecurityService().checkCurrentUserReadPermission(trackedRace);
-                checkExportPermission(trackedRace, secondaryUserBearerToken);
+                checkExportPermission(trackedRace, secondaryUserBearerToken, clientIP, userAgent);
                 RaceWindJsonSerializer serializer = new RaceWindJsonSerializer();
                 JSONObject jsonWindTracks = serializer.serialize(trackedRace);
                 return Response.ok(streamingOutput(jsonWindTracks)).build();
@@ -1768,8 +1783,11 @@ public class RegattasResource extends AbstractSailingServerResource {
             @QueryParam("windsourceid") String windSourceId, @QueryParam("fromtime") String fromtime,
             @QueryParam("fromtimeasmillis") Long fromtimeasmillis, @QueryParam("totime") String totime,
             @QueryParam("totimeasmillis") Long totimeasmillis,
-            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken) {
+            @HeaderParam(SECONDARY_USER_BEARER_TOKEN) String secondaryUserBearerToken,
+            @Context HttpServletRequest request) {
         Response response;
+        final String clientIP = HttpRequestUtils.getClientIP(request);
+        final String userAgent = HttpRequestUtils.getUserAgent(request);
         Regatta regatta = findRegattaByName(regattaName);
         if (regatta == null) {
             response = Response.status(Status.NOT_FOUND)
@@ -1790,7 +1808,7 @@ public class RegattasResource extends AbstractSailingServerResource {
                 } else {
                     final TrackedRace trackedRace = findTrackedRace(regattaName, raceName);
                     getSecurityService().checkCurrentUserReadPermission(trackedRace);
-                    checkExportPermission(trackedRace, secondaryUserBearerToken);
+                    checkExportPermission(trackedRace, secondaryUserBearerToken, clientIP, userAgent);
                     TimePoint from;
                     TimePoint to;
                     try {
@@ -2214,8 +2232,10 @@ public class RegattasResource extends AbstractSailingServerResource {
                 final FutureTask<Iterable<Pair<TimePoint, Map<DetailType, Double>>>> future =new FutureTask<Iterable<Pair<TimePoint, Map<DetailType, Double>>>>(
                         new Callable<Iterable<Pair<TimePoint, Map<DetailType, Double>>>>() {
                     @Override
-                    public Iterable<Pair<TimePoint, Map<DetailType, Double>>> call() throws NoWindException {
-                        final List<Pair<TimePoint, Map<DetailType, Double>>> raceData = new ArrayList<>();
+                            public Iterable<Pair<TimePoint, Map<DetailType, Double>>> call()
+                                    throws NoWindException, NotEnoughDataHasBeenAddedException,
+                                    MaxIterationsExceededException, FunctionEvaluationException {
+                                final List<Pair<TimePoint, Map<DetailType, Double>>> raceData = new ArrayList<>();
                         if (startTime != null && endTime != null) {
                             for (long i = startTime.asMillis(); i <= endTime.asMillis(); i += adjustedStepSizeInMillis) {
                                 final TimePoint time = TimePoint.of(i);

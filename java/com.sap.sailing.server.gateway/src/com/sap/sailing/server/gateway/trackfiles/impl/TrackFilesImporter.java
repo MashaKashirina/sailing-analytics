@@ -28,6 +28,7 @@ import com.sap.sailing.server.gateway.trackfiles.impl.ImportResult.TrackImportDT
 import com.sap.sailing.server.interfaces.RacingEventService;
 import com.sap.sse.common.NoCorrespondingServiceRegisteredException;
 import com.sap.sse.common.TimeRange;
+import com.sap.sse.common.Timed;
 import com.sap.sse.common.TransformationException;
 import com.sap.sse.common.TypeBasedServiceFinderFactory;
 import com.sap.sse.common.Util.Pair;
@@ -136,7 +137,7 @@ public class TrackFilesImporter {
         }
     }
 
-    void storeFixes(Iterable<GPSFix> fixes, DeviceIdentifier deviceIdentifier) {
+    <FixT extends Timed> void storeFixes(Iterable<FixT> fixes, DeviceIdentifier deviceIdentifier) {
         try {
             service.getSensorFixStore().storeFixes(deviceIdentifier, fixes, /* returnManeuverUpdate */ false, /* returnLiveDelay */ false);
         } catch (NoCorrespondingServiceRegisteredException e) {

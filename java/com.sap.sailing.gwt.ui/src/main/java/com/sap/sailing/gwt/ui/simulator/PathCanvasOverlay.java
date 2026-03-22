@@ -12,13 +12,13 @@ import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.base.Point;
 import com.google.gwt.maps.client.geometrylib.SphericalUtils;
-import com.sap.sailing.domain.common.Mile;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sailing.gwt.ui.client.shared.racemap.CoordinateSystem;
 import com.sap.sailing.gwt.ui.shared.SimulatorWindDTO;
 import com.sap.sailing.gwt.ui.shared.WindFieldGenParamsDTO;
 import com.sap.sse.common.AbstractBearing;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Mile;
 import com.sap.sse.common.Named;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
@@ -163,11 +163,11 @@ public class PathCanvasOverlay extends WindFieldCanvasOverlay implements Named {
     private void drawLine(SimulatorWindDTO p1, SimulatorWindDTO p2) {
         double weight = 3.0;
         LatLng positionLatLng = coordinateSystem.toLatLng(p1.position);
-        Point canvasPositionInPx = mapProjection.fromLatLngToDivPixel(positionLatLng);
+        Point canvasPositionInPx = getMapProjection().fromLatLngToDivPixel(positionLatLng);
         double x1 = canvasPositionInPx.getX() - this.getWidgetPosLeft();
         double y1 = canvasPositionInPx.getY() - this.getWidgetPosTop();
         positionLatLng = coordinateSystem.toLatLng(p2.position);
-        canvasPositionInPx = mapProjection.fromLatLngToDivPixel(positionLatLng);
+        canvasPositionInPx = getMapProjection().fromLatLngToDivPixel(positionLatLng);
         double x2 = canvasPositionInPx.getX() - this.getWidgetPosLeft();
         double y2 = canvasPositionInPx.getY() - this.getWidgetPosTop();
         // Context2d context2d = canvas.getContext2d();
@@ -180,7 +180,7 @@ public class PathCanvasOverlay extends WindFieldCanvasOverlay implements Named {
     private void drawPoint(SimulatorWindDTO p) {
         double weight = 3.0;
         LatLng positionLatLng = coordinateSystem.toLatLng(p.position);
-        Point canvasPositionInPx = mapProjection.fromLatLngToDivPixel(positionLatLng);
+        Point canvasPositionInPx = getMapProjection().fromLatLngToDivPixel(positionLatLng);
         double x1 = canvasPositionInPx.getX() - this.getWidgetPosLeft();
         double y1 = canvasPositionInPx.getY() - this.getWidgetPosTop();
         drawCircle(x1, y1, weight / 2., pathColor);
@@ -196,11 +196,11 @@ public class PathCanvasOverlay extends WindFieldCanvasOverlay implements Named {
             return true;
         }
         LatLng positionLatLng = coordinateSystem.toLatLng(p1.position);
-        Point canvasPositionInPx = mapProjection.fromLatLngToDivPixel(positionLatLng);
+        Point canvasPositionInPx = getMapProjection().fromLatLngToDivPixel(positionLatLng);
         double x1 = canvasPositionInPx.getX();
         double y1 = canvasPositionInPx.getY();
         positionLatLng = coordinateSystem.toLatLng(p2.position);
-        canvasPositionInPx = mapProjection.fromLatLngToDivPixel(positionLatLng);
+        canvasPositionInPx = getMapProjection().fromLatLngToDivPixel(positionLatLng);
         double x2 = canvasPositionInPx.getX();
         double y2 = canvasPositionInPx.getY();
         double pxDistance = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));

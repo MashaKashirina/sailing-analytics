@@ -1,6 +1,7 @@
 package com.sap.sailing.domain.igtimiadapter.persistence.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -75,28 +76,40 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
             final Number id = ((Number) ((Document) o).get(FieldNames.IGTIMI_DEVICES_ID.name()));
             final String serialNumber = (String) ((Document) o).get(FieldNames.IGTIMI_DEVICES_SERIAL_NUMBER.name());
             final String name = (String) ((Document) o).get(FieldNames.IGTIMI_DEVICES_NAME.name());
-            result.add(Device.create(id.longValue(), serialNumber, name));
+            final Device device = Device.create(id.longValue(), serialNumber, name);
+            final Long lastHeartbeatMillis = ((Document) o).getLong(FieldNames.IGTIMI_DEVICES_LAST_HEARTBEAT_MILLIS.name());
+            if (lastHeartbeatMillis != null) {
+                final String remoteAddress = ((Document) o).getString(FieldNames.IGTIMI_DEVICES_REMOTE_ADDRESS.name());
+                device.setLastHeartbeat(lastHeartbeatMillis == null ? null : TimePoint.of(lastHeartbeatMillis), remoteAddress);
+            }
+            result.add(device);
         }
         return result;
     }
 
     @Override
     public Iterable<Msg> getMessages(String deviceSerialNumber, MultiTimeRange timeRanges, Set<DataCase> dataCases, ClientSession clientSessionOrNull) {
-        final Document query = new Document();
-        appendMultiTimeRangeQuery(query, timeRanges);
-        query.append(FieldNames.IGTIMI_MESSAGES_DEVICE_SERIAL_NUMBER.name(), deviceSerialNumber);
-        final Iterable<Document> queryResult = clientSessionOrNull == null ? messagesCollection.find(query)
-                : messagesCollection.find(clientSessionOrNull, query);
-        return Util.filter(Util.map(queryResult,
-                doc->{
-                    try {
-                        final Msg msg = Msg.parseFrom(doc.get(FieldNames.IGTIMI_MESSAGES_PROTOBUF_MESSAGE.name(), Binary.class).getData());
-                        return filterMessageForDataCases(msg, dataCases);
-                    } catch (InvalidProtocolBufferException e) {
-                        logger.log(Level.SEVERE, "Error trying to parse an Igtimi message for device "+deviceSerialNumber, e);
-                        return null;
-                    }
-                }), r->r != null);
+        final Iterable<Msg> result;
+        if (timeRanges == null) {
+            result = Collections.emptySet();
+        } else {
+            final Document query = new Document();
+            appendMultiTimeRangeQuery(query, timeRanges);
+            query.append(FieldNames.IGTIMI_MESSAGES_DEVICE_SERIAL_NUMBER.name(), deviceSerialNumber);
+            final Iterable<Document> queryResult = (clientSessionOrNull == null ? messagesCollection.find(query)
+                    : messagesCollection.find(clientSessionOrNull, query)).sort(Sorts.ascending(FieldNames.IGTIMI_MESSAGES_TIMESTAMP.name()));
+            result = Util.filter(Util.map(queryResult,
+                    doc->{
+                        try {
+                            final Msg msg = Msg.parseFrom(doc.get(FieldNames.IGTIMI_MESSAGES_PROTOBUF_MESSAGE.name(), Binary.class).getData());
+                            return filterMessageForDataCases(msg, dataCases);
+                        } catch (InvalidProtocolBufferException e) {
+                            logger.log(Level.SEVERE, "Error trying to parse an Igtimi message for device "+deviceSerialNumber, e);
+                            return null;
+                        }
+                    }), r->r != null);
+        }
+        return result;
     }
     
     /**
@@ -129,32 +142,34 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
 
     @Override
     public Msg getLatestMessage(String deviceSerialNumber, DataCase dataCase, MultiTimeRange timeRanges, ClientSession clientSessionOrNull) throws InvalidProtocolBufferException {
-        final Document query = new Document();
-        query.append(FieldNames.IGTIMI_MESSAGES_DEVICE_SERIAL_NUMBER.name(), deviceSerialNumber);
-        appendMultiTimeRangeQuery(query, timeRanges);
-        final FindIterable<Document> documentsUnsorted = clientSessionOrNull == null ? messagesCollection.find(query)
-                : messagesCollection.find(clientSessionOrNull, query);
-        final Iterable<Document> queryResult = documentsUnsorted.sort(Sorts.descending(FieldNames.IGTIMI_MESSAGES_TIMESTAMP.name()));
-        for (final Document document : queryResult) {
-            final Binary messageBinary = (Binary) document.get(FieldNames.IGTIMI_MESSAGES_PROTOBUF_MESSAGE.name());
-            final Msg msg = Msg.parseFrom(messageBinary.getData());
-            if (msg.hasData()) {
-                final Data data = msg.getData();
-                // iterate in reverse order to find the *last* match
-                for (final ListIterator<DataMsg> i=data.getDataList().listIterator(data.getDataCount()); i.hasPrevious(); ) {
-                    final DataMsg dataMsg = i.previous();
-                    for (final ListIterator<DataPoint> j=dataMsg.getDataList().listIterator(dataMsg.getDataCount()); j.hasPrevious(); ) {
-                        final DataPoint dataPoint = j.previous();
-                        if (dataPoint.getDataCase() == dataCase) {
-                            // the message has a data point of the type requested by dataCase; return it
-                            return Msg.newBuilder().setData(
-                                       Data.newBuilder().addData(
-                                           DataMsg.newBuilder()
-                                               .addData(dataPoint)
-                                               .setSerialNumber(deviceSerialNumber)
+        if (timeRanges != null) {
+            final Document query = new Document();
+            query.append(FieldNames.IGTIMI_MESSAGES_DEVICE_SERIAL_NUMBER.name(), deviceSerialNumber);
+            appendMultiTimeRangeQuery(query, timeRanges);
+            final FindIterable<Document> documentsUnsorted = clientSessionOrNull == null ? messagesCollection.find(query)
+                    : messagesCollection.find(clientSessionOrNull, query);
+            final Iterable<Document> queryResult = documentsUnsorted.sort(Sorts.descending(FieldNames.IGTIMI_MESSAGES_TIMESTAMP.name()));
+            for (final Document document : queryResult) {
+                final Binary messageBinary = (Binary) document.get(FieldNames.IGTIMI_MESSAGES_PROTOBUF_MESSAGE.name());
+                final Msg msg = Msg.parseFrom(messageBinary.getData());
+                if (msg.hasData()) {
+                    final Data data = msg.getData();
+                    // iterate in reverse order to find the *last* match
+                    for (final ListIterator<DataMsg> i=data.getDataList().listIterator(data.getDataCount()); i.hasPrevious(); ) {
+                        final DataMsg dataMsg = i.previous();
+                        for (final ListIterator<DataPoint> j=dataMsg.getDataList().listIterator(dataMsg.getDataCount()); j.hasPrevious(); ) {
+                            final DataPoint dataPoint = j.previous();
+                            if (dataPoint.getDataCase() == dataCase) {
+                                // the message has a data point of the type requested by dataCase; return it
+                                return Msg.newBuilder().setData(
+                                           Data.newBuilder().addData(
+                                               DataMsg.newBuilder()
+                                                   .addData(dataPoint)
+                                                   .setSerialNumber(deviceSerialNumber)
+                                               .build())
                                            .build())
-                                       .build())
-                                   .build();
+                                       .build();
+                            }
                         }
                     }
                 }

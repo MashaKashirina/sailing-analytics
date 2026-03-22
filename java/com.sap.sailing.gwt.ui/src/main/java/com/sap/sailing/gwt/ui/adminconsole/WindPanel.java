@@ -62,7 +62,6 @@ import com.sap.sailing.gwt.ui.adminconsole.places.AdminConsoleView.Presenter;
 import com.sap.sailing.gwt.ui.client.Displayer;
 import com.sap.sailing.gwt.ui.client.SailingServiceWriteAsync;
 import com.sap.sailing.gwt.ui.client.StringMessages;
-import com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil;
 import com.sap.sailing.gwt.ui.shared.CoursePositionsDTO;
 import com.sap.sailing.gwt.ui.shared.RegattaDTO;
 import com.sap.sailing.gwt.ui.shared.WindDTO;
@@ -73,6 +72,7 @@ import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.fileupload.FileUploadUtil;
 import com.sap.sse.gwt.adminconsole.AdminConsoleTableResources;
 import com.sap.sse.gwt.adminconsole.FilterablePanelProvider;
+import com.sap.sse.gwt.client.DateAndTimeFormatterUtil;
 import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.celltable.BaseCelltable;
 import com.sap.sse.gwt.client.celltable.RefreshableMultiSelectionModel;
@@ -341,6 +341,7 @@ public class WindPanel extends FormPanel implements FilterablePanelProvider<Race
         contentPanel.add(new Label(stringMessages.seeIgtimiTabForAccountSettings()));
         final CheckBox correctByDeclination = new CheckBox(stringMessages.declinationCheckbox());
         correctByDeclination.setValue(true); // by default this is desirable because the Igtimi connector reads uncorrected magnetic values
+        final TextBox optionalBearerTokenBox = new TextBox();
         final Button importButton = new Button(stringMessages.importWindFromIgtimi());
         importButton.ensureDebugId("ImportWindFromIgtimi");
         final HTML resultReport = new HTML();
@@ -357,7 +358,9 @@ public class WindPanel extends FormPanel implements FilterablePanelProvider<Race
                 if (Window.confirm(warningMessage)) {
                     resultReport.setText(stringMessages.loading());
                     sailingServiceWrite.importWindFromIgtimi(new ArrayList<>(refreshableRaceSelectionModel.getSelectedSet()),
-                            correctByDeclination.getValue(), new AsyncCallback<Map<RegattaAndRaceIdentifier, Integer>>() {
+                            correctByDeclination.getValue(),
+                            Util.hasLength(optionalBearerTokenBox.getValue()) ? optionalBearerTokenBox.getValue().trim() : null,
+                            new AsyncCallback<Map<RegattaAndRaceIdentifier, Integer>>() {
                         @Override
                         public void onFailure(Throwable caught) {
                             errorReporter.reportError(stringMessages.errorImportingIgtimiWind(caught.getMessage()));
@@ -383,6 +386,11 @@ public class WindPanel extends FormPanel implements FilterablePanelProvider<Race
             }
         });
         contentPanel.add(correctByDeclination);
+        final HorizontalPanel tokenPanel = new HorizontalPanel();
+        tokenPanel.setSpacing(5);
+        tokenPanel.add(new Label(stringMessages.optionalBearerTokenForWindImport()));
+        tokenPanel.add(optionalBearerTokenBox);
+        contentPanel.add(tokenPanel);
         contentPanel.add(importButton);
         contentPanel.add(resultReport);
         return igtimiWindImportRootPanel;

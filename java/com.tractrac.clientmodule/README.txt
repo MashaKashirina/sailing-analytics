@@ -16,6 +16,101 @@ It contains also some files:
  - Manifest.txt -> manifest used to create the test.jar file
 
 ********************************************
+        TracAPI 5.0.3
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 15/12/2025
+
+ 1) Features
+
+ - Adding two new methods to the IPosition interface:
+  1) getDTL: the distance to the start line in centimeters. It will be NULL until a final distance
+    is captured at the start.
+  2) isClear: before the start isClear will = TRUE for all boats. For boats that are clear of the line
+    at go this will remain TRUE for the entire race. For OCS boats this will = FALSE until they clear
+    the line, at which point it will switch to TRUE
+  (Requested by Chris Terkelsen, 12/12/2025)
+
+********************************************
+        TracAPI 5.0.2
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 11/11/2025
+
+ 1) Bugs
+
+ - The Java HTTP client’s automatic redirection did not preserve authentication headers. We now handle HTTP redirects
+ manually to ensure that the headers are retained during redirection. (Reported by Axel Uhl, 10/11/2025)
+
+********************************************
+        TracAPI 5.0.1
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 29/10/2025
+
+ 1) Bugs
+
+ - The library was not compatible with Java 8 (Reported by Axel Uhl, 28/10/2025)
+
+********************************************
+        TracAPI 5.0.0
+********************************************
+This is the final version. It adds authentication to the backend and it is not compatible with versions 4.x.x.
+
+This version introduces authentication to access TracTrac data in the backend. From now on, all resources require
+authentication using API tokens, which can be generated through the TracTrac Event Manager.
+
+This release is not compatible with versions 4.x.x, as it introduces breaking changes to the API.
+
+Breaking Changes from Version 4.x.x
+
+- com.tractrac.model.lib.api.event.IEventFactory: added a new first parameter apiToken to all methods.
+- com.tractrac.subscription.lib.api.ISubscriberFactory:added a new first parameter apiToken to all methods.
+
+  Release date: 23/10/2025
+
+********************************************
+        TracAPI 4.0.4
+********************************************
+This is the final version. It keeps the backward compatibility. It was compiled with Java 21, but the target
+compatibility is still Java 8
+
+  Release date: 01/10/2025
+
+ 1) Bugs
+
+ - The heartbeat monitoring the connection status can stop working (Reported by Jorge Piera, 01/10/2025)
+
+********************************************
+        TracAPI 4.0.3
+********************************************
+This is the final version.  It keeps the backward compatibility. The new parameter files will be encoded in UTF-8,
+and the first line will contain "utf8:true". If the file does not start with this line, TracAPI will assume the
+file is an older version and will read it using the ISO-8859 encoding.
+
+  Release date: 03/04/2025
+
+ 1) Feature
+
+ - Support for UTF-8 (Requested by Jorge Piera, 01/04/2025)
+
+********************************************
+        TracAPI 4.0.2
+********************************************
+This is a final version. It keeps the backward compatibility.
+
+  Release date: 10/03/2025
+
+ 1) Feature
+
+ - Some entry status codes use a three-character abbreviation. For example, use ABD instead of ABANDONED. The API has
+ not been updated yet, but internally, it is possible to use either the old abbreviation or the new one. This is the
+ first step toward using the new abbreviation for all entry statuses. (Reported by Jorge Piera, 10/03/2025)
+
+********************************************
         TracAPI 4.0.1
 ********************************************
 This is a final version. It keeps the backward compatibility.

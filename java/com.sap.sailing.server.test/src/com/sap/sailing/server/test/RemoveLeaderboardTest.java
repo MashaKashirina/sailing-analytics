@@ -1,8 +1,8 @@
 package com.sap.sailing.server.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.abstractlog.race.RaceLog;
 import com.sap.sailing.domain.base.BoatClass;
@@ -68,7 +68,7 @@ public class RemoveLeaderboardTest {
     private Fleet defaultFleet;
     private FlexibleLeaderboard leaderboard;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         server = new RacingEventServiceImpl();
         List<Event> allEvents = new ArrayList<>();
@@ -104,7 +104,7 @@ public class RemoveLeaderboardTest {
                 /* windStore */ EmptyWindStore.INSTANCE, /* delayToLiveInMillis */ 0l,
                 /* millisecondsOverWhichToAverageWind */ 0l, /* millisecondsOverWhichToAverageSpeed */ 0l,
                 /* raceDefinitionSetToUpdate */ null, /* useMarkPassingCalculator */ false,
-                mock(RaceLogAndTrackedRaceResolver.class), Optional.empty(), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                mock(RaceLogAndTrackedRaceResolver.class), Optional.empty(), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
     }
     
     @Test

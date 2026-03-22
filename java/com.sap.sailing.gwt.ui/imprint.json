@@ -231,7 +231,7 @@
         },
         {
             "name": "GWT Highcharts",
-            "version": "1.6.0",
+            "version": "12.1.2",
             "owner": "Moxie Group",
             "homepage": "http://www.moxiegroup.com/moxieapps/gwt-highcharts/",
             "acknowledgements": [
@@ -522,7 +522,7 @@
         },
         {
             "name": "video-js",
-            "version": "5.20.3",
+            "version": "7.8.4",
             "owner": "Brightcove, Inc.",
             "homepage": "https://github.com/videojs/video.js",
             "acknowledgements": [
@@ -534,7 +534,7 @@
             "name": "video-js-vimeo",
             "version": "2.0.0",
             "owner": "Benoit Tremblay",
-            "homepage": "http://github.com/eXon/videojs-vimeo/",
+            "homepage": "https://github.com/eXon/videojs-vimeo/",
             "acknowledgements": [
                 "Copyright (c) 2015 Benoit Tremblay <trembl.ben@gmail.com>"
             ],
@@ -544,7 +544,7 @@
             "name": "video-js-youtube",
             "version": "2.0.8",
             "owner": "Benoit Tremblay",
-            "homepage": "http://github.com/eXon/videojs-youtube/",
+            "homepage": "https://github.com/eXon/videojs-youtube/",
             "acknowledgements": [
                 "Copyright (c) 2015 Benoit Tremblay <trembl.ben@gmail.com>"
             ],
@@ -569,6 +569,15 @@
                 "Copyright 2016 yanwsh@gmail.com"
             ],
             "key": "ASL2.0"
+        },
+        {
+            "name": "zxcvbn",
+            "version": "1.9.0",
+            "owner": "nulab",
+            "homepage": "https://github.com/nulab/zxcvbn4j",
+            "acknowledgements": [
+            ],
+            "key": "MITL"
         }
     ],
     "licenses": [

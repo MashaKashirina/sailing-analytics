@@ -2,7 +2,7 @@ package com.sap.sailing.gwt.common.communication.event;
 
 import java.util.UUID;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
+import com.sap.sse.gwt.shared.DTO;
 
 public class EventSeriesReferenceDTO implements IsSerializable {
 

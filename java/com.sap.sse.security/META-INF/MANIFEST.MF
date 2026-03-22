@@ -6,7 +6,8 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: com.sap.sse.security.impl.Activator
 Bundle-Vendor: SAP
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: javax.mail;version="1.4.0",
+Import-Package: com.sap.sse.branding,
+ javax.mail;version="1.4.0",
  javax.mail.internet;version="1.4.0",
  javax.ws.rs;version="1.1.1",
  javax.ws.rs.core;version="1.1.1",
@@ -40,7 +41,8 @@ Require-Bundle: org.eclipse.jetty.osgi-servlet-api;bundle-version="3.1.0",
  com.chargebee.chargebee-java;bundle-version="2.9.0",
  org.apache.httpcomponents.httpclient,
  org.apache.httpcomponents.httpcore,
- org.apache.commons.collections;bundle-version="3.2.2"
+ org.apache.commons.collections;bundle-version="3.2.2",
+ com.nulab-inc.zxcvbn;bundle-version="1.9.0"
 Web-ContextPath: /security
 Export-Package: com.sap.sse.security,
  com.sap.sse.security.impl;x-friends:="com.sap.sailing.domain.test,com.sap.sailing.server.testsupport",

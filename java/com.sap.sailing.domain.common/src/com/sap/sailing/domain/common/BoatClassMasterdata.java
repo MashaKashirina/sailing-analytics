@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.impl.MeterDistance;
 
 
 public enum BoatClassMasterdata {
@@ -31,6 +31,7 @@ public enum BoatClassMasterdata {
     BAVARIA_CRUISER_46 ("Bavaria Cruiser 46", true, 14.27, 4.35, BoatHullType.MONOHULL, true, "B46", "B 46", "BAVARIACRUISER46"),
     BB10M ("BB 10m", true, 10.00, 2.30, BoatHullType.MONOHULL, true, "Dansk BB10M klub"),
     BENETEAU_FIRST_35 ("Benetau First 35", true, 10.66, 3.636, BoatHullType.MONOHULL, true, "First 35"),
+    BENETEAU_FIRST_36 ("Benetau First 36", true, 11.98, 3.80, BoatHullType.MONOHULL, true, "First 36"),
     BENETEAU_FIRST_45 ("Benetau First 45", true, 13.68, 4.202, BoatHullType.MONOHULL, true, "First 45"),
     BRASSFAHRT_I ("Brassfahrt I", true, 12.00, 3.50, BoatHullType.MONOHULL, true, "Brassfahrt 1"),
     BRASSFAHRT_II ("Brassfahrt II", true, 12.00, 3.50, BoatHullType.MONOHULL, true, "Brassfahrt 2"),
@@ -49,11 +50,13 @@ public enum BoatClassMasterdata {
     DELPHIA_24 ("Delphia 24", true, 7.70, 2.50, BoatHullType.MONOHULL, true, "Delphia 24 One Design", "Delphia 24 OD"),
     DYAS("Dyas", true, 7.15, 1.95, BoatHullType.MONOHULL, true),
     ELAN350("Elan 350", true, 10.6, 3.5, BoatHullType.MONOHULL, true, "Elan 350 Performance"),
+    ELAN_E4("Elan E4", true, 10.6, 3.5, BoatHullType.MONOHULL, true, "Elan E4"),
     EXTREME_40 ("Extreme 40", false, 12.2, 6.60, BoatHullType.CATAMARAN, true, "Extreme-40", "Extreme40", "ESS40", "ess"),
     D_35 ("D35", false, 10.81, 6.89, BoatHullType.CATAMARAN, false),
     ELLIOTT_6M ("Elliott 6m", true, 6.0, 2.35, BoatHullType.MONOHULL, true, "Elliott6m"),
     EUROPE_INT ("Europe Int.", true, 3.35, 1.35, BoatHullType.MONOHULL, false, "Europe"),
     F_18 ("Formula 18", true, 6.85, 2.25, BoatHullType.CATAMARAN, true, "F18", "F-18"),
+    FAREAST28R ("Fareast 28R", true, 9.07, 2.75, BoatHullType.MONOHULL, true, "FE28R", "F28R"),
     FARR_30 ("Farr 30", true, 9.42, 3.08, BoatHullType.MONOHULL, true, "F30", "F-30", "Farr-30"),
     FARR_280 ("Farr 280", true, 8.72, 2.87, BoatHullType.MONOHULL, true, "F280", "F-280", "Farr-280"),
     FINN ("Finn", true, 4.50, 1.51, BoatHullType.MONOHULL, false),
@@ -125,7 +128,7 @@ public enum BoatClassMasterdata {
     RS_FEVA ("RS Feva", true, 3.64, 1.42, BoatHullType.MONOHULL, true, "RSFeva"),
     RS_TERA ("RS Tera", true, 2.87, 1.23, BoatHullType.MONOHULL, false, "RSTera"),
     RS_VAREO ("RS Vareo", true, 4.25, 1.57, BoatHullType.MONOHULL, true, "RS_VAREO", "RSVareo", "RS Vareo"),
-    RS_VENTURE ("RS Venture", true, 4.9, 2.0, BoatHullType.MONOHULL, true, "RSVenture", "RS Venture Connect"),
+    RS_VENTURE ("RS Venture", true, 4.9, 2.0, BoatHullType.MONOHULL, true, "RSVenture", "RS Venture Connect", "RS Venture Connect SCS"),
     SALONA_46 ("Salona 46", true, 14.14, 4.2, BoatHullType.MONOHULL, true, "Salona-46"),
     SCAN_KAP_99 ("Scan-kap 99", true, 9.86, 2.61, BoatHullType.MONOHULL, true, "Scan Kap 99"),
     SK_22 ("SK 22", true, 12, 2, BoatHullType.MONOHULL, true, "22er Schärenkreuzer", "22", "SK22", "22 sq.m."),
@@ -136,6 +139,7 @@ public enum BoatClassMasterdata {
     SPLASH_BLUE ("Splash Blue", true, 3.50, 1.50, BoatHullType.MONOHULL, false, "Splash_Blue"),
     SPLASH_RED ("Splash Red", true, 3.50, 1.50, BoatHullType.MONOHULL, false, "Splash_Red"),
     SPLASH_GREEN ("Splash Green", true, 3.50, 1.50, BoatHullType.MONOHULL, false, "Splash_Green"),
+    SRS ("Svenskt Respitsystem", true, 15.00, 4.00, BoatHullType.MONOHULL, false, "SRS", "LYS", "Leading Yard Stick", "Lidingö Yard Stick"),
     STAR ("Star", true, 6.92, 1.74, BoatHullType.MONOHULL, false, "STR", "STARBOOT", "STARBOAT"),
     STREAMLINE ("Streamline", true, 7.15, 2.55, BoatHullType.MONOHULL, true),
     SUNBEAM_22 ("Sunbeam 22", true, 6.70, 2.15, BoatHullType.MONOHULL, true, "Sunbeam 22.1"),
@@ -168,6 +172,7 @@ public enum BoatClassMasterdata {
     ORC ("ORC", true, 13.83, 3.91, BoatHullType.MONOHULL, true, "ORC I", "ORC II", "ORC III", "ORC IV", "ORC III+IV", "ORC A", "ORC B", "ORC C", "ORC D"),
     ORC_CLUB ("ORC Club", true, 13.83, 3.91, BoatHullType.MONOHULL, true),
     ORC_INTERNATIONAL ("ORC International", true, 13.83, 3.91, BoatHullType.MONOHULL, true, "ORC Int."),
+    ORC_MULTIHULL ("ORC Multihull", true, 13.83, 3.91, BoatHullType.CATAMARAN, true, "ORC MH"),
     
     // Performance Handicap Racing Fleet (PHRF) is a handicap system used for racing in North America
     PHRF ("PHRF", true, 13.83, 3.91, BoatHullType.MONOHULL, true),

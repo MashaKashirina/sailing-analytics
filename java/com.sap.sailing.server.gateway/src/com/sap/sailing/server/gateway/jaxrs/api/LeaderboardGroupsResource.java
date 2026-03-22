@@ -19,7 +19,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -86,13 +85,9 @@ public class LeaderboardGroupsResource extends AbstractSailingServerResource {
         final JSONArray jsonLeaderboardGroups = getLeaderboardGroups(leaderboardGroup->leaderboardGroup.getName());
         // header option is set to allow communication between two sapsailing servers, especially for
         // the master data import functionality
-        return addAccessControlAllowOriginHeader(Response.ok(streamingOutput(jsonLeaderboardGroups))).build();
+        return Response.ok(streamingOutput(jsonLeaderboardGroups)).build();
     }
 
-    private ResponseBuilder addAccessControlAllowOriginHeader(ResponseBuilder responseBuilder) {
-        return responseBuilder.header("Access-Control-Allow-Origin", "*");
-    }
-    
     private JSONArray getLeaderboardGroups(Function<LeaderboardGroup, Object> resultObjectSupplier) {
         JSONArray jsonLeaderboardGroups = new JSONArray();
         for (final LeaderboardGroup leaderboardGroupEntry : getService().getLeaderboardGroups().values()) {
@@ -117,7 +112,7 @@ public class LeaderboardGroupsResource extends AbstractSailingServerResource {
         });
         // header option is set to allow communication between two sapsailing servers, especially for
         // the master data import functionality
-        return addAccessControlAllowOriginHeader(Response.ok(streamingOutput(jsonLeaderboardGroups))).build();
+        return Response.ok(streamingOutput(jsonLeaderboardGroups)).build();
     }
 
     @GET
@@ -159,6 +154,7 @@ public class LeaderboardGroupsResource extends AbstractSailingServerResource {
                         idsOfEventsReferencingLeaderboardGroup.add(event.getId().toString());
                     }
                 }
+                Collections.sort(idsOfEventsReferencingLeaderboardGroup, (id1, id2)->id1.toString().compareTo(id2.toString()));
                 jsonLeaderboardGroup.put(LeaderboardGroupConstants.EVENTS, idsOfEventsReferencingLeaderboardGroup);
                 JSONArray jsonLeaderboardEntries = new JSONArray();
                 jsonLeaderboardGroup.put(LeaderboardGroupConstants.LEADERBOARDS, jsonLeaderboardEntries);

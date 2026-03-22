@@ -157,7 +157,7 @@ public class UserEditDialog extends DataEntryDialog<UserDTO> {
         final UserDTO user = new UserDTO(userToEdit.getName(), email.getText(), fullName.getText(), company.getText(),
                 userToEdit.getLocale(), userToEdit.isEmailValidated(), userToEdit.getAccounts(),
                 userToEdit.getRoles(), userToEdit.getDefaultTenant(), permissions,
-                userToEdit.getUserGroups());
+                userToEdit.getUserGroups(), userToEdit.getLockedUntil());
         return user;
     }
 

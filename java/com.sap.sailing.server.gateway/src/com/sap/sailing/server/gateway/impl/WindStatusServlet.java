@@ -132,13 +132,15 @@ public abstract class WindStatusServlet extends SailingServerHttpServletWithPost
                 .getOrCreateConnection(() -> getSecurityService().getCurrentUser() == null ? null
                         : getSecurityService().getAccessToken(getSecurityService().getCurrentUser().getName()));
         try {
-            LiveDataConnection newIgtimiConnection = igtimiConnection.getOrCreateLiveConnection(igtimiConnection.getWindDevices());
-            newIgtimiConnection.addListener(igtimiWindReceiver);
-            newIgtimiConnection.addListener(this);
-            IgtimiConnectionInfo newIgtimiConnectionInfo = new IgtimiConnectionInfo(
-                    newIgtimiConnection, igtimiConnection.getWindDevices());
-            igtimiConnections.put(newIgtimiConnection, newIgtimiConnectionInfo);
-            result = true;
+            final LiveDataConnection newIgtimiConnection = igtimiConnection.getOrCreateLiveConnection(igtimiConnection.getWindDevices());
+            result = newIgtimiConnection != null;
+            if (result) {
+                newIgtimiConnection.addListener(igtimiWindReceiver);
+                newIgtimiConnection.addListener(this);
+                IgtimiConnectionInfo newIgtimiConnectionInfo = new IgtimiConnectionInfo(
+                        newIgtimiConnection, igtimiConnection.getWindDevices());
+                igtimiConnections.put(newIgtimiConnection, newIgtimiConnectionInfo);
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Exception trying to stop Igtimi connection "+igtimiConnection, e);
         }

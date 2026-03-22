@@ -5,10 +5,10 @@ import com.google.gwt.canvas.dom.client.Context2d.TextAlign;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.base.Point;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.gwt.ui.client.shared.racemap.CoordinateSystem;
 import com.sap.sailing.gwt.ui.simulator.racemap.FullCanvasOverlay;
 import com.sap.sailing.simulator.util.SailingSimulatorConstants;
+import com.sap.sse.common.impl.DegreePosition;
 
 public class RegattaAreaCanvasOverlay extends FullCanvasOverlay {
 
@@ -49,7 +49,7 @@ public class RegattaAreaCanvasOverlay extends FullCanvasOverlay {
     	
         super.draw();
 
-        if(mapProjection != null) {
+        if(getMapProjection() != null) {
 
             clearCanvas();
             drawRegattaAreas();
@@ -69,15 +69,15 @@ public class RegattaAreaCanvasOverlay extends FullCanvasOverlay {
 
     protected void drawRegattaAreas() {
         LatLng cPos = coordinateSystem.toLatLng(new DegreePosition(54.4344, 10.19659167));
-        Point centerPoint = mapProjection.fromLatLngToDivPixel(cPos);
-        Point borderPoint = mapProjection.fromLatLngToDivPixel(this.getEdgePoint(cPos, 0.015));
+        Point centerPoint = getMapProjection().fromLatLngToDivPixel(cPos);
+        Point borderPoint = getMapProjection().fromLatLngToDivPixel(this.getEdgePoint(cPos, 0.015));
         double pxStroke = Math.pow(2.0, (getMap().getZoom() - 10.0) / 2.0);
         final Context2d context2d = canvas.getContext2d();
         context2d.setLineWidth(3);
         context2d.setStrokeStyle("Black");
         for (CourseAreaDescriptor courseArea : venue.getCourseAreas()) {
-            centerPoint = mapProjection.fromLatLngToDivPixel(courseArea.getCenterPos());
-            borderPoint = mapProjection.fromLatLngToDivPixel(courseArea.getEdgePos());
+            centerPoint = getMapProjection().fromLatLngToDivPixel(courseArea.getCenterPos());
+            borderPoint = getMapProjection().fromLatLngToDivPixel(courseArea.getEdgePos());
             drawCourseArea(courseArea.getName(), context2d, centerPoint, borderPoint, courseArea.getColor(), courseArea.getColorText(),
                     pxStroke);
         }

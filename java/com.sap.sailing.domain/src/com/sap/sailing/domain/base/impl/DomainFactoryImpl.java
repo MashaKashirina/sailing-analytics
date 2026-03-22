@@ -20,7 +20,6 @@ import com.sap.sailing.domain.base.RaceDefinition;
 import com.sap.sailing.domain.base.Waypoint;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.Placemark;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
 import com.sap.sailing.domain.common.ScoringSchemeType;
 import com.sap.sailing.domain.common.WindSourceType;
@@ -35,7 +34,6 @@ import com.sap.sailing.domain.common.dto.RaceDTO;
 import com.sap.sailing.domain.common.dto.RaceStatusDTO;
 import com.sap.sailing.domain.common.dto.TrackedRaceDTO;
 import com.sap.sailing.domain.common.dto.TrackedRaceStatisticsDTO;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.common.media.MediaTrack;
 import com.sap.sailing.domain.common.tracking.GPSFix;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
@@ -62,10 +60,12 @@ import com.sap.sailing.domain.leaderboard.impl.LowPointFirstToWinThreeRaces;
 import com.sap.sailing.domain.leaderboard.impl.LowPointFirstToWinThreeRacesA82Only;
 import com.sap.sailing.domain.leaderboard.impl.LowPointFirstToWinTwoRaces;
 import com.sap.sailing.domain.leaderboard.impl.LowPointForLeagueOverallLeaderboard;
+import com.sap.sailing.domain.leaderboard.impl.LowPointForOverallUsingNetPoints;
 import com.sap.sailing.domain.leaderboard.impl.LowPointTieBreakBasedOnLastSeriesOnly;
 import com.sap.sailing.domain.leaderboard.impl.LowPointWinnerGetsZero;
 import com.sap.sailing.domain.leaderboard.impl.LowPointWithAutomaticRDG;
 import com.sap.sailing.domain.leaderboard.impl.LowPointWithEliminatingMedalSeriesPromotingOneToFinalAndTwoToSemifinal;
+import com.sap.sailing.domain.leaderboard.impl.LowPointWithEliminatingMedalSeriesPromotingTwoToFinalAndTwoToSemifinal;
 import com.sap.sailing.domain.leaderboard.impl.LowPointWithEliminationsAndRoundsWinnerGets07;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
@@ -81,8 +81,10 @@ import com.sap.sailing.domain.tracking.impl.StartTimeUpdateHandler;
 import com.sap.sailing.domain.tracking.impl.TrackedRaceImpl;
 import com.sap.sailing.geocoding.ReverseGeocoder;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.util.ObjectInputStreamResolvingAgainstCache;
 import com.sap.sse.util.ObjectInputStreamResolvingAgainstCache.ResolveListener;
@@ -167,6 +169,10 @@ public class DomainFactoryImpl extends SharedDomainFactoryImpl<RaceLogAndTracked
             return new LowPointFirstToWinThreeRacesA82Only();
         case LOW_POINT_WITH_ELIMINATING_MEDAL_SERIES_PROMOTING_ONE_TO_FINAL_AND_TWO_TO_SEMIFINAL:
             return new LowPointWithEliminatingMedalSeriesPromotingOneToFinalAndTwoToSemifinal();
+        case LOW_POINT_OVERALL_USING_NET_POINTS:
+            return new LowPointForOverallUsingNetPoints();
+        case LOW_POINT_WITH_ELIMINATING_MEDAL_SERIES_PROMOTING_TWO_TO_FINAL_AND_TWO_TO_SEMIFINAL:
+            return new LowPointWithEliminatingMedalSeriesPromotingTwoToFinalAndTwoToSemifinal();
         }
         throw new RuntimeException("Unknown scoring scheme type "+scoringSchemeType.name());
     }

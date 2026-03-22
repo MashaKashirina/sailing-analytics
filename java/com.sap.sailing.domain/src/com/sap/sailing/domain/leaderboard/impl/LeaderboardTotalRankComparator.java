@@ -169,8 +169,10 @@ public class LeaderboardTotalRankComparator implements Comparator<Competitor> {
         List<Util.Pair<RaceColumn, Double>> o2TotalPoints = new ArrayList<>();
         double o1ScoreSum = getLeaderboard().getCarriedPoints(o1);
         double o2ScoreSum = getLeaderboard().getCarriedPoints(o2);
-        Double o1MedalRaceScore = 0.0; // "blindly" adds them all up, regardless of "series starts with zero score"
-        Double o2MedalRaceScore = 0.0; // "blindly" adds them all up, regardless of "series starts with zero score"
+        final List<Util.Pair<RaceColumn, Double>> o1ScoringMedalRaces = new ArrayList<>();
+        final List<Util.Pair<RaceColumn, Double>> o2ScoringMedalRaces = new ArrayList<>();
+        Double o1MedalRaceScoreSum = 0.0; // "blindly" adds them all up, regardless of "series starts with zero score"
+        Double o2MedalRaceScoreSum = 0.0; // "blindly" adds them all up, regardless of "series starts with zero score"
         Double o1CarryForwardScoreInMedals = null;
         Double o2CarryForwardScoreInMedals = null;
         // When a column has isStartsWithZeroScore, the competitor's score only need to be reset to zero if from there on
@@ -240,10 +242,12 @@ public class LeaderboardTotalRankComparator implements Comparator<Competitor> {
                     // only count the score for the medal race score if it wasn't a carry-forward column
                     if (!raceColumn.isCarryForward()) {
                         if (o1Score != null) {
-                            o1MedalRaceScore += o1Score;
+                            o1MedalRaceScoreSum += o1Score;
+                            o1ScoringMedalRaces.add(new Pair<>(raceColumn, o1Score));
                         }
                         if (o2Score != null) {
-                            o2MedalRaceScore += o2Score;
+                            o2MedalRaceScoreSum += o2Score;
+                            o2ScoringMedalRaces.add(new Pair<>(raceColumn, o2Score));
                         }
                     } else {
                         o1CarryForwardScoreInMedals = o1Score;
@@ -290,7 +294,6 @@ public class LeaderboardTotalRankComparator implements Comparator<Competitor> {
                 }
             }
         }
-        // TODO bug5877: pass leaderboard and competitors and a totalPointsSupplier (based on totalPointsCache, see call to compareByBetterScore below) to allow for identifying competitors promoted through to later medal race
         int result = scoringScheme.compareByMedalRaceParticipation(zeroBasedIndexOfLastMedalSeriesInWhichO1Scored, zeroBasedIndexOfLastMedalSeriesInWhichO2Scored);
         if (result == 0) {
             result = defaultFleetBasedComparisonResult;
@@ -317,16 +320,23 @@ public class LeaderboardTotalRankComparator implements Comparator<Competitor> {
                             if (result == 0) {
                                 result = scoringScheme.compareByLastMedalRacesCriteria(o1, o1Scores, o2, o2Scores, nullScoresAreBetter, leaderboard,
                                         raceColumnsToConsider,
-                                        (competitor, raceColumn)->totalPointsCache.get(new Pair<>(competitor, raceColumn)), cache, timePoint, zeroBasedIndexOfLastMedalSeriesInWhichO1Scored, numberOfMedalRacesWonO1, numberOfMedalRacesWonO2);
+                                        (competitor, raceColumn)->totalPointsCache.get(new Pair<>(competitor, raceColumn)), cache, timePoint,
+                                        zeroBasedIndexOfLastMedalSeriesInWhichO1Scored, numberOfMedalRacesWonO1, numberOfMedalRacesWonO2);
                                 if (result == 0) {
-                                    result = scoringScheme.compareByMedalRaceScore(o1MedalRaceScore, o2MedalRaceScore, nullScoresAreBetter);
+                                    result = scoringScheme.compareByMedalRaceScore(o1, o2, o1MedalRaceScoreSum,
+                                            o2MedalRaceScoreSum, o1ScoringMedalRaces, o2ScoringMedalRaces, timePoint,
+                                            leaderboard, Collections.unmodifiableMap(discardedRaceColumnsPerCompetitor),
+                                            (competitor1, raceColumn1) -> totalPointsCache
+                                                    .get(new Pair<>(competitor1, raceColumn1)),
+                                            nullScoresAreBetter, cache);
                                     if (result == 0) {
                                         result = scoringScheme.compareByBetterScore(o1, Collections.unmodifiableList(o1TotalPoints),
                                                                                     o2, Collections.unmodifiableList(o2TotalPoints),
                                                                                     raceColumnsToConsider, nullScoresAreBetter, timePoint,
                                                                                     leaderboard,
                                                                                     Collections.unmodifiableMap(discardedRaceColumnsPerCompetitor),
-                                                                                    (competitor1, raceColumn1) -> totalPointsCache.get(new Pair<>(competitor1, raceColumn1)), cache);
+                                                                                    (competitor1, raceColumn1) -> totalPointsCache.get(new Pair<>(competitor1, raceColumn1)),
+                                                                                    cache);
                                         if (result == 0) {
                                             // compare by last race:
                                             result = scoringScheme.compareByLastRace(o1TotalPoints, o2TotalPoints, nullScoresAreBetter, o1, o2, timePoint, cache);
@@ -482,29 +492,26 @@ public class LeaderboardTotalRankComparator implements Comparator<Competitor> {
     }
 
     /**
-     * If the race column only has one fleet, no decision is made and 0 is returned. Otherwise, if <code>fleet</code> is the
-     * best fleet with others in the column being worse, return "better" (lesser; -1). If <code>fleet</code> is the worst fleet
-     * with others in the column being better, return "worse" (greater; 1). Otherwise, return 0.
+     * If the race column only has one fleet, no decision is made and 0 is returned. Otherwise, if there are other fleets with
+     * a {@link Fleet#getOrdering() rank} different from that of <code>fleet</code>, we want to sort competitors with no fleet
+     * assignment to the "worse" end of the leaderboard, therefore returning 1. Otherwise, 0 is returned.
      */
     private int extremeFleetComparison(RaceColumn raceColumn, Fleet fleet) {
-        boolean allOthersAreGreater = true;
-        boolean allOthersAreLess = true;
+        boolean greaterFleetExists = false;
+        boolean lesserFleetExists = false;
         boolean othersExist = false;
         for (Fleet f : raceColumn.getFleets()) {
             if (f != fleet) {
                 othersExist = true;
-                allOthersAreGreater = allOthersAreGreater && f.compareTo(fleet) > 0;
-                allOthersAreLess = allOthersAreLess && f.compareTo(fleet) < 0;
+                greaterFleetExists = greaterFleetExists || f.compareTo(fleet) > 0;
+                lesserFleetExists = lesserFleetExists || f.compareTo(fleet) < 0;
             }
         }
-        int result = 0;
-        if (othersExist) {
-            assert !(allOthersAreGreater && allOthersAreLess);
-            if (allOthersAreGreater) {
-                result = -1;
-            } else if (allOthersAreLess) {
-                result = 1;
-            }
+        final int result;
+        if (othersExist && (greaterFleetExists || lesserFleetExists)) {
+            result = -1; // the competitor with no fleet is considered worse than a competitor in one of the ranked fleets
+        } else {
+            result = 0;
         }
         return result;
     }

@@ -24,6 +24,7 @@ import com.sap.sailing.datamining.data.HasTrackedLegSliceOfCompetitorContext;
 import com.sap.sailing.datamining.data.HasTrackedRaceContext;
 import com.sap.sailing.datamining.data.HasWindFixContext;
 import com.sap.sailing.datamining.data.HasWindTrackContext;
+import com.sap.sailing.datamining.data.TerminalHasTrackedLegSliceOfCompetitorContext;
 import com.sap.sailing.datamining.impl.components.BravoFixRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.BravoFixTrackRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.CompetitorDayRetrievalProcessor;
@@ -39,6 +40,7 @@ import com.sap.sailing.datamining.impl.components.ManeuverSpeedDetailsRetrievalP
 import com.sap.sailing.datamining.impl.components.MarkPassingRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.RaceOfCompetitorRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.TackTypeSegmentRetrievalProcessor;
+import com.sap.sailing.datamining.impl.components.TerminalTrackedLegOfCompetitorRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.TrackedLegOfCompetitorRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.TrackedLegRetrievalProcessor;
 import com.sap.sailing.datamining.impl.components.TrackedLegSliceOfCompetitorRetrievalProcessor;
@@ -130,7 +132,13 @@ public class SailingDataRetrievalChainDefinitions {
         // use TackTypeSegmentsDataMiningSettings here to support the per-leg statistics about tack type segments
         legOfCompetitorRetrieverChainDefinition.endWith(TrackedLegRetrievalProcessor.class, TrackedLegOfCompetitorRetrievalProcessor.class,
                 HasTrackedLegOfCompetitorContext.class, TackTypeSegmentsDataMiningSettings.class, TackTypeSegmentsDataMiningSettings.createDefaultSettings(), "LegOfCompetitor");
-        dataRetrieverChainDefinitions.add(legOfCompetitorRetrieverChainDefinition);
+        //
+        final DataRetrieverChainDefinition<RacingEventService, TerminalHasTrackedLegSliceOfCompetitorContext> terminalLegOfCompetitorRetrieverChainDefinition = new SimpleDataRetrieverChainDefinition<>(
+                legRetrieverChainDefinition, TerminalHasTrackedLegSliceOfCompetitorContext.class, "LegOfCompetitorSailingDomainRetrieverChain");
+        // use TackTypeSegmentsDataMiningSettings here to support the per-leg statistics about tack type segments
+        terminalLegOfCompetitorRetrieverChainDefinition.endWith(TrackedLegRetrievalProcessor.class, TerminalTrackedLegOfCompetitorRetrievalProcessor.class,
+                TerminalHasTrackedLegSliceOfCompetitorContext.class, TackTypeSegmentsDataMiningSettings.class, TackTypeSegmentsDataMiningSettings.createDefaultSettings(), "LegOfCompetitor");
+        dataRetrieverChainDefinitions.add(terminalLegOfCompetitorRetrieverChainDefinition);
         // tenth of a competitor's tracked leg retriever, based on the tracked leg of competitor retriever:
         final DataRetrieverChainDefinition<RacingEventService, HasTrackedLegSliceOfCompetitorContext> legOfCompetitorSliceRetrieverChainDefinition = new SimpleDataRetrieverChainDefinition<>(
                 legOfCompetitorRetrieverChainDefinition, HasTrackedLegSliceOfCompetitorContext.class, "LegOfCompetitorSliceSailingDomainRetrieverChain");

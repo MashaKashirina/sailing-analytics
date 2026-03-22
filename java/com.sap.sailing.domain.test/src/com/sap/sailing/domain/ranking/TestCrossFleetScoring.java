@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.ranking;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
@@ -16,8 +16,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.BoatClass;
@@ -47,8 +47,6 @@ import com.sap.sailing.domain.common.BoatClassMasterdata;
 import com.sap.sailing.domain.common.CompetitorRegistrationType;
 import com.sap.sailing.domain.common.ScoringSchemeType;
 import com.sap.sailing.domain.common.WindSourceType;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.common.impl.WindSourceImpl;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixImpl;
@@ -68,10 +66,12 @@ import com.sap.sse.common.Duration;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
-@Ignore("bug5147: first ensuring that we have no regressions; then using this as test-first driver")
+@Disabled("bug5147: first ensuring that we have no regressions; then using this as test-first driver")
 public class TestCrossFleetScoring extends LeaderboardScoringAndRankingTestBase {
     private final BoatClass boatClass = new BoatClassImpl(BoatClassMasterdata.PIRATE);
     private final TimePoint referenceTimePoint = MillisecondsTimePoint.now();
@@ -144,7 +144,7 @@ public class TestCrossFleetScoring extends LeaderboardScoringAndRankingTestBase 
                     /* delay for wind estimation cache invalidation */ 0, /* useMarkPassingCalculator */ false,
                     tr -> new TimeOnTimeAndDistanceRankingMetric(tr, timeOnTimeFactors, // time-on-time
                             c -> new MillisecondsDurationImpl((long) (1000. * timeOnDistanceAllowance.apply(c)))),
-                    mock(RaceLogAndTrackedRaceResolver.class), null, /* markPassingRaceFingerprintRegistry */ null);
+                    mock(RaceLogAndTrackedRaceResolver.class), null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
             // in this simplified artificial course, the top mark is exactly north of the right leeward gate
             DegreePosition topPosition = new DegreePosition(1, 0);
             trackedRace.getOrCreateTrack(left)

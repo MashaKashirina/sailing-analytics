@@ -20,8 +20,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.base.Competitor;
@@ -30,13 +30,8 @@ import com.sap.sailing.domain.base.RaceDefinition;
 import com.sap.sailing.domain.base.SpeedWithConfidence;
 import com.sap.sailing.domain.base.Waypoint;
 import com.sap.sailing.domain.common.PolarSheetGenerationSettings;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.PolarSheetGenerationSettingsImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.common.impl.WindSpeedSteppingWithMaxDistance;
@@ -54,9 +49,14 @@ import com.sap.sailing.polars.mining.CubicRegressionPerCourseProcessor;
 import com.sap.sailing.polars.mining.PolarDataMiner;
 import com.sap.sailing.polars.mining.SpeedRegressionPerAngleClusterProcessor;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.datamining.data.ClusterGroup;
 
@@ -84,7 +84,7 @@ public class PolarDataMinerTest {
         return new BearingClusterGroup(0, 180, 5);
     }
 
-    @Ignore("The test did work before DataMining was used for polars; maybe rework in the future...")
+    @Disabled("The test did work before DataMining was used for polars; maybe rework in the future...")
     @Test
     public void testGrouping() throws InterruptedException, TimeoutException, NoSuchMethodException,
             NotEnoughDataHasBeenAddedException {
@@ -137,10 +137,10 @@ public class PolarDataMinerTest {
         }
         
         int millisLeft = 500000;
-        while (miner.isCurrentlyActiveAndOrHasQueue() && millisLeft > 0) {
+        while (miner.isCurrentlyActiveOrHasQueue() && millisLeft > 0) {
             Thread.sleep(100);
             millisLeft = millisLeft - 100;
-            if (miner.isCurrentlyActiveAndOrHasQueue() && millisLeft <= 0) {
+            if (miner.isCurrentlyActiveOrHasQueue() && millisLeft <= 0) {
                 throw new TimeoutException();
             }
         }

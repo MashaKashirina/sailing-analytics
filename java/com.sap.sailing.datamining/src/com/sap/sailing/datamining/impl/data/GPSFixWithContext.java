@@ -5,23 +5,27 @@ import java.util.function.BiFunction;
 import com.sap.sailing.datamining.data.HasGPSFixContext;
 import com.sap.sailing.datamining.data.HasTrackedLegOfCompetitorContext;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.TackType;
+import com.sap.sailing.domain.common.Wind;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.tracking.TrackedLegOfCompetitor;
 import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.domain.tracking.WindPositionMode;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 
 /**
  * Equality is based on the {@link #getGPSFix() GPS fix} only.
  */
 public class GPSFixWithContext implements HasGPSFixContext {
+    private static final long serialVersionUID = -2808861038064003352L;
     private final HasTrackedLegOfCompetitorContext trackedLegOfCompetitorContext;
     private final GPSFixMoving gpsFix;
+    private Wind wind;
 
     public GPSFixWithContext(HasTrackedLegOfCompetitorContext trackedLegOfCompetitorContext, GPSFixMoving gpsFix) {
         this.trackedLegOfCompetitorContext = trackedLegOfCompetitorContext;
@@ -53,11 +57,28 @@ public class GPSFixWithContext implements HasGPSFixContext {
         return true;
     }
 
-    private TimePoint getTimePoint() {
+    @Override
+    public TimePoint getTimePoint() {
         return getGPSFix().getTimePoint();
     }
     
-    private TrackedRace getTrackedRace() {
+    @Override
+    public Wind getWindInternal() {
+        return wind;
+    }
+
+    @Override
+    public void setWindInternal(Wind wind) {
+        this.wind = wind;
+    }
+
+    @Override
+    public Position getPosition() {
+        return getGPSFix().getPosition();
+    }
+
+    @Override
+    public TrackedRace getTrackedRace() {
         return getTrackedLegOfCompetitorContext().getTrackedRace();
     }
 

@@ -1,5 +1,10 @@
 package com.sap.sailing.landscape.common;
 
+import java.util.Arrays;
+import java.util.Collections;
+
+import com.sap.sse.common.Util;
+
 public interface SharedLandscapeConstants {
     /**
      * If no specific domain name is provided, e.g., when creating a new application replica set, this will be
@@ -7,6 +12,58 @@ public interface SharedLandscapeConstants {
      * replica set's name.
      */
     String DEFAULT_DOMAIN_NAME = "sapsailing.com";
+
+    /**
+     * Servers in any of these domains we want to trust. This can and shall be used, e.g., to guard server-side requests
+     * to URLs that may have been provided through an API or UI by some potentially untrusted client or user.
+     */
+    Iterable<String> TRUSTED_DOMAINS = Collections.unmodifiableCollection(Arrays.asList(new String[] {
+        DEFAULT_DOMAIN_NAME, "sailing.omegatiming.com", "localhost", "127.0.0.1"
+    }));
+    
+    /**
+     * Checks that {@code domain} equals one of {@link #TRUSTED_DOMAINS} or is a sub-domain of any of these
+     */
+    static boolean isTrustedDomain(String domain) {
+        while (Util.hasLength(domain)) {
+            if (Util.contains(TRUSTED_DOMAINS, domain)) {
+                return true;
+            } else {
+                final int indexOfSubdomainSeparator = domain.indexOf('.');
+                domain = indexOfSubdomainSeparator >= 0 ? domain.substring(indexOfSubdomainSeparator+1) : "";
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * The default name of the replica set in the landscape we use to receive data from Igtimi WindBot devices.
+     */
+    String IGTIMI_DEFAULT_RIOT_REPLICA_SET_NAME = "wind";
+    
+    /**
+     * The default host name under which at port {@link #IGTIMI_DEFAULT_RIOT_PORT} the Riot server can be reached by the
+     * Igtimi WindBot devices. Constructed from the {@link #IGTIMI_DEFAULT_RIOT_REPLICA_SET_NAME default Riot replica
+     * set name} and the {@link #DEFAULT_DOMAIN_NAME default domain name}.
+     */
+    String IGTIMI_DEFAULT_RIOT_HOSTNAME = IGTIMI_DEFAULT_RIOT_REPLICA_SET_NAME + "." + DEFAULT_DOMAIN_NAME;
+    
+    /**
+     * The default value for the property whose name is given by {@link #IGTIMI_BASE_URL_PROPERTY_NAME}; ends with a
+     * slash (/)
+     */
+    String IGTIMI_BASE_URL_DEFAULT = "https://" + IGTIMI_DEFAULT_RIOT_REPLICA_SET_NAME + "." + DEFAULT_DOMAIN_NAME + "/";
+    
+    /**
+     * The port of our default Igtimi "Riot" server implementation that WindBot devices may send their data to.
+     * WindBots can be configured in their {@code config.ini} file with a line like
+     * <pre>
+     *   riot server_address &lt;hostname&gt; &lt;port&gt;
+     * </pre>
+     * Where the hostname should by default be the one used in the {@link #IGTIMI_BASE_URL_DEFAULT}, and the
+     * port should be the value of this constant.
+     */
+    int IGTIMI_DEFAULT_RIOT_PORT = 6000;
     
     /**
      * If a shared security realm is to be used for a domain then this constant tells the name of the application
@@ -68,6 +125,14 @@ public interface SharedLandscapeConstants {
     String SAILING_ANALYTICS_APPLICATION_HOST_TAG = "sailing-analytics-server";
 
     String ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME = "ARCHIVE";
+    
+    String ARCHIVE_SERVER_INSTANCE_NAME = "SL Archive";
+    
+    String ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME = ARCHIVE_SERVER_INSTANCE_NAME+" (New Candidate)";
+
+    String ARCHIVE_SERVER_FAILOVER_INSTANCE_NAME = ARCHIVE_SERVER_INSTANCE_NAME+" (Failover)";
+
+    String ARCHIVE_CANDIDATE_SUBDOMAIN = "archive-candidate";
 
     /**
      * Value of the {@link #SAILING_ANALYTICS_APPLICATION_HOST_TAG} tag

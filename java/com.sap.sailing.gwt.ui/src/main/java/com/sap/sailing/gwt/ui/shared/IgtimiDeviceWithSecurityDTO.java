@@ -1,8 +1,9 @@
 package com.sap.sailing.gwt.ui.shared;
 
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.security.SecuredDomainType;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.Util.Pair;
 import com.sap.sse.security.shared.HasPermissions;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
@@ -18,21 +19,19 @@ public class IgtimiDeviceWithSecurityDTO implements SecuredDTO {
     private long id;
     private String name;
     private String serialNumber;
-    private TimePoint lastHeartBeat;
-    private String remoteAddress;
+    private Pair<TimePoint, String> lastHeartBeat;
     private Position lastKnownPosition;
     private double lastKnownBatteryPercent;
     
     @Deprecated // GWT serialization only
     IgtimiDeviceWithSecurityDTO() {}
 
-    public IgtimiDeviceWithSecurityDTO(long id, String serialNumber, String name, TimePoint lastHeartBeat,
-            String remoteAddress, Position lastKnownPosition, double lastKnownBatteryPercent) {
+    public IgtimiDeviceWithSecurityDTO(long id, String serialNumber, String name, Pair<TimePoint, String> lastHeartBeat,
+            Position lastKnownPosition, double lastKnownBatteryPercent) {
         this.id = id;
         this.serialNumber = serialNumber;
         this.name = name;
         this.lastHeartBeat = lastHeartBeat;
-        this.remoteAddress = remoteAddress;
         this.lastKnownPosition = lastKnownPosition;
         this.lastKnownBatteryPercent = lastKnownBatteryPercent;
     }
@@ -49,12 +48,8 @@ public class IgtimiDeviceWithSecurityDTO implements SecuredDTO {
         return serialNumber;
     }
 
-    public TimePoint getLastHeartBeat() {
+    public Pair<TimePoint, String> getLastHeartBeat() {
         return lastHeartBeat;
-    }
-
-    public String getRemoteAddress() {
-        return remoteAddress;
     }
 
     public Position getLastKnownPosition() {

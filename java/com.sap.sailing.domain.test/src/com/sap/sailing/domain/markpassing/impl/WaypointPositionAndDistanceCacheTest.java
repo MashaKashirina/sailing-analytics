@@ -1,6 +1,6 @@
 package com.sap.sailing.domain.markpassing.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -9,8 +9,8 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.ControlPointWithTwoMarks;
 import com.sap.sailing.domain.base.Course;
@@ -24,9 +24,6 @@ import com.sap.sailing.domain.base.impl.CourseImpl;
 import com.sap.sailing.domain.base.impl.MarkImpl;
 import com.sap.sailing.domain.base.impl.WaypointImpl;
 import com.sap.sailing.domain.common.PassingInstruction;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
-import com.sap.sailing.domain.common.impl.NauticalMileDistance;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixImpl;
 import com.sap.sailing.domain.markpassingcalculation.impl.WaypointPositionAndDistanceCache;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
@@ -38,7 +35,10 @@ import com.sap.sailing.domain.tracking.impl.EmptyWindStore;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.common.impl.NauticalMileDistance;
 
 public class WaypointPositionAndDistanceCacheTest {
     private WaypointPositionAndDistanceCache cache;
@@ -57,7 +57,7 @@ public class WaypointPositionAndDistanceCacheTest {
     private Mark windward;
     private ControlPointWithTwoMarks startFinish;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         final RaceDefinition race = mock(RaceDefinition.class);
         when(race.getCompetitors()).thenReturn(Collections.emptyList());
@@ -79,7 +79,7 @@ public class WaypointPositionAndDistanceCacheTest {
         trackedRace = new DynamicTrackedRaceImpl(trackedRegatta, race, Collections.emptyList(), EmptyWindStore.INSTANCE,
                 /* delayToLiveInMillis */ 8000, /* millisecondsOverWhichToAverageWind */ 30000,
                 /* millisecondsOverWhichToAverageSpeed */ 15000, /* delayForCacheInvalidationOfWindEstimation */ 10000,
-                /* useInternalMarkPassingAlgorithm */ false, OneDesignRankingMetric::new, mock(RaceLogAndTrackedRaceResolver.class), null, /* markPassingRaceFingerprintRegistry */ null);
+                /* useInternalMarkPassingAlgorithm */ false, OneDesignRankingMetric::new, mock(RaceLogAndTrackedRaceResolver.class), null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         timeRangeResolution = Duration.ONE_MINUTE;
         now = new MillisecondsTimePoint(MillisecondsTimePoint.now().asMillis() / timeRangeResolution.asMillis() * timeRangeResolution.asMillis());
         trackedRace.getOrCreateTrack(pinEnd).addGPSFix(new GPSFixImpl(new DegreePosition(0, -0.0000001), now));

@@ -119,14 +119,19 @@ public class TagsResource extends AbstractSailingServerResource {
             @PathParam(RaceLogServletConstants.PARAMS_LEADERBOARD_NAME) String leaderboardName,
             @PathParam(RaceLogServletConstants.PARAMS_RACE_COLUMN_NAME) String raceColumnName,
             @PathParam(RaceLogServletConstants.PARAMS_RACE_FLEET_NAME) String fleetName, @FormParam("tag") String tag,
-            @FormParam("comment") String comment, @FormParam("image") String imageURL,
+            @FormParam("comment") String comment, @FormParam("hiddenInfo") String hiddenInfo, @FormParam("image") String imageURL,
             @FormParam("resizedImage") String resizedImageURL, @FormParam("public") boolean visibleForPublic,
             @FormParam("raceTimepoint") long raceTimepoint) {
         Response response;
         final TaggingService taggingService = getService().getTaggingService();
         try {
-            taggingService.addTag(leaderboardName, raceColumnName, fleetName, tag, comment, imageURL, resizedImageURL,
-                    visibleForPublic, new MillisecondsTimePoint(raceTimepoint)); // FIXME what about replication???
+            if (visibleForPublic) {
+                getSecurityService().checkCurrentUserUpdatePermission(getService().getLeaderboardByName(leaderboardName));
+            }
+            taggingService.addTag(leaderboardName, raceColumnName, fleetName, tag, comment, hiddenInfo, imageURL,
+                    resizedImageURL, visibleForPublic, new MillisecondsTimePoint(raceTimepoint));
+            // replication works either through SecurityService preferences for private tags,
+            // or through RaceLog replication
             response = Response.created(uriInfo.getRequestUri()).build();
         } catch (IllegalArgumentException | RaceLogNotFoundException | TagAlreadyExistsException e) {
             response = Response.status(Status.BAD_REQUEST).type(TEXT_PLAIN_UTF8).build();
@@ -191,7 +196,7 @@ public class TagsResource extends AbstractSailingServerResource {
             @PathParam(RaceLogServletConstants.PARAMS_RACE_COLUMN_NAME) String raceColumnName,
             @PathParam(RaceLogServletConstants.PARAMS_RACE_FLEET_NAME) String fleetName,
             @FormParam("tag_json") String tagJson, @FormParam("tag") String tagParam,
-            @FormParam("comment") String commentParam, @FormParam("image") String imageURLParam,
+            @FormParam("comment") String commentParam, @FormParam("hiddenInfo") String hiddenInfo, @FormParam("image") String imageURLParam,
             @FormParam("resizedImage") String resizedImageURLParam, @FormParam("public") String visibleForPublicParam) {
         Response response;
         final TagDTO tagToUpdate = serializer.deserializeTag(tagJson);
@@ -207,8 +212,11 @@ public class TagsResource extends AbstractSailingServerResource {
             boolean visibleForPublic = (visibleForPublicParam == null ? tagToUpdate.isVisibleForPublic()
                     : visibleForPublicParam.equalsIgnoreCase("true") ? true : false);
             try {
+                if (visibleForPublic) {
+                    getSecurityService().checkCurrentUserUpdatePermission(getService().getLeaderboardByName(leaderboardName));
+                }
                 taggingService.updateTag(leaderboardName, raceColumnName, fleetName, tagToUpdate, tag, comment,
-                        imageURL, resizedImageURL, visibleForPublic); // FIXME what about replication???
+                        hiddenInfo, imageURL, resizedImageURL, visibleForPublic); // FIXME what about replication???
                 response = Response.noContent().build();
             } catch (IllegalArgumentException | NotRevokableException | RaceLogNotFoundException
                     | TagAlreadyExistsException e) {

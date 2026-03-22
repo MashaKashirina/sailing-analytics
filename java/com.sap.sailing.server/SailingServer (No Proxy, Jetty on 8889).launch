@@ -21,7 +21,7 @@
     <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl ${target.nl} -consoleLog -console -clean"/>
     <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
-    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Djetty.port=8889 -Dreplication.exchangeName=sapsailinganalytics-replica -Declipse.ignoreApp=true -Dosgi.noShutdown=true&#13;&#10;-Dexpedition.udp.port=2011 -Xmx6000m -XX:+UseG1GC -Djetty.home=${project_loc:com.sap.sailing.server}/../target/configuration/jetty -Djava.util.logging.config.file=${project_loc:com.sap.sailing.server}/../target/configuration/logging_debug.properties -Dmongo.dbName=replica -DAnniversaryRaceDeterminator.enabled=true -Dpolardata.source.url=http://127.0.0.1:8888 -Dwindestimation.source.url=http://127.0.0.1:8888 -Djava.naming.factory.url.pkgs=org.eclipse.jetty.jndi -Djava.naming.factory.initial=org.eclipse.jetty.jndi.InitialContextFactory -Dorg.eclipse.jetty.annotations.maxWait=120 -Dmanage2sail.accesstoken=${MANAGE2SAIL_ACCESS_TOKEN} -Dgoogle.maps.authenticationparams=${GOOGLE_MAPS_AUTHENTICATION_PARAMS}"/>
+    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Djetty.port=8889 -Dreplication.exchangeName=sapsailinganalytics-replica -Declipse.ignoreApp=true -Dosgi.noShutdown=true&#13;&#10;-Dexpedition.udp.port=2011 -Xmx6000m -XX:+UseG1GC -Djetty.home=${project_loc:com.sap.sailing.server}/../target/configuration/jetty -Djava.util.logging.config.file=${project_loc:com.sap.sailing.server}/../target/configuration/logging_debug.properties -Dmongo.dbName=replica -DAnniversaryRaceDeterminator.enabled=true -Dpolardata.source.url=http://127.0.0.1:8888 -Dwindestimation.source.url=http://127.0.0.1:8888 -Djava.naming.factory.url.pkgs=org.eclipse.jetty.jndi -Djava.naming.factory.initial=org.eclipse.jetty.jndi.InitialContextFactory -Dorg.eclipse.jetty.annotations.maxWait=120 -Dmanage2sail.accesstoken=${MANAGE2SAIL_ACCESS_TOKEN} -Dgoogle.maps.authenticationparams=${GOOGLE_MAPS_AUTHENTICATION_PARAMS} -Dgeonames.org.usernames=&quot;${GEONAMES_ORG_USERNAMES}&quot;"/>
     <stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="${workspace_loc}"/>
     <stringAttribute key="pde.version" value="3.3"/>
     <setAttribute key="selected_target_bundles">
@@ -159,11 +159,13 @@
 <setEntry value="com.amazon.aws.aws-java-api.source@default:default"/>
 <setEntry value="org.objectweb.asm@default:default"/>
 <setEntry value="org.objectweb.asm.commons@default:default"/>
-<setEntry value="org.objectweb.asm.analysis@default:default"/>
+<setEntry value="org.objectweb.asm.tree.analysis@default:default"/>
+<setEntry value="org.objectweb.asm.tree.analysis.source@default:default"/>
+<setEntry value="org.objectweb.asm.tree@default:default"/>
+<setEntry value="org.objectweb.asm.tree.source@default:default"/>
 <setEntry value="org.objectweb.asm.tree@default:default"/>
 <setEntry value="org.objectweb.asm.util@default:default"/>
 <setEntry value="org.objectweb.asm.source@default:default"/>
-<setEntry value="org.objectweb.asm.analysis.source@default:default"/>
 <setEntry value="org.objectweb.asm.commons.source@default:default"/>
 <setEntry value="org.objectweb.asm.tree.source@default:default"/>
 <setEntry value="org.objectweb.asm.util.source@default:default"/>
@@ -176,6 +178,8 @@
 <setEntry value="org.apache.aries.spifly.dynamic.bundle.source@default:default"/>
 <setEntry value="org.mortbay.jasper.apache-el@default:default"/>
 <setEntry value="org.mortbay.jasper.apache-jsp@default:default"/>
+<setEntry value="org.mortbay.jasper.apache-el.source@default:default"/>
+<setEntry value="org.mortbay.jasper.apache-jsp.source@default:default"/>
 <setEntry value="org.eclipse.jdt.core.compiler.batch@default:default"/>
 <setEntry value="org.apache.taglibs.standard-impl@default:default"/>
 <setEntry value="org.apache.taglibs.taglibs-standard-spec@default:default"/>
@@ -238,6 +242,12 @@
 <setEntry value="com.diffplug.osgi.extension.sun.misc@default:default"/>
 <setEntry value="com.google.protobuf@default:default"/>
 <setEntry value="com.google.protobuf.source@default:default"/>
+<setEntry value="com.sun.jna@default:default"/>
+<setEntry value="com.sun.jna.source@default:default"/>
+<setEntry value="com.sun.jna.platform@default:default"/>
+<setEntry value="com.sun.jna.platform.source@default:default"/>
+<setEntry value="com.nulab-inc.zxcvbn@default:default"/>
+<setEntry value="com.nulab-inc.zxcvbn.source@default:default"/>
 </setAttribute>
     <setAttribute key="selected_workspace_bundles">
 <setEntry value="com.sap.sailing.geocoding@default:default"/>
@@ -246,6 +256,7 @@
 <setEntry value="com.sap.sailing.news@4:true"/>
 <setEntry value="com.sap.sailing.domain.tractracadapter@5:true"/>
 <setEntry value="com.sap.sailing.expeditionconnector@default:default"/>
+<setEntry value="com.sap.sailing.domain.vakarosadapter@4:true"/>
 <setEntry value="com.sap.sailing.domain.windfinderadapter@4:true"/>
 <setEntry value="com.sap.sailing.server@5:true"/>
 <setEntry value="com.sap.sailing.server.gateway@5:true"/>
@@ -266,6 +277,7 @@
 <setEntry value="com.sap.sailing.freg.resultimport@4:true"/>
 <setEntry value="com.sap.sailing.barbados.resultimport@4:true"/>
 <setEntry value="com.sap.sailing.sailwave.resultimport@4:true"/>
+<setEntry value="com.sap.sailing.sailwave.html.resultimport@4:true"/>
 <setEntry value="com.sap.sailing.manage2sail.resultimport@4:true"/>
 <setEntry value="com.sap.sailing.sailti.resultimport@4:true"/>
 <setEntry value="com.sap.sailing.yachtscoring.resultimport@4:true"/>
@@ -317,6 +329,10 @@
 <setEntry value="com.sap.sailing.landscape.ui@default:default"/>
 <setEntry value="com.sap.sailing.hanaexport@5:true"/>
 <setEntry value="com.sap.sailing.domain.queclinkadapter@5:true"/>
+<setEntry value="com.sap.sailing.aiagent.interfaces@default:default"/>
+<setEntry value="com.sap.sailing.aiagent@4:true"/>
+<setEntry value="com.sap.sailing.aiagent.persistence@5:true"/>
+<setEntry value="com.sap.sailing.aiagent.gateway@6:true"/>
 <setEntry value="com.tractrac.clientmodule@default:default"/>
 <setEntry value="com.sap.sse.gwt@default:default"/>
 <setEntry value="com.google.gwt.servlet@default:default"/>
@@ -351,7 +367,9 @@
 <setEntry value="com.sap.sse.landscape.aws@4:true"/>
 <setEntry value="com.sap.sse.landscape.aws.common@default:default"/>
 <setEntry value="com.sap.sse.landscape.aws.persistence@default:default"/>
-<setEntry value="com.sap.sse.debranding@default:default"/>
+<setEntry value="com.sap.sse.branding@default:default"/>
+<setEntry value="com.sap.sse.branding.sap@5:true"/>
+<setEntry value="com.sap.sse.aicore@default:default"/>
 <setEntry value="elemental2@default:default"/>
 </setAttribute>
     <booleanAttribute key="show_selected_only" value="false"/>

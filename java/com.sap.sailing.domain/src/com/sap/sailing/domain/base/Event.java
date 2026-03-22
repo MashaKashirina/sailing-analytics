@@ -4,16 +4,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.WindSource;
 import com.sap.sailing.domain.common.WindSourceType;
 import com.sap.sailing.domain.leaderboard.Leaderboard;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroup;
 import com.sap.sailing.domain.tracking.TrackedRace;
+import com.sap.sse.common.Position;
 
 /**
  * An event is a group of {@link Regatta regattas} carried out at a common venue within a common time frame. For
- * example, Kiel Week 2011 is an event, and the International German Championship 2011 held, e.g., in Travem�nde, is an event,
+ * example, Kiel Week 2011 is an event, and the International German Championship 2011 held, e.g., in Travemünde, is an event,
  * too.
  * 
  * @author Axel Uhl (D043530)
@@ -48,6 +48,14 @@ public interface Event extends EventBase {
      * leaderboard groups in <code>leaderboardGroups</code>.
      */
     void setLeaderboardGroups(Iterable<LeaderboardGroup> leaderboardGroups);
+    
+    /**
+     * Adds an event listener to this event. Note that event listeners are <em>not</em> serialized together with this
+     * event. The de-serialized event starts out with a new, empty event listener collection.
+     */
+    void addEventListener(EventListener eventListener);
+    
+    void removeEventListener(EventListener eventListener);
     
     /**
      * An event may happen in the vicinity of one or more WindFinder (https://www.windfinder.com) weather stations.

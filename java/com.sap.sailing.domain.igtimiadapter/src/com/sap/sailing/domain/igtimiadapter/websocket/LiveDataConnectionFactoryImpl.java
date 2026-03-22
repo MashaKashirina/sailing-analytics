@@ -26,24 +26,31 @@ public class LiveDataConnectionFactoryImpl implements LiveDataConnectionFactory 
     
     @Override
     public synchronized LiveDataConnection getOrCreateLiveDataConnection(Iterable<String> deviceSerialNumbers) throws Exception {
-        Set<String> deviceSerialNumbersAsSet = new HashSet<>();
-        Util.addAll(deviceSerialNumbers, deviceSerialNumbersAsSet);
-        LiveDataConnection result = dataConnectionsForDeviceSerialNumbers.get(deviceSerialNumbersAsSet);
-        if (result == null) {
-            logger.info("Didn't find an existing Igtimi LiveDataConnection for devices "+deviceSerialNumbersAsSet+"; creating one...");
-            result = new WebSocketConnectionManager(connection, deviceSerialNumbers);
-            dataConnectionsForDeviceSerialNumbers.put(deviceSerialNumbersAsSet, result);
-            deviceSerialNumersForDataConnections.put(result, deviceSerialNumbersAsSet);
+        final LiveDataConnection finalResult;
+        if (deviceSerialNumbers == null || Util.isEmpty(deviceSerialNumbers)) {
+            logger.info("Not creating a live Igtimi data connection for an empty set of device serial numbers through connection "+connection);
+            finalResult = null;
         } else {
-            logger.info("Found an existing Igtimi LiveDataConnection for devices "+deviceSerialNumbersAsSet+"; using it.");
+            final Set<String> deviceSerialNumbersAsSet = new HashSet<>();
+            Util.addAll(deviceSerialNumbers, deviceSerialNumbersAsSet);
+            LiveDataConnection result = dataConnectionsForDeviceSerialNumbers.get(deviceSerialNumbersAsSet);
+            if (result == null) {
+                logger.info("Didn't find an existing Igtimi LiveDataConnection for devices "+deviceSerialNumbersAsSet+"; creating one...");
+                result = new WebSocketConnectionManager(connection, deviceSerialNumbers);
+                dataConnectionsForDeviceSerialNumbers.put(deviceSerialNumbersAsSet, result);
+                deviceSerialNumersForDataConnections.put(result, deviceSerialNumbersAsSet);
+            } else {
+                logger.info("Found an existing Igtimi LiveDataConnection for devices "+deviceSerialNumbersAsSet+"; using it.");
+            }
+            Integer usageCount = usageCounts.get(result);
+            if (usageCount == null) {
+                usageCount = 0;
+            }
+            usageCount++;
+            usageCounts.put(result, usageCount);
+            finalResult = new LiveDataConnectionWrapper(this, result);
         }
-        Integer usageCount = usageCounts.get(result);
-        if (usageCount == null) {
-            usageCount = 0;
-        }
-        usageCount++;
-        usageCounts.put(result, usageCount);
-        return new LiveDataConnectionWrapper(this, result);
+        return finalResult;
     }
 
     public synchronized void stop(LiveDataConnection actualConnection) throws Exception {

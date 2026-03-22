@@ -1,22 +1,22 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import com.sap.sailing.domain.test.measurements.Measurement;
-import com.sap.sailing.domain.test.measurements.MeasurementCase;
-import com.sap.sailing.domain.test.measurements.MeasurementXMLFile;
 import com.sap.sse.common.Util;
 import com.sap.sse.concurrent.LockUtil;
 import com.sap.sse.concurrent.NamedReentrantReadWriteLock;
+import com.sap.sse.testutils.Measurement;
+import com.sap.sse.testutils.MeasurementCase;
+import com.sap.sse.testutils.MeasurementXMLFile;
 
 public class LockTraceTest {
     private static class LockingThread extends Thread {
@@ -104,7 +104,7 @@ public class LockTraceTest {
         System.out.println("Took "+(System.currentTimeMillis()-start)+"ms");
     }
     
-    @Ignore
+    @Disabled
     @Test
     public void testLockTraceForMultipleReaders() throws InterruptedException {
         NamedReentrantReadWriteLock lock1 = new NamedReentrantReadWriteLock("Lock1", /* fair */ true);
@@ -119,7 +119,7 @@ public class LockTraceTest {
         }
     }
     
-    @Ignore
+    @Disabled
     @Test
     public void testDeadlockDetectionWithJMX() throws InterruptedException {
         NamedReentrantReadWriteLock lock1 = new NamedReentrantReadWriteLock("Lock1", /* fair */ true);

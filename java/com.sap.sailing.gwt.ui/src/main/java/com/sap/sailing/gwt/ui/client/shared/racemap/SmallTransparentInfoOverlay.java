@@ -6,8 +6,8 @@ import com.google.gwt.canvas.dom.client.TextMetrics;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.base.Point;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.gwt.ui.shared.racemap.CanvasOverlayV3;
+import com.sap.sse.common.Position;
 
 /**
  * A google map overlay based on a HTML5 canvas for drawing a short textual information close to some object on a map
@@ -78,7 +78,7 @@ public class SmallTransparentInfoOverlay extends CanvasOverlayV3 {
         final int LEFT_MARGIN = 8;
         final int RIGHT_MARGIN = 9;
         final int POLE_LENGTH = 25;
-        if (mapProjection != null && position != null) {
+        if (getMapProjection() != null && position != null) {
             LatLng latLngPosition = coordinateSystem.toLatLng(position);
             Context2d context2d = getCanvas().getContext2d();
             final int fontSizeInPx = (int) (fontScalingFactor*(12+2*Math.max(0, map.getZoom()-15)));
@@ -122,7 +122,7 @@ public class SmallTransparentInfoOverlay extends CanvasOverlayV3 {
                 y += LINE_HEIGHT;
             }
             context2d.stroke();
-            Point objectPositionInPx = mapProjection.fromLatLngToDivPixel(latLngPosition);
+            Point objectPositionInPx = getMapProjection().fromLatLngToDivPixel(latLngPosition);
             setCanvasPosition(objectPositionInPx.getX(), objectPositionInPx.getY() - canvasHeight);
         }
     }

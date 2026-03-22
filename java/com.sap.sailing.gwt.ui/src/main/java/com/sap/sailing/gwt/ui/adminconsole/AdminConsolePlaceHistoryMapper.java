@@ -10,6 +10,7 @@ import com.sap.sailing.gwt.ui.adminconsole.places.advanced.ReplicationPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.advanced.RolesPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.advanced.UserGroupManagementPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.advanced.UserManagementPlace;
+import com.sap.sailing.gwt.ui.adminconsole.places.aiagent.AIAgentConfigurationPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.connectors.ExpeditionDeviceConfigurationsPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.connectors.IgtimiDevicesPlace;
 import com.sap.sailing.gwt.ui.adminconsole.places.connectors.Manage2SailRegattaStructureImportPlace;
@@ -45,7 +46,7 @@ import com.sap.sailing.landscape.ui.client.LandscapeManagementPlace;
     ReplicationPlace.Tokenizer.class, MasterDataImportPlace.Tokenizer.class, RemoteServerInstancesPlace.Tokenizer.class, LocalServerPlace.Tokenizer.class,
     UserManagementPlace.Tokenizer.class, RolesPlace.Tokenizer.class, UserGroupManagementPlace.Tokenizer.class, FileStoragePlace.Tokenizer.class, 
     MarkTemplatesPlace.Tokenizer.class, MarkPropertiesPlace.Tokenizer.class, CourseTemplatesPlace.Tokenizer.class, MarkRolesPlace.Tokenizer.class,
-    LandscapeManagementPlace.Tokenizer.class})
+    LandscapeManagementPlace.Tokenizer.class, AIAgentConfigurationPlace.Tokenizer.class })
 public interface AdminConsolePlaceHistoryMapper extends PlaceHistoryMapper {
 
 }

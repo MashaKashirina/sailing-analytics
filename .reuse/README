@@ -1,3 +1,0 @@
-This folder is used by the workflow defined in ``.github/workflows/reuse-tool-license-updates.yml``
-and produces machine-readable licensing information for the entire repository into the dep5 file
-in this same folder.

@@ -11,10 +11,10 @@ import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
+import com.sap.sailing.selenium.core.SeleniumTestCase;
 import com.sap.sailing.selenium.pages.adminconsole.AdminConsolePage;
 import com.sap.sailing.selenium.pages.adminconsole.event.EventConfigurationPanelPO;
 import com.sap.sailing.selenium.pages.adminconsole.leaderboard.LeaderboardConfigurationPanelPO;
@@ -43,7 +43,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
     private static final String RACE_N_49ER = "R%d (49er)"; //$NON-NLS-1$
     private static final String MEDAL_RACE_49ER = "R12-M Medal (49er)"; //$NON-NLS-1$
     private static final String EVENT_DESC = "Kieler Woche 2015"; //$NON-NLS-1$
-    private static final String VENUE = "Kieler F�rde"; //$NON-NLS-1$
+    private static final String VENUE = "Kieler Förde"; //$NON-NLS-1$
     private static final Date EVENT_START_TIME = DatatypeConverter.parseDateTime("2015-06-20T08:00:00-00:00")
             .getTime();
     private static final Date EVENT_END_TIME = DatatypeConverter.parseDateTime("2015-06-28T20:00:00-00:00")
@@ -54,7 +54,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
     private static final String SERIES_MEDALS = "Medals";
 
     @Override
-    @Before
+    @BeforeEach
     public void setUp() {
         clearState(getContextRoot());
         super.setUp();
@@ -65,7 +65,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
      * class. This test verifies that the checkbox isn't available for a race when wind data isn't loaded yet but
      * appears after successfully loading wind.
      */
-    @Test
+    @SeleniumTestCase
     public void testSimulatorOverlayIsAvailableFor49erAtKW2015() throws InterruptedException, IOException {
         final RegattaDescriptor regattaDescriptor = new RegattaDescriptor(REGATTA_49ER, BOAT_CLASS_49ER);
         {
@@ -102,7 +102,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
                     REGATTA_49ER_WITH_SUFFIX, String.format(RACE_N_49ER, 1), false);
             MapSettingsPO mapSettings = raceboard.openMapSettings();
             // Simulator overlay option must not be available without wind data
-            Assert.assertFalse(mapSettings.isShowSimulationOverlayCheckBoxVisible());
+            Assertions.assertFalse(mapSettings.isShowSimulationOverlayCheckBoxVisible());
         }
         {
             final AdminConsolePage adminConsole = AdminConsolePage.goToPage(getWebDriver(), getContextRoot());
@@ -119,6 +119,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
                 gpxInputStream.close();
                 final String routeconverterWindFileName = tmpFile.getAbsolutePath();
                 windPanel.importWindFromRouteconverter(routeconverterWindFileName, /* waiting up to 10 min */ 15 * 60);
+                Thread.sleep(30000); // wait for 30s to allow all wind fixes to get processed by the PolarDataService
             } finally {
                 tmpFile.delete();
             }
@@ -128,7 +129,7 @@ public class SimulatorOverlayTest extends AbstractSeleniumTest {
                     REGATTA_49ER_WITH_SUFFIX, String.format(RACE_N_49ER, 1), false);
             MapSettingsPO mapSettings = raceboard.openMapSettings();
             // Simulator overlay option must be available with the wind data being available
-            Assert.assertTrue(mapSettings.isShowSimulationOverlayCheckBoxVisible());
+            Assertions.assertTrue(mapSettings.isShowSimulationOverlayCheckBoxVisible());
         }
     }
 

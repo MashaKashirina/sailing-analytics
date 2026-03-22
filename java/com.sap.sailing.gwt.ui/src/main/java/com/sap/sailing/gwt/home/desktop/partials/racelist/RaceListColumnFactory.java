@@ -1,7 +1,7 @@
 package com.sap.sailing.gwt.home.desktop.partials.racelist;
 
-import static com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil.mediumTimeFormatter;
-import static com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil.shortTimeFormatter;
+import static com.sap.sse.gwt.client.DateAndTimeFormatterUtil.mediumTimeFormatter;
+import static com.sap.sse.gwt.client.DateAndTimeFormatterUtil.shortTimeFormatter;
 
 import java.util.Date;
 
@@ -39,10 +39,10 @@ import com.sap.sailing.gwt.home.shared.utils.HomeSailingFlagsBuilder;
 import com.sap.sailing.gwt.regattaoverview.client.FlagsMeaningExplanator;
 import com.sap.sailing.gwt.ui.client.FlagImageResolver;
 import com.sap.sailing.gwt.ui.client.StringMessages;
-import com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.SortingOrder;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.gwt.client.DateAndTimeFormatterUtil;
 import com.sap.sse.security.ui.client.premium.PaywallResolver;
 import com.sap.sse.security.ui.client.premium.PaywallResolverImpl;
 

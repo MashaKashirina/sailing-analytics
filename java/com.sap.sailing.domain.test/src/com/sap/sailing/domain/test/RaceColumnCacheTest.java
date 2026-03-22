@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.sap.sailing.domain.base.Boat;
@@ -130,7 +130,7 @@ public class RaceColumnCacheTest extends AbstractLeaderboardTest {
                 new HashSet<Sideline>(), EmptyWindStore.INSTANCE, 5000, 20000, 20000,
                 /* useMarkPassingCalculator */ false, OneDesignRankingMetric::new,
                 mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null,
-                /* markPassingRaceFingerprintRegistry */ null));
+                /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null));
         return spyedTrackedRace;
     }
 

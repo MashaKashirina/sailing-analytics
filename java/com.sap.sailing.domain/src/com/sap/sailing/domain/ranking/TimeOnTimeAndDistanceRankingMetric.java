@@ -14,8 +14,6 @@ import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.Course;
 import com.sap.sailing.domain.base.Leg;
 import com.sap.sailing.domain.base.Waypoint;
-import com.sap.sailing.domain.common.Mile;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RankingMetrics;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tracking.TrackedLeg;
@@ -24,6 +22,8 @@ import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.domain.tracking.WindLegTypeAndLegBearingAndORCPerformanceCurveCache;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Mile;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.shared.util.WeakReferenceWithCleanerCallback;
@@ -331,7 +331,7 @@ public class TimeOnTimeAndDistanceRankingMetric extends NonPerformanceCurveRanki
      * where <code>t_i / t_k</code> is the actual duration from the race start until competitor <code>i / k</code> (or
      * <code>competitor</code> and the leader, respectively) reaches the fastest competitor's position at
      * {@link #timePoint}. The <code>diff_corr_t_i</code> is the sorting criterion for ranking because corrected time is
-     * (also for Performance Curve after mapping implied wind to corrected times through the use of a scratch boat) the
+     * (also for Polar Curve after mapping implied wind to corrected times through the use of a scratch boat) the
      * basis for ranking. But we would additionally like to understand what this difference means in <code>i</code>'s
      * own time, so we introduce <code>diff_t_i</code> as follows:
      * 
@@ -385,7 +385,7 @@ public class TimeOnTimeAndDistanceRankingMetric extends NonPerformanceCurveRanki
      * where <code>t_i / t_k</code> is the actual duration from the race start until competitor <code>i / k</code> (or
      * <code>competitor</code> and the leader, respectively) reaches the fastest competitor's position at
      * {@link #timePoint}. The <code>diff_corr_t_i</code> is the sorting criterion for ranking because corrected time is
-     * (also for Performance Curve after mapping implied wind to corrected times through the use of a scratch boat) the
+     * (also for Polar Curve after mapping implied wind to corrected times through the use of a scratch boat) the
      * basis for ranking. But we would additionally like to understand what this difference means in <code>i</code>'s
      * own time, so we introduce <code>diff_t_i</code> as follows:
      * 

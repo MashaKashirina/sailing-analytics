@@ -18,6 +18,7 @@ import org.osgi.framework.BundleContext;
 
 import com.sap.sailing.domain.igtimiadapter.IgtimiConnectionFactory;
 import com.sap.sailing.domain.tracking.WindTrackerFactory;
+import com.sap.sailing.landscape.common.SharedLandscapeConstants;
 import com.sap.sse.replication.FullyInitializedReplicableTracker;
 import com.sap.sse.security.SecurityService;
 import com.sap.sse.util.impl.ThreadFactoryWithPriority;
@@ -40,11 +41,6 @@ public class Activator implements BundleActivator {
      */
     private static final String IGTIMI_BASE_URL_PROPERTY_NAME = "igtimi.base.url";
     
-    /**
-     * The default value for the property whose name is given by {@link #IGTIMI_BASE_URL_PROPERTY_NAME}
-     */
-    private static final String IGTIMI_BASE_URL_DEFAULT = "https://wind.sapsailing.com/";
-    
     private static final String IGTIMI_DEFAULT_BEARER_TOKEN_PROPERTY_NAME = "igtimi.bearer.token";
     
     private static Activator INSTANCE;
@@ -57,7 +53,7 @@ public class Activator implements BundleActivator {
 
     public Activator() throws ClientProtocolException, IllegalStateException, IOException, ParseException {
         logger.info(getClass().getName()+" constructor");
-        final URL baseUrl = new URL(System.getProperty(IGTIMI_BASE_URL_PROPERTY_NAME, IGTIMI_BASE_URL_DEFAULT));
+        final URL baseUrl = new URL(System.getProperty(IGTIMI_BASE_URL_PROPERTY_NAME, SharedLandscapeConstants.IGTIMI_BASE_URL_DEFAULT));
         logger.info("Using base URL "+baseUrl+" for the Igtimi REST API");
         logger.info("Creating IgtimiConnectionFactory");
         final String defaultBearerToken = System.getProperty(IGTIMI_DEFAULT_BEARER_TOKEN_PROPERTY_NAME);

@@ -4,13 +4,13 @@
     <link href="sailing-fontface-1.0.cache.css" media="screen" rel="stylesheet" title="Default stylesheet" type="text/css" />
     <link href="start.css" rel="stylesheet" type="text/css" />
     <link href="release_notes.css" rel="stylesheet" type="text/css" />
-    <link rel="shortcut icon" type="image/x-icon" href="images/sap${applicationScope['clientConfigurationContext.whitelabeled']}.ico"  selenium-id="shortcutIcon"/>
-    <title>${applicationScope['clientConfigurationContext.SAP']}Sailing Analytics - Admin Console Release Notes</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/sap${clientConfigurationContext['whitelabeled']}.ico"  selenium-id="shortcutIcon"/>
+    <title>${clientConfigurationContext['brandTitle']}Sailing Analytics - Admin Console Release Notes</title>
 </head>
 <body>
     <div class="logoAndTitlePanel">
         <script>
-            if (!${applicationScope['clientConfigurationContext.debrandingActive']}){
+            if (!${clientConfigurationContext['debrandingActive']}){
                 document.write("<a class=\"sapLogo\" href=\"https://www.sap.com?campaigncode=CRM-XH21-OSP-Sailing\"><img class=\"sapLogoImage\" src=\"/images/logo-small@2x.png\" alt=\"SAP Website\"/></a>\r\n");
             }
         </script>
@@ -19,10 +19,236 @@
         </div>
     </div>
     <div class="yield_content">
-        <div class="contentWrapper">
-            <div class="mainContent">
-                <h2 class="releaseHeadline">Release Notes - Administration Console</h2>
-                <div class="innerContent">
+      <div class="contentWrapper">
+        <div class="mainContent">
+          <h2 class="releaseHeadline">Release Notes - Administration Console</h2>
+          <div class="innerContent">
+          <h2 class="articleSubheadline">February 2026</h2>
+          <ul class="bulletList">
+                <li>Implemented an automated procedure for upgrading the ARCHIVE server. This is now available
+                    through the "Upgrade" action icon in the landscape management panel for "phase 1" (launching,
+                    setting https://archive-candidate.sapsailing.com as redirect, and scheduling periodic
+                    checks in the background for completion of loading and calculations as well as a final
+                    "compare servers"), and the "Activate ARCHIVE Candidate" action icon for "phase 2" which
+                    will then, after the user has confirmed having done some manual spot checks, rotate the
+                    new candidate to the live server, and the former live server to the "fail-over" role,
+                    renaming instances, terminating the old "fail-over" instance and updating all
+                    reverse proxies in the landscape accordingly. User information is sent via e-mail.</li>
+          </ul>
+          <h2 class="articleSubheadline">January 2026</h2>
+          <ul class="bulletList">
+                <li>Extended RabbitMQ channel heartbeat interval to 1h. This will suffice even for
+                    longer garbage collection cycles that may happen during replica set start-up.</li>
+                <li>Using explicit ("manual") RabbitMQ message delivery acknowledgements for initial
+                    load when starting up a replica, combined with a "prefetch" (basicQos) value of 1.
+                    This way, when the replica is processing data
+                    and doesn't read fast enough, the RabbitMQ server will wait for the next message
+                    confirmation before sending more messages. This avoids socket buffer overflows
+                    which previously could lead to the RabbitMQ server timing out trying to send
+                    messages to the replica's channel.</li>
+          </ul>
+          <h2 class="articleSubheadline">December 2025</h2>
+          <ul class="bulletList">
+                <li>Added boat class Fareast 28R.</li>
+                <li>Added support for unlocking users under Admin Console >
+                 Advanced > User Management. The lock referred to here is that
+                 placed for multiple unsuccessful login attempts, resembling a
+                 brute force attack, onto an account identified by the used email
+                 address or username, for a duration of time.</li>
+                <li>Added support for unlocking IP addresses under Admin
+                 Console > Advanced > Local Server. The lock referred to here is
+                 that placed for multiple create account API hits or multiple API
+                 hits using an invalid bearer token for a duration of time.</li>
+          </ul>
+          <h2 class="articleSubheadline">November 2025</h2>
+          <ul class="bulletList">
+                <li>The Landscape Management panel as well as the <tt>refreshInstance.sh</tt> shell script
+                    now use GitHub releases instead of <tt>releases.sapsailing.com</tt> to list and install
+                    latest or specific releases to an environment. In particular, <tt>refreshInstance.sh</tt>
+                    considers the newest 100 releases; the Landscape Management panel can list, select,
+                    and install <em>all</em> releases available. For the time being, and for simplicity,
+                    we decided to not require a GitHub access token, which however will cause a rate limit
+                    of 60 release requests per hour per IP address.</li>
+                <li>Branding is now configurable beyond just switching it on and off. The corresponding
+                    VM argument / system property name has changed from <tt>com.sap.sse.debranding</tt>
+                    with its possible values <tt>true</tt> and <tt>false</tt> to <tt>com.sap.sse.branding</tt>
+                    which can either be left empty to deactivate branding altogether, matching the old
+                    <tt>true</tt> configuration for de-branding the solution, which was also the default,
+                    or you can specify the ID of an existing branding configuration, such as <tt>SAP</tt>.
+                    The command line option for an active SAP branding hence would look like this:
+                    <pre>
+                        -Dcom.sap.sse.branding=SAP
+                    </pre>
+                    and this is to be used only in an SAP context according to SAP's branding rules.
+                    See also <a href="https://brand.sap.com/">https://brand.sap.com/</a> and
+                    <a href="https://wiki.sapsailing.com/wiki/info/landscape/branding-setup.md">our wiki entry on branding configurations</a>.
+                    </li>
+                <li>The project Wiki can now be viewed publicly, in line with the publication of the underlying
+                    Git repository, at <a href="https://wiki.sapsailing.com">https://wiki.sapsailing.com</a>.
+                    Currently, write access has to be requested at <a href="mailto:support@sapsailing.com">support@sapsailing.com</a>,
+                    but you may also create a <a href="https://github.com/SAP/sailing-analytics/pulls"></a>pull request</a>
+                    for changes you'd like to see appear in the Wiki. We are working on granting committers
+                    write-access through a GitHub OAuth app soon. See also
+                    <a href="https://bugzilla.sapsailing.com/bugzilla/show_bug.cgi?id=6181">bug 6181</a>.
+          </ul>
+          <h2 class="articleSubheadline">October 2025</h2>
+          <ul class="bulletList">
+                <li>When WindBots sent buffered data, e.g., from previous days, there was a possibility that
+                    under some circumstances this data may have interfered with live data, leading, e.g.,
+                    to "jumping" WindBot positions. This has now been fixed.<p>
+                <li>Upgraded the TracAPI to version 5.0.0. This version now secures access to TracTrac events
+                    with a new authentication and authorization scheme based on API tokens that are used
+                    to authenticate users. TracTrac can then authorize those users for read or read/write
+                    access to specific events. Such API tokens can be obtained from the new version of
+                    the TracTrac event manager.<p>
+                    The API token also replaces the username/password authentication scheme for the update
+                    back channel from which TracTrac can optionally receive updates coming from the Race
+                    Manager app, such as race start times, race aborts, or course configurations.<p>
+                    Use the new "Test Connection" button in the dialog for editing TracTrac connections
+                    to check your token's validity. If you see permission "rest_api" in the response, you're good
+                    for reading/receiving data. If you also see permission "rest_api_write" then you can also update
+                    the event through the API, e.g., through update handlers that send race start times
+                    and course updates.</li>
+                <li>For the following system properties, alternative environment variables have been introduced:
+                    <ul>
+                        <li><tt>AWS_S3_TEST_S3ACCESSID</tt> for <tt>aws.s3.test.s3AccessId</tt></li>
+                        <li><tt>AWS_S3_TEST_S3ACCESSKEY</tt> for <tt>aws.s3.test.s3AccessKey</tt></li>
+                        <li><tt>GOOGLE_MAPS_AUTHENTICATION_PARAMS</tt> for <tt>google.maps.authenticationparams</tt></li>
+                        <li><tt>YOUTUBE_V3_API_KEY</tt> for <tt>youtube.api.key</tt></li>
+                        <li><tt>GEONAMES_ORG_USERNAMES</tt> for <tt>geonames.org.usernames</tt></li>
+                    </ul>   
+                    If the system property is set, it takes precedence over the environment variable.</li>
+                <li>The source code of the Sailing Analytics including its companion apps (Race Manager App,
+                    Buoy Pinger App, Sail Insight) has been published under the Apache 2.0 license on
+                    GitHub. See <a href="https://github.com/SAP/sailing-analytics">https://github.com/SAP/sailing-analytics</a>.
+                    Get engaged!</li>
+          </ul>
+          <h2 class="articleSubheadline">September 2025</h2>
+          <ul class="bulletList">
+                <li>Added boat classes "Elan E4" and "Beneteau First 36" to the list of boat classes.<p>
+          </ul>
+          <h2 class="articleSubheadline">August 2025</h2>
+          <ul class="bulletList">
+                <li>Pairings, e.g., in league set-ups, can not be copied across regattas/leaderboards.
+                    This allows users to create a hidden regatta/leaderboard with flights to the entire
+                    season, create a pairing list for that and the copy sub-sequences from it to
+                    the regattas of the individual events. This can help improve the fairness of
+                    pairing lists across an entire season.</li>
+                <li>Branding is now more configurable. Instead of using system property <pre>-Dcom.sap.sse.debranding=false</pre>
+                    to request SAP branding you now have to set system property <pre>-Dcom.sap.sse.branding=SAP</pre> for
+                    SAP's branding. With this, branding generally becomes pluggable. Alternative branding may be provided
+                    by registering a service for type <tt>com.sap.sse.branding.BrandingConfiguration</tt> with the OSGi
+                    service registry, adding the <tt>com.sap.sse.branding</tt> attribute in the registration's dictionary,
+                    setting the value to the ID that can then be selected by the <tt>com.sap.sse.branding</tt> system
+                    property.</li>
+                <li>Upon popular demand, the series editing dialog now supports not only 50 but 100
+                    race columns / flights to be created in the drop-down list.</li>
+                <li>AI Agent credentials can now be reset from the Admin Console.</li>
+                <li>When using the Advanced / Landscape Management page of the Admin Console, and a new
+                    application load balancer (ALB) is created (e.g., in response to the number of ALB
+                    listener rules exceeding the limit for all existing ALBs in the region), the new ALB
+                    will automatically be registered with any AWS Web Application Firewall (WAF) access
+                    control list (Web ACL) that has a tag "web-acl-purpose" with value "geoblocking".<p>
+          </ul>
+          <h2 class="articleSubheadline">June 2025</h2>
+          <ul class="bulletList">
+                <li>Introduced a new Low Point scoring scheme for overall leaderboards which---instead of using the <em>ranks</em>
+                    from the contained leaderboards---uses the net points from those leaderboards. This way, the overall leaderboard's
+                    point sum equals the total points sum of the leaderboards (if no discards are configured for the overall leaderboard).
+                    Tie breaking is by rule A8.1, as usual. Use this if you want to give emphasis to each act according to the number
+                    of races/flights sailed in them.</li>
+                <li>ORC Performance Curve Scoring (PCS) was renamed to "ORC Polar Curve Scoring" with the acronym unchanged. We have adjusted
+                    our message texts in the UI accordingly. Furthermore, the "CIRCULAR_RANDOM" pre-set is now called "All Purpose,"
+                    and "LONG_DISTANCE" is now called "Ocean Race." Non-spinnaker allowances now typically come in separate certificates.</li>
+                <li>Upgraded embedded Jetty web server, closing CVE-2024-13009</li>
+                <li>Added boat classes "ORC Multihull" and "SRS" (also known as "LYS")</li>
+                <li>Added action to remotely trigger a calibration run on a WindBot device.</li>
+                <li>New scoring system for iQFOil medal series mode where two, not one, get promoted straight into the grand final.</li>
+          </ul>
+          <h2 class="articleSubheadline">May 2025</h2>
+          <ul class="bulletList">
+                <li>The Riot server listening for WindBot data now properly implements connection closing upon not having
+                    received device heartbeat messages for more than 30s.</li>
+                <li>Users can now file take-down requests for media assets displayed on the web site. This includes
+                    event stage/logo/teaser/gallery images and videos, as well as competitor images and competitor flags.
+                    For all these assets, a little semi-transparent three-dots button is displayed in the top-left
+                    corner of the image/video tile. When a logged-in user with a validated e-mail address clicks the
+                    button, a popup dialog allows for additional input and submitting of the take-down request, which
+                    will lead to an e-mail being sent to support@sapsailing.com.</li>
+                <li>Fixed parsing of X-Forwarded-For header, now reporting the correct client IP in case of multiple proxies along the way.</li>
+                <li>Improved logging in case operations received from replicas are being applied. The log entry now shows the name of the server
+                    where the operation originated from.</li>
+          </ul>
+          <h2 class="articleSubheadline">March 2025</h2>
+          <ul class="bulletList">
+                <li>We included a new AI Agent, based on <a href="https://help.sap.com/docs/sap-ai-core/sap-ai-core-service-guide/what-is-sap-ai-core">SAP AI Core</a>,
+                    that helps commenting races, live and replay. To configure the agent,
+                    the administration console has a new "AI Agent" tab. It shows whether credentials for the
+                    underlying AI Core service have been provided, allows users to provide these,
+                    shows which language model is currently selected for producing the comments
+                    and displays the list of events, allowing the user to select for which of those
+                    the AI Agent shall be activated to produce comments. The comments will be produced
+                    when certain events in those races are discovered, such as a start or a certain
+                    share of competitors having rounded a mark. This also means that races already
+                    loaded will not have their existing data commented on. But (re-)loading races
+                    as well as live races into selected events will add those comments, visible in
+                    the "Tags" side bar in the race viewer.<p>
+                    Two optional system properties can be used to control the AI Agent:
+                    <ul>
+                    <li><tt>sap.aicore.credentials</tt>: if provided, its value is expected to be a JSON document with AI Core
+                        credentials, as you would get from viewing your credentials of you AI Core instance in SAP BTP Cockpit;
+                        if not provided, credentials may still be provided through the Admin Console later.</li>
+                    <li><tt>sap.sailing.aiagent.modelname</tt>: if provided, selected a language model name to use; a model
+                        deployment by that name must be available in the AI Core account for which the credentials are valid.
+                        If not provided, or if no model deployment by that name can be found, a default model is used
+                        (currently gpt-4o-mini). Note that the model you choose this way needs to comply with the <tt>openai</tt>
+                        API for <tt>chat-completions</tt> in order to be used in this context.</li>
+                    </ul>
+                </li>
+                <li>The Administration Console now allows you to configure trusted origins / domains for using Cross-Origin Resource Sharing
+                    (CORS) and hence access, in particular, REST API resources from the server or replica set you are administering, as well as
+                    the possibility to embed pages from that server or replica set in some other page's &lt;iframe&gt; HTML element,
+                    controlled through the <tt>Content-Security-Policy</tt> header field and its <tt>frame-ancestors</tt> directive.
+                    Both, wildcard or explicit sets of origins in the form of <tt>https://www.example.org</tt> can be specified.
+                    CORS restrictions map to corresponding values of the <tt>Access-Control-Allow-Origin</tt> HTTP response header field.
+                    You can find these new options <a href="/gwt/AdminConsole.html#LocalServerPlace:">here in the Advanced / Local Server</a>
+                    panel of the Administration Console.<p>
+                    Note that the settings you make there are specific to the replica set / server name of the environment you're
+                    administering.<p>
+                    Also note that with the introduction of these configuration options, there are new, secure defaults. CORS
+                    requests are now by default allowed only from the same origin as the REST request goes to, and frame embedding
+                    is by default disabled. Should you have a scenario in which you have embedded Sailing Analytics pages in your
+                    web site using an &lt;iframe&gt; and would like to continue doing this, please get in touch
+                    (<a href="mailto:support@sapsailing.com">support@sapsailing.com</a>).<p>
+                    Note that this additional configuration data changes the format of the Security Service's initial load
+                    for replication incompatibly. A synchronized roll-out approach is required, upgrading primary/master
+                    nodes before upgrading their replica(s).</li>
+                <li>File uploads now not only require an authenticated user to have object creation permissions on the
+                    target server, but additionally the user's e-mail address now must have been validated successfully.</li>
+                <li>New passwords now need to have a higher minimum complexity than before.</li>
+                <li>There is a new system property <tt>geonames.org.usernames</tt> that can be used to provide one or more
+                    (comma-separated) user names for the <a href="https://geonames.org">geonames.org</a> service that we
+                    use to map coordinates to venue names and to determine time zones for races as used, e.g., in
+                    data mining.</li>
+          </ul>
+          <h2 class="articleSubheadline">February 2025</h2>
+          <ul class="bulletList">
+                <li>In the <a href="/gwt/AdminConsole.html#SmartphoneTrackingPlace:">admin console's</a>
+                    Smartphone Tracking panel, when importing data from files to create new device mappings
+                    there is now a "Vakaros" / "VAKAROS_EXTENDED" menu entry when using "Import fixes"
+                    or "Import additional sensor data," respectively. With these, files obtained from
+                    Vakaros devices can be imported with their time stamps, GPS information (lat/lon,
+                    COG, SOG) and, when available, from the "additional" sensor data heel, pitch,
+                    and the two special values load_GDF1 and load_GDF2, which we map to the
+                    forestay load and the kicker tension values, respectively.</li>
+                <li>When upgrading an application replica set through the Landscape Management panel,
+                    other target groups such as those from an NLB will be considered correctly for adding
+                    and removing temporary upgrade replicas and the primary/master node.</li>
+                <li>Added a result importer for the typical Sailwave HTML output, such as
+                    <a href="https://www.rhkyc.org.hk/storage/app/media/Sailing/result/HONG-KONG-RACE-WEEK/2025/ILCA4.htm">https://www.rhkyc.org.hk/storage/app/media/Sailing/result/HONG-KONG-RACE-WEEK/2025/ILCA4.htm</a>.
+                    You can add these types of URLs now in the <a href="/gwt/AdminConsole.html#ResultImportUrlsPlace:">Result import URLs</a> tab
+                    of the Connectors category in the administration console.</li>
+          </ul>
           <h2 class="articleSubheadline">January 2025</h2>
           <ul class="bulletList">
                 <li>When exporting wind from the Admin Console's Tracked Races / Tracked Races panel,
@@ -33,7 +259,11 @@
                     wind source types and IDs, e.g., <tt>"EXPEDITION (DC-FE-AAHJ)"</tt> and can be
                     imported again in the Tracked Races / Wind panel now (see "Routeconverter"-based
                     wind import).</li>
-          </ul>          <h2 class="articleSubheadline">December 2024</h2>
+                <li>Fixed wind import from ZIP files exported by the Sailing Analytics. So far, file extensions
+                    of the files wrapped in the ZIP file were checked to be ".txt" which therefore ignored the
+                    .gpx, .kml, etc. file types that we normally export ourselves.</li>
+          </ul>
+          <h2 class="articleSubheadline">December 2024</h2>
           <ul class="bulletList">
                 <li>The Igtimi WindBot connector has been re-designed. This became necessary because
                     Riedel Communications GmbH deprecated and then stopped their "Riot" back-end
@@ -1292,8 +1522,8 @@
                             com_sap_sailing_Leaderboard_NumberOfCompetitors{name="5O5-Worlds 2010 (5O5)",} 147.0
                             com_sap_sailing_Leaderboard_NumberOfAllCompetitors{name="5O5-Worlds 2010 (5O5)",} 147.0
                             com_sap_sailing_Leaderboard_ComputationTimeAverageMedium_averageRangeInMillis{name="5O5-Worlds 2010 (5O5)",} 30000.0
-                                ...
-                                com_sap_sailing_RacingEventService_LeaderboardComputationStatisticsYoung_averageComputeDurationInMillis 13.0
+                            ...
+                            com_sap_sailing_RacingEventService_LeaderboardComputationStatisticsYoung_averageComputeDurationInMillis 13.0
                             com_sap_sailing_RacingEventService_LeaderboardComputationStatisticsMedium_averageComputeDurationInMillis 52.0
                             com_sap_sailing_RacingEventService_LeaderboardComputationStatisticsYoung_numberOfComputations 5.0
                             com_sap_sailing_RacingEventService_LeaderboardComputationStatisticsMedium_numberOfComputations 17.0

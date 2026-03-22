@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.base.DomainFactory;
@@ -61,13 +64,13 @@ public class SwissTimingAdapterImpl implements SwissTimingAdapter {
             String raceName, String raceDescription, BoatClass boatClass, String hostname, int port,
             StartList startList, RaceLogStore raceLogStore, RegattaLogStore regattaLogStore, long timeoutInMilliseconds,
             boolean useInternalMarkPassingAlgorithm, boolean trackWind, boolean correctWindDirectionByMagneticDeclination,
-            String updateURL, String updateUsername, String updatePassword, String eventName, String manage2SailEventUrl) throws Exception {
+            String updateURL, String apiToken, String eventName, String manage2SailEventUrl) throws Exception {
         return trackerManager.addRace(regattaToAddTo,
                 swissTimingDomainFactory.createTrackingConnectivityParameters(hostname, port, raceID, raceName,
                         raceDescription, boatClass, startList, DEFAULT_SWISSTIMING_LIVE_DELAY_IN_MILLISECONDS,
                         swissTimingFactory, swissTimingDomainFactory, raceLogStore, regattaLogStore,
                         useInternalMarkPassingAlgorithm, trackWind, correctWindDirectionByMagneticDeclination,
-                        updateURL, updateUsername, updatePassword, eventName, manage2SailEventUrl),
+                        updateURL, apiToken, eventName, manage2SailEventUrl),
                 timeoutInMilliseconds);
     }
 
@@ -133,7 +136,7 @@ public class SwissTimingAdapterImpl implements SwissTimingAdapter {
     }
 
     @Override
-    public RegattaResults readRegattaEntryListFromXrrUrl(String xrrEntryListUrl) throws IOException, JAXBException {
+    public RegattaResults readRegattaEntryListFromXrrUrl(String xrrEntryListUrl) throws IOException, JAXBException, SAXException, ParserConfigurationException {
         // try to read the entry list from manage2sail
         URL regattaEntryListUrl = new URL(xrrEntryListUrl);
         URLConnection regattaEntryListConn = HttpUrlConnectionHelper.redirectConnection(regattaEntryListUrl);

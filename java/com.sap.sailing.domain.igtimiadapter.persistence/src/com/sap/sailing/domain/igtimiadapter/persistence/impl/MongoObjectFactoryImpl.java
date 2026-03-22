@@ -64,6 +64,8 @@ public class MongoObjectFactoryImpl implements MongoObjectFactory {
         update.put(FieldNames.IGTIMI_DEVICES_ID.name(), device.getId());
         update.put(FieldNames.IGTIMI_DEVICES_NAME.name(), device.getName());
         update.put(FieldNames.IGTIMI_DEVICES_SERIAL_NUMBER.name(), device.getSerialNumber());
+        update.put(FieldNames.IGTIMI_DEVICES_LAST_HEARTBEAT_MILLIS.name(), device.getLastHeartbeat() == null ? null : device.getLastHeartbeat().getA() == null ? null : device.getLastHeartbeat().getA().asMillis());
+        update.put(FieldNames.IGTIMI_DEVICES_REMOTE_ADDRESS.name(), device.getLastHeartbeat() == null ? null : device.getLastHeartbeat().getB());
         final MongoCollection<Document> deviceCollection = db.getCollection(CollectionNames.IGTIMI_DEVICES.name()).withWriteConcern(WriteConcern.ACKNOWLEDGED);
         if (clientSessionOrNull == null) {
             deviceCollection.replaceOne(filter, update, new ReplaceOptions().upsert(true));

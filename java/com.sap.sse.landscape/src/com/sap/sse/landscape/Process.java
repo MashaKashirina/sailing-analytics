@@ -16,6 +16,14 @@ public interface Process<LogT extends Log, MetricsT extends Metrics> {
      */
     int getPort();
     
+    default int[] getAllTCPPorts(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        return new int[] { getPort() };
+    }
+    
+    default int[] getAllUDPPorts(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        return new int[0];
+    }
+    
     /**
      * The host that this process is running on
      */

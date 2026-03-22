@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
 
+import com.sap.sse.common.TimedLock;
 import com.sap.sse.security.shared.Account;
 import com.sap.sse.security.shared.Account.AccountType;
 import com.sap.sse.security.shared.HasPermissions;
@@ -237,6 +238,11 @@ public class UserProxy implements User {
 
     @Override
     public boolean hasActiveSubscription(String planId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimedLock getTimedLock() {
         throw new UnsupportedOperationException();
     }
 }

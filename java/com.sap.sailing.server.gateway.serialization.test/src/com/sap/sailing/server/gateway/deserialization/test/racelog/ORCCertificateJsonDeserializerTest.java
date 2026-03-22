@@ -1,8 +1,8 @@
 package com.sap.sailing.server.gateway.deserialization.test.racelog;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,10 +13,9 @@ import java.util.Iterator;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
 import com.sap.sailing.domain.common.orc.ORCCertificate;
 import com.sap.sailing.domain.orc.ORCCertificatesCollection;
 import com.sap.sailing.domain.orc.ORCCertificatesImporter;
@@ -25,13 +24,14 @@ import com.sap.sailing.server.gateway.serialization.racelog.impl.ORCCertificateJ
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Speed;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 
 public class ORCCertificateJsonDeserializerTest {
     private ORCCertificateJsonSerializer serializer;
     private ORCCertificateJsonDeserializer deserializer;
     private static final String RESOURCES = "resources/rms/";
 
-    @Before
+    @BeforeEach
     public void setup() {
         deserializer = new ORCCertificateJsonDeserializer();
         serializer = new ORCCertificateJsonSerializer();

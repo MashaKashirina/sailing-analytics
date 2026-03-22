@@ -1,8 +1,8 @@
 package com.sap.sailing.server.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.abstractlog.AbstractLogEventAuthor;
 import com.sap.sailing.domain.abstractlog.impl.LogEventAuthorImpl;
@@ -78,7 +78,7 @@ public class ApplyScoresFromRaceLogTest extends LeaderboardScoringAndRankingTest
     private List<Competitor> competitors;
     private Leaderboard leaderboard;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         service = new RacingEventServiceImpl();
     }
@@ -140,7 +140,7 @@ public class ApplyScoresFromRaceLogTest extends LeaderboardScoringAndRankingTest
                 /* delayToLiveInMillis */ 5000, /* millisecondsOverWhichToAverageWind */ 15000,
                 /* millisecondsOverWhichToAverageSpeed */ 10000,
                 /* useInternalMarkPassingAlgorithm */ false, OneDesignRankingMetric::new,
-                /* raceLogResolver */ service, /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                /* raceLogResolver */ service, /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         final Fleet fleet = f1Column.getFleets().iterator().next();
         f1Column.setTrackedRace(fleet, newF1);
         // Now add a CompetitorResult to the race log:

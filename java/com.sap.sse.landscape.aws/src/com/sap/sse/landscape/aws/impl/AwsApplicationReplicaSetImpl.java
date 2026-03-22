@@ -13,7 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
+import com.sap.sailing.landscape.common.SharedLandscapeConstants;
 import com.sap.sse.ServerInfo;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.HttpRequestHeaderConstants;
@@ -23,7 +25,6 @@ import com.sap.sse.landscape.application.ApplicationProcessMetrics;
 import com.sap.sse.landscape.application.ApplicationReplicaSet;
 import com.sap.sse.landscape.application.impl.ApplicationReplicaSetImpl;
 import com.sap.sse.landscape.aws.ApplicationLoadBalancer;
-import com.sap.sse.landscape.aws.ApplicationProcessHost;
 import com.sap.sse.landscape.aws.AwsApplicationProcess;
 import com.sap.sse.landscape.aws.AwsApplicationReplicaSet;
 import com.sap.sse.landscape.aws.AwsAutoScalingGroup;
@@ -78,6 +79,7 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
     private final CompletableFuture<Iterable<Rule>> loadBalancerRules;
     private final CompletableFuture<TargetGroup<ShardingKey>> masterTargetGroup;
     private final CompletableFuture<TargetGroup<ShardingKey>> publicTargetGroup;
+    private final CompletableFuture<Iterable<TargetGroup<ShardingKey>>> otherTargetGroups;
     private final CompletableFuture<ResourceRecordSet> resourceRecordSet;
     private final String pathPrefixForShardingKey;
     
@@ -89,7 +91,8 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
             CompletableFuture<Iterable<AutoScalingGroup>> allAutoScalingGroups,
             CompletableFuture<Iterable<LaunchTemplate>> allLaunchTemplates,
             CompletableFuture<Iterable<LaunchTemplateVersion>> allLaunchTemplateDefaultVersions,
-            DNSCache dnsCache, String pathPrefixForShardingKey) throws InterruptedException, ExecutionException, TimeoutException {
+            DNSCache dnsCache, String pathPrefixForShardingKey, Optional<Duration> optionalTimeout,
+            Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws InterruptedException, ExecutionException, TimeoutException {
         super(replicaSetAndServerName, hostname, master, replicas);
         this.pathPrefixForShardingKey = pathPrefixForShardingKey;
         autoScalingGroup = new CompletableFuture<>();
@@ -99,6 +102,7 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
         loadBalancerRules = new CompletableFuture<>();
         masterTargetGroup = new CompletableFuture<>();
         publicTargetGroup = new CompletableFuture<>();
+        otherTargetGroups = new CompletableFuture<>();
         resourceRecordSet = new CompletableFuture<>();
         shards = new HashMap<>();
         try {
@@ -109,7 +113,7 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
                             allLaunchTemplates.thenCompose(launchTemplates->
                                 allLaunchTemplateDefaultVersions.handle((launchTemplateDefaultVersions, e)->establishState(
                                     loadBalancers, targetGroupsAndTheirTargetHealthDescriptions, listenersAndTheirRules, autoScalingGroups,
-                                    launchTemplates, launchTemplateDefaultVersions, dnsCache)))))))
+                                    launchTemplates, launchTemplateDefaultVersions, dnsCache, optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase)))))))
                 .handle((v, e)->{
                     if (e != null) {
                         logger.log(Level.SEVERE, "Exception while trying to establish state of application replica set "+getName(), e);
@@ -133,11 +137,13 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
             CompletableFuture<Map<Listener, Iterable<Rule>>> allLoadBalancerRulesInRegion,
             AwsLandscape<ShardingKey> landscape, CompletableFuture<Iterable<AutoScalingGroup>> allAutoScalingGroups,
             CompletableFuture<Iterable<LaunchTemplate>> allLaunchTemplates,
-            CompletableFuture<Iterable<LaunchTemplateVersion>> allLaunchTemplateDefaultVersions, DNSCache dnsCache, String pathPrefixForShardingKey)
+            CompletableFuture<Iterable<LaunchTemplateVersion>> allLaunchTemplateDefaultVersions, DNSCache dnsCache, String pathPrefixForShardingKey,
+            Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase)
                     throws InterruptedException, ExecutionException, TimeoutException {
         this(replicaSetAndServerName, /* hostname to be inferred */ null, master, replicas, allLoadBalancersInRegion,
                 allTargetGroupsInRegion, allLoadBalancerRulesInRegion, allAutoScalingGroups, allLaunchTemplates,
-                allLaunchTemplateDefaultVersions, dnsCache, pathPrefixForShardingKey);
+                allLaunchTemplateDefaultVersions, dnsCache, pathPrefixForShardingKey, optionalTimeout, optionalKeyName,
+                privateKeyEncryptionPassphrase);
     }
     
     /**
@@ -174,13 +180,23 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
      * routing rules). The {@link AutoScalingGroup} can be identified by enumerating all {@link AutoScalingGroup}s and
      * filtering for their {@link TargetGroup#getTargetGroupArn() targetGroupArn}.</li>
      * </ul>
+     * 
+     * @param optionalTimeout
+     *            timeout for obtaining the additional port configurations from the primary/master
+     * @param optionalKeyName
+     *            SSH key to use when contacting the primary/master host to obtain variable values for additional port
+     *            configurations
+     * @param privateKeyEncryptionPassphrase
+     *            passphrase for the key identified by {@code optionalKeyName}
      */
     private Void establishState(Iterable<ApplicationLoadBalancer<ShardingKey>> loadBalancers,
             Map<TargetGroup<ShardingKey>, Iterable<TargetHealthDescription>> targetGroupsAndTheirTargetHealthDescriptions,
             Map<Listener, Iterable<Rule>> listenersAndTheirRules, Iterable<AutoScalingGroup> autoScalingGroups,
-            Iterable<LaunchTemplate> launchTemplates, Iterable<LaunchTemplateVersion> launchTemplateDefaultVersions, DNSCache dnsCache) {
+            Iterable<LaunchTemplate> launchTemplates, Iterable<LaunchTemplateVersion> launchTemplateDefaultVersions, DNSCache dnsCache,
+            Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) {
         TargetGroup<ShardingKey> myMasterTargetGroup = null;
         TargetGroup<ShardingKey> singleTargetGroupCandidate = null;
+        final Set<TargetGroup<ShardingKey>> otherTargetGroupsFound = new HashSet<>();
         for (final Entry<TargetGroup<ShardingKey>, Iterable<TargetHealthDescription>> e : targetGroupsAndTheirTargetHealthDescriptions.entrySet()) {
             if ((e.getKey().getProtocol() == ProtocolEnum.HTTP || e.getKey().getProtocol() == ProtocolEnum.HTTPS)
             && e.getKey().getLoadBalancerArn() != null && e.getKey().getHealthCheckPort() == getMaster().getPort()) {
@@ -211,8 +227,26 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
                     publicTargetGroup.complete(e.getKey());
                     tryToFindAutoScalingGroup(e.getKey(), autoScalingGroups, launchTemplates, launchTemplateDefaultVersions);
                 }
-            }
+            } else
+                try {
+                    if ((e.getKey().getProtocol() == ProtocolEnum.TCP || e.getKey().getProtocol() == ProtocolEnum.TCP_UDP)
+                    && e.getKey().getLoadBalancerArn() != null && IntStream.of(getMaster().getAllTCPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase)).anyMatch(p->p==e.getKey().getPort())) {
+                        if (!Util.isEmpty(Util.filter(e.getValue(), target->target.target().id().equals(getMaster().getHost().getId())))) {
+                            // found a target group that the primary/master is part of and that forwards to a TCP target port the primary/master listens on
+                            otherTargetGroupsFound.add(e.getKey());
+                        }
+                    } else if ((e.getKey().getProtocol() == ProtocolEnum.UDP || e.getKey().getProtocol() == ProtocolEnum.TCP_UDP)
+                    && e.getKey().getLoadBalancerArn() != null && IntStream.of(getMaster().getAllUDPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase)).anyMatch(p->p==e.getKey().getPort())) {
+                        if (!Util.isEmpty(Util.filter(e.getValue(), target->target.target().id().equals(getMaster().getHost().getId())))) {
+                            // found a target group that the primary/master is part of and that forwards to a UDP target port the primary/master listens on
+                            otherTargetGroupsFound.add(e.getKey());
+                        }
+                    }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
         }
+        otherTargetGroups.complete(otherTargetGroupsFound);
         shards.putAll(establishShards(targetGroupsAndTheirTargetHealthDescriptions, listenersAndTheirRules,
                 autoScalingGroups, launchTemplates, launchTemplateDefaultVersions));
         if (!autoScalingGroup.isDone()) { // no auto-scaling group was found after having looked at all target groups
@@ -299,7 +333,7 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
             // or no load balancer forwards to it; in any case we can only default to the assumption that the process may be an archive
             // server:
             if (getName().equals(ARCHIVE_SERVER_NAME)) {
-                setHostname("www.sapsailing.com"); // TODO this should probably be archive-failover.sapsailing.com for the fail-over ARCHIVE server
+                setHostname("www."+SharedLandscapeConstants.DEFAULT_DOMAIN_NAME); // TODO this should probably be archive-failover.sapsailing.com for the fail-over ARCHIVE server; TODO bug6208: use something other than "www" for the ARCHIVE
             } else {
                 logger.warning("Found an application replica set " + getName() + " that is not the "
                         + ARCHIVE_SERVER_NAME + " replica set; no hostname can be inferred.");
@@ -372,25 +406,6 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
         return ShardTargetGroupName.create(getName(), shardName, targetGroupNamePrefix);
     }
     
-    @Override
-    public boolean isEligibleForDeployment(ApplicationProcessHost<ShardingKey, MetricsT, ProcessT> host,
-            Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
-        boolean result;
-        if (host.isManagedByAutoScalingGroup()) {
-            result = false;
-        } else {
-            result = true;
-            final Iterable<ProcessT> applicationProcesses = host.getApplicationProcesses(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
-            for (final ProcessT applicationProcess : applicationProcesses) {
-                if (applicationProcess.getPort() == getPort() || applicationProcess.getServerName(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase).equals(getServerName())) {
-                    result = false;
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
     @Override
     public void stopAllUnmanagedReplicas(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName,
             byte[] privateKeyEncryptionPassphrase) throws Exception {
@@ -573,7 +588,12 @@ implements AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> {
     public TargetGroup<ShardingKey> getPublicTargetGroup() throws InterruptedException, ExecutionException {
         return publicTargetGroup.get();
     }
-
+    
+    @Override
+    public Iterable<TargetGroup<ShardingKey>> getOtherTargetGroups() throws InterruptedException, ExecutionException {
+        return otherTargetGroups.get();
+    }
+    
     @Override
     public Iterable<Rule> getLoadBalancerRules() throws InterruptedException, ExecutionException {
         return loadBalancerRules.get();

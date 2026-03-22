@@ -37,8 +37,6 @@ import com.sap.sailing.domain.common.dto.PairingListTemplateDTO;
 import com.sap.sailing.domain.common.dto.PersonDTO;
 import com.sap.sailing.domain.common.dto.RaceColumnDTO;
 import com.sap.sailing.domain.common.dto.TagDTO;
-import com.sap.sailing.domain.common.impl.KilometersPerHourSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
 import com.sap.sailing.domain.common.orc.ImpliedWindSource;
 import com.sap.sailing.domain.common.orc.ORCCertificate;
 import com.sap.sailing.domain.common.orc.ORCPerformanceCurveLegTypes;
@@ -106,6 +104,8 @@ import com.sap.sse.common.TimeRange;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
+import com.sap.sse.common.impl.KilometersPerHourSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 import com.sap.sse.common.impl.SecondsDurationImpl;
 import com.sap.sse.gwt.client.replication.RemoteReplicationServiceAsync;
 import com.sap.sse.pairinglist.PairingList;
@@ -125,11 +125,10 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
 
     /**
      * The string returned in the callback's pair is the common event name
-     * 
      * @param listHiddenRaces
      */
     void listTracTracRacesInEvent(String eventJsonURL, boolean listHiddenRaces,
-            AsyncCallback<Util.Pair<String, List<TracTracRaceRecordDTO>>> callback);
+            String tracTracApiToken, AsyncCallback<Util.Pair<String, List<TracTracRaceRecordDTO>>> callback);
 
     void replaySwissTimingRace(RegattaIdentifier regattaIdentifier, Iterable<SwissTimingReplayRaceDTO> replayRaces,
             boolean trackWind, boolean correctWindByDeclination, boolean useInternalMarkPassingAlgorithm,
@@ -225,7 +224,7 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
     void getRacesOfSwissTimingEvent(String eventJsonUrl, AsyncCallback<SwissTimingEventRecordDTO> asyncCallback);
 
     void getDouglasPoints(RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges,
-            double meters, AsyncCallback<Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>>> callback);
+            AsyncCallback<Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>>> callback);
 
     void getManeuvers(RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges,
             AsyncCallback<Map<CompetitorDTO, List<ManeuverDTO>>> callback);
@@ -280,7 +279,7 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
     void getWindSourcesInfo(RegattaAndRaceIdentifier raceIdentifier, AsyncCallback<WindInfoForRaceDTO> callback);
 
     void getServerConfiguration(AsyncCallback<ServerConfigurationDTO> callback);
-
+    
     void getRemoteSailingServerReferences(AsyncCallback<List<RemoteSailingServerReferenceDTO>> callback);
 
     void getResultImportUrls(String resultProviderName, AsyncCallback<List<UrlDTO>> callback);
@@ -592,7 +591,7 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
 
     /**
      * Obtains the {@link ImpliedWindSource} set in the race log identified by the triple {@code leaderboardName},
-     * {@code raceColumnName}, and {@code fleetName}. Note that other than in the ORC Performance Curve ranking metric
+     * {@code raceColumnName}, and {@code fleetName}. Note that other than in the ORC Polar Curve ranking metric
      * no defaulting takes place here, and {@code null} is a possible result that indicates that either no race log
      * event was found that set an implied wind source, or that event explicitly set the implied wind source to {@code null}
      * (which will have the ranking metric default to {@link OwnMaxImpliedWind}, eventually).
@@ -697,4 +696,6 @@ public interface SailingServiceAsync extends RemoteReplicationServiceAsync {
     void getCourseAreaForEventOfLeaderboard(String leaderboardName, AsyncCallback<List<CourseAreaDTO>> callback);
 
     void getGoogleMapsLoaderAuthenticationParams(AsyncCallback<String> callback);
+    
+    void getBrandAffiliationWithSailing(String locale, AsyncCallback<String> callback);
 }

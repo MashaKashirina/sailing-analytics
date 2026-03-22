@@ -1,9 +1,9 @@
 package com.sap.sailing.domain.markpassingcalculation.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.abstractlog.impl.LogEventAuthorImpl;
 import com.sap.sailing.domain.abstractlog.race.impl.RaceLogImpl;
@@ -23,10 +23,6 @@ import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.CompetitorWithBoat;
 import com.sap.sailing.domain.base.Waypoint;
 import com.sap.sailing.domain.base.configuration.impl.EmptyRegattaConfiguration;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
 import com.sap.sailing.domain.markpassingcalculation.Candidate;
 import com.sap.sailing.domain.markpassingcalculation.CandidateFinder;
@@ -36,10 +32,14 @@ import com.sap.sailing.domain.test.TrackBasedTest;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
 import com.sap.sailing.domain.tracking.impl.TrackedRaceImpl;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
+import com.sap.sse.common.impl.MeterDistance;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 public class CandidateFinderImplWhiteBoxTest {
@@ -60,7 +60,7 @@ public class CandidateFinderImplWhiteBoxTest {
     private DynamicTrackedRace trackedRace;
     private TimePoint now;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         now = MillisecondsTimePoint.now();
         competitor = TrackBasedTest.createCompetitorWithBoat("Competitor");
@@ -218,7 +218,7 @@ public class CandidateFinderImplWhiteBoxTest {
         distancesToStartLineOfOtherCompetitors.add(createDistancePair(2739.0, null));
         final double probability = finder.getProbabilityOfStartBasedOnOtherCompetitorsStartLineDistances(distancesToStartLineOfOtherCompetitors,
                 /* startIsLine */ false);
-        assertTrue("Expected probability to exceed 55% but got "+probability, probability > 0.55);
+        assertTrue(probability > 0.55, "Expected probability to exceed 55% but got "+probability);
     }
 
     @Test
@@ -234,7 +234,7 @@ public class CandidateFinderImplWhiteBoxTest {
         distancesToStartLineOfOtherCompetitors.add(createDistancePair(2739.0, null));
         final double probability = finder.getProbabilityOfStartBasedOnOtherCompetitorsStartLineDistances(distancesToStartLineOfOtherCompetitors,
                 /* startIsLine */ false);
-        assertTrue("Expected probability to be below 10% but got "+probability, probability <= 0.1);
+        assertTrue(probability <= 0.1, "Expected probability to be below 10% but got "+probability);
     }
 
     @Test
@@ -250,7 +250,7 @@ public class CandidateFinderImplWhiteBoxTest {
         distancesToStartLineOfOtherCompetitors.add(createDistancePair(20.0, -10.)); // another late starter just across the line
         final double probability = finder.getProbabilityOfStartBasedOnOtherCompetitorsStartLineDistances(distancesToStartLineOfOtherCompetitors,
                 /* startIsLine */ true);
-        assertTrue("Expected probability to be above 85% but got "+probability, probability >= 0.85);
+        assertTrue(probability >= 0.85, "Expected probability to be above 85% but got "+probability);
     }
 
     private AbsoluteGeometricDistanceAndSignedProjectedDistanceToStartLine createDistancePair(double absoluteDistanceToLine,

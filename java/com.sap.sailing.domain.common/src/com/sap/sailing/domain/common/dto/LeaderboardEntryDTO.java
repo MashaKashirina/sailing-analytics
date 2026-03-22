@@ -5,13 +5,13 @@ import java.util.List;
 
 import com.sap.sailing.domain.common.MaxPointsReason;
 import com.sap.sailing.domain.common.RaceIdentifier;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
+import com.sap.sse.common.impl.MeterDistance;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 
 /**
@@ -126,7 +126,7 @@ public class LeaderboardEntryDTO implements Serializable {
     public Duration calculatedTime;
     
     /**
-     * If this is a leaderboard entry for an ORC Performance Curve Scoring (PCS) race,
+     * If this is a leaderboard entry for an ORC Polar Curve Scoring (PCS) race,
      * the field holds the so-called "implied wind" as a speed. It is the wind speed with which,
      * according to its polar, the competitor would have sailed the part of the course sailed
      * so far in the time elapsed so far. For ORC PCS before 2015 this was the primary ranking
@@ -166,6 +166,8 @@ public class LeaderboardEntryDTO implements Serializable {
     public Bearing heel;
 
     public Bearing pitch;
+
+    public Double percentTargetBoatSpeed;
 
     public LeaderboardEntryDTO() { }
     
@@ -639,6 +641,7 @@ public class LeaderboardEntryDTO implements Serializable {
         result = prime * result + ((legDetails == null) ? 0 : legDetails.hashCode());
         result = prime * result + ((netPoints == null) ? 0 : netPoints.hashCode());
         result = prime * result + ((pitch == null) ? 0 : pitch.hashCode());
+        result = prime * result + ((percentTargetBoatSpeed == null) ? 0 : percentTargetBoatSpeed.hashCode());
         result = prime * result + ((race == null) ? 0 : race.hashCode());
         result = prime * result + ((reasonForMaxPoints == null) ? 0 : reasonForMaxPoints.hashCode());
         result = prime * result + ((speedOverGroundAtPassingStartWaypointInKnots == null) ? 0
@@ -769,6 +772,11 @@ public class LeaderboardEntryDTO implements Serializable {
             if (other.pitch != null)
                 return false;
         } else if (!pitch.equals(other.pitch))
+            return false;
+        if (percentTargetBoatSpeed == null) {
+            if (other.percentTargetBoatSpeed != null)
+                return false;
+        } else if (!percentTargetBoatSpeed.equals(other.percentTargetBoatSpeed))
             return false;
         if (race == null) {
             if (other.race != null)

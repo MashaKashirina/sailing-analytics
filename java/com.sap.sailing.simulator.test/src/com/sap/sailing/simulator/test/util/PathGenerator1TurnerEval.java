@@ -8,10 +8,8 @@ import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.simulator.PolarDiagram;
 import com.sap.sailing.simulator.SimulationParameters;
 import com.sap.sailing.simulator.TimedPositionWithSpeed;
@@ -20,7 +18,9 @@ import com.sap.sailing.simulator.impl.PolarDiagramCSV;
 import com.sap.sailing.simulator.impl.SimulationParametersImpl;
 import com.sap.sailing.simulator.util.SailingSimulatorConstants;
 import com.sap.sailing.simulator.windfield.WindFieldGenerator;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 public class PathGenerator1TurnerEval {
@@ -64,17 +64,17 @@ public class PathGenerator1TurnerEval {
         TimedPositionWithSpeed result = this._pathGenerator.get1Turner(this._windField, this._polarDiagram, start, end,
                 startTime, leftSide, stepMax, timeStep);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getPosition());
-        Assert.assertNotNull(result.getSpeed());
-        Assert.assertNotNull(result.getSpeed().getBearing());
-        Assert.assertNotNull(result.getTimePoint());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getPosition());
+        Assertions.assertNotNull(result.getSpeed());
+        Assertions.assertNotNull(result.getSpeed().getBearing());
+        Assertions.assertNotNull(result.getTimePoint());
 
-        Assert.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
-        Assert.assertEquals(131.919809, result.getSpeed().getBearing().getDegrees(), 0.000001);
-        Assert.assertEquals(53.969782, result.getPosition().getLatDeg(), 0.000001);
-        Assert.assertEquals(10.894810, result.getPosition().getLngDeg(), 0.000001);
-        Assert.assertEquals(1360533820118L, result.getTimePoint().asMillis());
+        Assertions.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
+        Assertions.assertEquals(131.919809, result.getSpeed().getBearing().getDegrees(), 0.000001);
+        Assertions.assertEquals(53.969782, result.getPosition().getLatDeg(), 0.000001);
+        Assertions.assertEquals(10.894810, result.getPosition().getLngDeg(), 0.000001);
+        Assertions.assertEquals(1360533820118L, result.getTimePoint().asMillis());
     }
 
     public void test_get1Turner_segment1() {
@@ -89,17 +89,17 @@ public class PathGenerator1TurnerEval {
         TimedPositionWithSpeed result = this._pathGenerator.get1Turner(this._windField, this._polarDiagram, start, end,
                 startTime, leftSide, stepMax, timeStep);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getPosition());
-        Assert.assertNotNull(result.getSpeed());
-        Assert.assertNotNull(result.getSpeed().getBearing());
-        Assert.assertNotNull(result.getTimePoint());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getPosition());
+        Assertions.assertNotNull(result.getSpeed());
+        Assertions.assertNotNull(result.getSpeed().getBearing());
+        Assertions.assertNotNull(result.getTimePoint());
 
-        Assert.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
-        Assert.assertEquals(131.917200, result.getSpeed().getBearing().getDegrees(), 0.000001);
-        Assert.assertEquals(53.970290, result.getPosition().getLatDeg(), 0.000001);
-        Assert.assertEquals(10.895261, result.getPosition().getLngDeg(), 0.000001);
-        Assert.assertEquals(1317552764000L, result.getTimePoint().asMillis());
+        Assertions.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
+        Assertions.assertEquals(131.917200, result.getSpeed().getBearing().getDegrees(), 0.000001);
+        Assertions.assertEquals(53.970290, result.getPosition().getLatDeg(), 0.000001);
+        Assertions.assertEquals(10.895261, result.getPosition().getLngDeg(), 0.000001);
+        Assertions.assertEquals(1317552764000L, result.getTimePoint().asMillis());
     }
 
     public void test_get1Turner_segment2() {
@@ -116,17 +116,17 @@ public class PathGenerator1TurnerEval {
         TimedPositionWithSpeed result = this._pathGenerator.get1Turner(this._windField, this._polarDiagram, end, start,
                 startTime, leftSide, stepMax, timeStep);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getPosition());
-        Assert.assertNotNull(result.getSpeed());
-        Assert.assertNotNull(result.getSpeed().getBearing());
-        Assert.assertNotNull(result.getTimePoint());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getPosition());
+        Assertions.assertNotNull(result.getSpeed());
+        Assertions.assertNotNull(result.getSpeed().getBearing());
+        Assertions.assertNotNull(result.getTimePoint());
 
-        Assert.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
-        Assert.assertEquals(131.916561, result.getSpeed().getBearing().getDegrees(), 0.000001);
-        Assert.assertEquals(53.969532, result.getPosition().getLatDeg(), 0.000001);
-        Assert.assertEquals(10.894251, result.getPosition().getLngDeg(), 0.000001);
-        Assert.assertEquals(1317552752000L, result.getTimePoint().asMillis());
+        Assertions.assertEquals(3.375, result.getSpeed().getKnots(), 0.001);
+        Assertions.assertEquals(131.916561, result.getSpeed().getBearing().getDegrees(), 0.000001);
+        Assertions.assertEquals(53.969532, result.getPosition().getLatDeg(), 0.000001);
+        Assertions.assertEquals(10.894251, result.getPosition().getLngDeg(), 0.000001);
+        Assertions.assertEquals(1317552752000L, result.getTimePoint().asMillis());
     }
 
     public WindFieldGenerator readWindFieldGeneratorFromExternalFile(final String fileName) {

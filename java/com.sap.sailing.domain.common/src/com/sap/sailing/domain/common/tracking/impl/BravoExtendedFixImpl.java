@@ -1,7 +1,5 @@
 package com.sap.sailing.domain.common.tracking.impl;
 
-import com.sap.sailing.domain.common.Mile;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.domain.common.sensordata.BravoExtendedSensorDataMetadata;
 import com.sap.sailing.domain.common.sensordata.ColumnMetadata;
 import com.sap.sailing.domain.common.tracking.BravoExtendedFix;
@@ -9,7 +7,9 @@ import com.sap.sailing.domain.common.tracking.BravoFix;
 import com.sap.sailing.domain.common.tracking.DoubleVectorFix;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.Mile;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.MeterDistance;
 
 /**
  * Implementation of {@link BravoExtendedFix}. {@link BravoExtendedFix} adds more measures compared to {@link BravoFix}.
@@ -254,5 +254,10 @@ public class BravoExtendedFixImpl extends BravoFixImpl implements BravoExtendedF
             return expeditionHDG + leeway.getDegrees();
         }
         return null;
+    }
+
+    @Override
+    public Double getExpeditionKickerTension() {
+        return fix.get(BravoExtendedSensorDataMetadata.EXPEDITION_KICKER_TENSION.getColumnIndex());
     }
 }

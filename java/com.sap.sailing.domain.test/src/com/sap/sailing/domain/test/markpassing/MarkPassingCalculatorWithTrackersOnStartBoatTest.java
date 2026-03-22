@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.test.markpassing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.ControlPoint;
@@ -25,9 +25,6 @@ import com.sap.sailing.domain.markpassingcalculation.MarkPassingCalculator;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateChooserImpl;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateChooserImpl.Stats;
 import com.sap.sailing.domain.markpassingcalculation.impl.CandidateChooserImpl.Stats.CompetitorStats;
-import com.sap.sailing.domain.test.measurements.Measurement;
-import com.sap.sailing.domain.test.measurements.MeasurementCase;
-import com.sap.sailing.domain.test.measurements.MeasurementXMLFile;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tracking.impl.DynamicTrackedRaceImpl;
 import com.sap.sailing.domain.tracking.impl.TrackedRaceImpl;
@@ -35,6 +32,9 @@ import com.sap.sse.common.Duration;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.testutils.Measurement;
+import com.sap.sse.testutils.MeasurementCase;
+import com.sap.sse.testutils.MeasurementXMLFile;
 
 public class MarkPassingCalculatorWithTrackersOnStartBoatTest extends AbstractExportedPositionsBasedTest {
     private DynamicTrackedRaceImpl trackedRace;
@@ -42,7 +42,7 @@ public class MarkPassingCalculatorWithTrackersOnStartBoatTest extends AbstractEx
     private CandidateChooserImpl candidateChooser;
     private TimePoint startOfSetup;
     
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, ParseException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         startOfSetup = MillisecondsTimePoint.now();
         trackedRace = readRace("/MoevensteinCompetitorPositions.json.gz", "/MoevensteinMarkPositions.json.gz", new BoatClassImpl(BoatClassMasterdata.J70));

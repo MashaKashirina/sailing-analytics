@@ -148,7 +148,7 @@ public interface LandscapeManagementWriteServiceAsync {
             String releaseNameOrNullForLatestMaster, String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             String securityReplicationBearerToken, String replicaReplicationBearerToken, String optionalDomainName,
             Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull,
-            Integer minimumAutoScalingGroupSizeOrNull, Integer maximumAutoScalingGroupSizeOrNull,
+            Integer minimumAutoScalingGroupSizeOrNull, Integer maximumAutoScalingGroupSizeOrNull, Integer optionalIgtimiRiotPort,
             AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
 
     void serializationDummy(ProcessDTO mongoProcessDTO, AwsInstanceDTO awsInstanceDTO, AwsShardDTO shardDTO,
@@ -186,10 +186,18 @@ public interface LandscapeManagementWriteServiceAsync {
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String masterReplicationBearerToken,
             String replicaReplicationBearerToken, String optionalDomainName,
             Integer optionalMinimumAutoScalingGroupSizeOrNull, Integer optionalMaximumAutoScalingGroupSizeOrNull,
-            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull,
+            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort,
             AwsInstanceDTO optionalPreferredInstanceToDeployUnmanagedReplicaTo,
             AsyncCallback<SailingApplicationReplicaSetDTO<String>> callback);
+    
+    void createArchiveReplicaSet(String regionId, SailingApplicationReplicaSetDTO<String> applicationReplicaSetToUpgrade,
+            String optionalSharedInstanceType, String releaseOrNullForLatestMaster, String optionalKeyName,
+            byte[] privateKeyEncryptionPassphrase, String securityReplicationBearerToken, String replicaReplicationBearerToken,
+            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull, AsyncCallback<Void> callback);
 
+    void makeCandidateArchiveServerGoLive(String regionId,
+            SailingApplicationReplicaSetDTO<String> archiveReplicaSetToUpgrade, String optionalKeyName,
+            byte[] privateKeyEncryptionPassphrase, AsyncCallback<Void> callback);
     /**
      * For the given replica set ensures there is at least one healthy replica, then stops replicating on all replicas and
      * removes the master from the public and master target groups. This can be used as a preparatory action for upgrading
@@ -246,6 +254,7 @@ public interface LandscapeManagementWriteServiceAsync {
 
     void addShard(String shardName, ArrayList<LeaderboardNameDTO> selectedLeaderBoardNames,
             SailingApplicationReplicaSetDTO<String> replicaSet, String bearerToken, String region,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             AsyncCallback<Void> callback);
 
     /**
@@ -255,6 +264,7 @@ public interface LandscapeManagementWriteServiceAsync {
      *            leaderboard names} of the shard.
      */
     void getShards(SailingApplicationReplicaSetDTO<String> replicaset, String region, String bearerToken,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             AsyncCallback<Map<AwsShardDTO, Iterable<String>>> callback);
 
     /**
@@ -270,6 +280,7 @@ public interface LandscapeManagementWriteServiceAsync {
      * 
      */
     public void removeShard(AwsShardDTO shard, SailingApplicationReplicaSetDTO<String> replicaSet, String region,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             AsyncCallback<Void> callback);
 
     /**
@@ -292,6 +303,7 @@ public interface LandscapeManagementWriteServiceAsync {
      */
     void appendShardingKeysToShard(Iterable<LeaderboardNameDTO> selectedLeaderBoards, String region, String shardName,
             SailingApplicationReplicaSetDTO<String> replicaSet, String bearerToken,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             AsyncCallback<Void> callback);
 
     /**
@@ -310,6 +322,7 @@ public interface LandscapeManagementWriteServiceAsync {
      */
     void removeShardingKeysFromShard(Iterable<LeaderboardNameDTO> selectedLeaderBoards, String region, String shardName,
             SailingApplicationReplicaSetDTO<String> replicaSet, String bearerToken,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             AsyncCallback<Void> callback);
 
     /**

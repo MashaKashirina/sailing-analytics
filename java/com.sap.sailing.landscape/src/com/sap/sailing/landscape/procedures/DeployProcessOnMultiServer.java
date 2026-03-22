@@ -137,13 +137,11 @@ implements Procedure<ShardingKey> {
                 getApplicationConfigurationBuilder().setServerDirectory(ApplicationProcessHost.DEFAULT_SERVERS_PATH+"/"+getApplicationConfigurationBuilder().getServerName());
             }
             if (!getApplicationConfigurationBuilder().isPortSet()) {
-                // TODO bug5763: this is where the port is selected; the selection shall consider available ports on all other instances eligible for a shared replica
                 getApplicationConfigurationBuilder().setPort(getNextAvailablePort(getHostToDeployTo(),
                         SailingAnalyticsApplicationConfiguration.Builder.DEFAULT_PORT,
                         SailingAnalyticsProcess::getPort));
             }
             if (!getApplicationConfigurationBuilder().isTelnetPortSet()) {
-                // TODO bug5763: this is where the port is selected; the selection shall consider available ports on all other instances eligible for a shared replica
                 getApplicationConfigurationBuilder().setTelnetPort(getNextAvailablePort(getHostToDeployTo(),
                         SailingAnalyticsApplicationConfiguration.Builder.DEFAULT_TELNET_PORT,
                         ap->{
@@ -155,7 +153,6 @@ implements Procedure<ShardingKey> {
                         }));
             }
             if (!getApplicationConfigurationBuilder().isExpeditionPortSet()) {
-                // TODO bug5763: this is where the port is selected; the selection shall consider available ports on all other instances eligible for a shared replica
                 getApplicationConfigurationBuilder().setExpeditionPort(getNextAvailablePort(getHostToDeployTo(),
                         SailingAnalyticsApplicationConfiguration.Builder.DEFAULT_EXPEDITION_PORT,
                         ap->{
@@ -165,6 +162,10 @@ implements Procedure<ShardingKey> {
                                 throw new RuntimeException(e);
                             }
                         }));
+            }
+            if (!getApplicationConfigurationBuilder().isIgtimiRiotPortSet() && getApplicationConfigurationBuilder().getServerName().equals(SharedLandscapeConstants.IGTIMI_DEFAULT_RIOT_REPLICA_SET_NAME)) {
+                // we deploy a process instance for the Igtimi Riot replica set; so we'll set the port to the default value:
+                getApplicationConfigurationBuilder().setIgtimiRiotPort(SharedLandscapeConstants.IGTIMI_DEFAULT_RIOT_PORT);
             }
             return new DeployProcessOnMultiServer<>(this);
         }
@@ -290,7 +291,8 @@ implements Procedure<ShardingKey> {
         }
         process = new SailingAnalyticsProcessImpl<>(applicationConfiguration.getPort(), getHostToDeployTo(),
                 serverDirectory, applicationConfiguration.getTelnetPort(),
-                applicationConfiguration.getServerName(), applicationConfiguration.getExpeditionPort(), getLandscape());
+                applicationConfiguration.getServerName(), applicationConfiguration.getExpeditionPort(),
+                applicationConfiguration.getIgtimiRiotPort(), getLandscape());
     }
     
     public SailingAnalyticsProcess<ShardingKey> getProcess() {

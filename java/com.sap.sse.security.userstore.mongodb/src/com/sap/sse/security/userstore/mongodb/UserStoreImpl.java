@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sap.sse.common.TimedLock;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.concurrent.LockUtil;
@@ -853,12 +854,12 @@ public class UserStoreImpl implements UserStore {
     }
 
     @Override
-    public User createUser(String name, String email, Account... accounts)
+    public User createUser(String name, String email, TimedLock timedLock, Account... accounts)
             throws UserManagementException {
         return LockUtil.executeWithWriteLockAndResultExpectException(usersLock, () -> {
             checkUsernameUniqueness(name);
             final Map<String, UserGroup> tenantsForServer = new ConcurrentHashMap<>();
-            final User user = new UserImpl(name, email, tenantsForServer, /* user group provider */ this, accounts);
+            final User user = new UserImpl(name, email, tenantsForServer, /* user group provider */ this, timedLock, accounts);
             logger.info("Creating user: " + user + " with e-mail " + email);
             addAndStoreUserInternal(user);
             return user;

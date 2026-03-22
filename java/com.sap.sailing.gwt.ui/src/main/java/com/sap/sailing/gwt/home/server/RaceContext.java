@@ -27,7 +27,6 @@ import com.sap.sailing.domain.base.RaceDefinition;
 import com.sap.sailing.domain.base.Regatta;
 import com.sap.sailing.domain.common.LeaderboardNameConstants;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
 import com.sap.sailing.domain.common.TimingConstants;
 import com.sap.sailing.domain.common.Wind;
@@ -60,12 +59,13 @@ import com.sap.sailing.gwt.home.communication.race.wind.WindStatisticsDTO;
 import com.sap.sailing.gwt.server.HomeServiceUtil;
 import com.sap.sailing.server.interfaces.RacingEventService;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TimeRange;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.common.media.MediaType;
-import com.sap.sse.gwt.dispatch.shared.commands.DTO;
+import com.sap.sse.gwt.shared.DTO;
 import com.sap.sse.security.ui.server.SecurityDTOUtil;
 
 /**
@@ -585,7 +585,8 @@ public class RaceContext {
             }
         }
         ScoreCorrection scoreCorrection = leaderboard.getScoreCorrection();
-        if (trackedRace == null && scoreCorrection != null && scoreCorrection.hasCorrectionForNonTrackedFleet(raceColumn)) {
+        // bug6168: for split fleets we need to check the fleet too
+        if (trackedRace == null && scoreCorrection != null && scoreCorrection.hasCorrectionForNonTrackedFleet(raceColumn, fleet)) {
             return RaceViewState.FINISHED;
         }
         if (startTime != null) {
