@@ -371,6 +371,7 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
                 window.removeFirst();
                 speedForFixesInWindow.removeFirst();
             }
+            trimQueue();
             windowDuration = window.isEmpty() ? Duration.NULL : window.getFirst().getTimePoint().until(window.getLast().getTimePoint());
             // adjust totalCourseChangeFromBeginningOfWindow by subtracting the first course change from all others
             // and shifting all by one position to the "left"
@@ -380,6 +381,20 @@ public class CourseChangeBasedTrackApproximation implements Serializable, GPSTra
                 // empty in which case courseChangeBetweenFixesInWindow is also empty.
                 courseChangeBetweenFixesInWindow.removeFirst(howManyElementsToRemove==oldSize?
                         howManyElementsToRemove-1:howManyElementsToRemove);
+            }
+        }
+
+        /**
+         * After having {@link #removeFirst(int) removed} items from the {@link #window}, the {@link #queueOfNewFixes}
+         * may now contain fixes older than the oldest element in {@link #window}. This would violate our assumption that
+         * only fixes at or after the start of the window are added, so we need to "trim" the queue accordingly.
+         */
+        private void trimQueue() {
+            if (!window.isEmpty()) {
+                final TimePoint timePointOfOldestFixInWindow = window.getFirst().getTimePoint();
+                while (!queueOfNewFixes.isEmpty() && queueOfNewFixes.peekFirst().getTimePoint().before(timePointOfOldestFixInWindow)) {
+                    queueOfNewFixes.removeFirst();
+                }
             }
         }
 
