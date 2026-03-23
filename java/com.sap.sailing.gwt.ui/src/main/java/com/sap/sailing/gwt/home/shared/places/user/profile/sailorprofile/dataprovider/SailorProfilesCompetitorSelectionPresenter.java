@@ -108,7 +108,7 @@ public class SailorProfilesCompetitorSelectionPresenter implements EditModeChang
     }
 
     @Override
-    public void initSelectedItems(Collection<SimpleCompetitorWithIdDTO> selectedItems) {
+    public void initSelectedItems(Iterable<SimpleCompetitorWithIdDTO> selectedItems) {
     }
 
     @Override

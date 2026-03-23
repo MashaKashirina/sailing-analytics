@@ -41,38 +41,37 @@ public final class SuggestedMultiSelection<T> extends Composite implements Sugge
     @UiField
     DivElement contentSeparatorUi;
     @UiField(provided = true)
-    AbstractFilterWidget<T, T> suggestionWidgetUi;
+    AbstractFilterWidget<T, T> searchUi;
     @UiField
     Button removeAllButtonUi;
     @UiField
-    FlowPanel itemContainerUi;
+    FlowPanel selectedItemsUi;
     private final SuggestedMultiSelectionPresenter<T, ?> presenter;
-    private final WidgetProvider<T> widgetProvider;
+    private final WidgetFactory<T> widgetFactory;
 
-    public static interface WidgetProvider<T> {
-        IsWidget getItemDescriptionWidget(T item);
-        AbstractSuggestBoxFilter<T, T> getSuggestBoxFilter(Consumer<T> selectionCallback);
+    public static interface WidgetFactory<T> {
+        IsWidget generateItemDescriptionWidget(T item);
+        AbstractSuggestBoxFilter<T, T> generateSuggestionSearchBar(Consumer<T> onSuggestionSelectedCallback);
     }
 
     public SuggestedMultiSelection(SuggestedMultiSelectionPresenter<T, ?> presenter,
-            WidgetProvider<T> widgetProvider) {
+            WidgetFactory<T> widgetFactory) {
         SuggestedMultiSelectionResources.INSTANCE.css().ensureInjected();
         this.presenter = presenter;
-        this.widgetProvider = widgetProvider;
-        this.suggestionWidgetUi = widgetProvider.getSuggestBoxFilter(selectedItem -> {
-            presenter.addSelection(selectedItem);
-            SuggestedMultiSelection.this.addSelectedItem(selectedItem);
+        this.widgetFactory = widgetFactory;
+        this.searchUi = widgetFactory.generateSuggestionSearchBar(e -> {
+            presenter.addSelection(e);
+            selectedItemsUi.add(generateSelectedItemUi(e));
         });
         initWidget(uiBinder.createAndBindUi(this));
-        this.updateUiState();
     }
 
     @UiHandler("removeAllButtonUi")
     void onRemoveAllButtonClicked(ClickEvent event) {
         presenter.clearSelection();
-        itemContainerUi.clear();
+        selectedItemsUi.clear();
         UIObject.setVisible(contentSeparatorUi, false);
-        this.updateUiState();
+        removeAllButtonUi.setEnabled(false);
     }
     
     public Set<T> getSelection(){
@@ -80,18 +79,22 @@ public final class SuggestedMultiSelection<T> extends Composite implements Sugge
     }  
 
     @Override
-    public void setSelectedItems(Iterable<T> selectedItemsToSet) {
-        itemContainerUi.clear();
-        this.updateUiState();
-        selectedItemsToSet.forEach(this::addSelectedItem);
+    public void setSelectedItems(Iterable<T> toBeSet) {
+        selectedItemsUi.clear();
+        UIObject.setVisible(contentSeparatorUi, true);
+        presenter.initSelectedItems(toBeSet);
+        toBeSet.forEach(e -> {
+            selectedItemsUi.add(generateSelectedItemUi(e));
+        });
+        final boolean areItemsNonEmpty = toBeSet.iterator().hasNext();
+        removeAllButtonUi.setEnabled(areItemsNonEmpty);
     }
-
-    private void addSelectedItem(final T selectedItem) {
-        final SuggestedMultiSelectionItem item = new SuggestedMultiSelectionItem() {
-
+    
+    private SuggestedMultiSelectionItem generateSelectedItemUi(T selectedItem) {
+        return new SuggestedMultiSelectionItem() {
             @Override
             protected IsWidget getItemDescriptionWidget() {
-                return widgetProvider.getItemDescriptionWidget(selectedItem);
+                return widgetFactory.generateItemDescriptionWidget(selectedItem);
             }
 
             @Override
@@ -101,26 +104,18 @@ public final class SuggestedMultiSelection<T> extends Composite implements Sugge
                     UIObject.setVisible(contentSeparatorUi, false);
                 }
                 this.removeFromParent();
-                updateUiState();
+                removeAllButtonUi.setEnabled(selectedItemsUi.getWidgetCount() > 0);
             }
         };
-        UIObject.setVisible(contentSeparatorUi, true);
-        presenter.addSelection(selectedItem);
-        itemContainerUi.add(item);
-        this.updateUiState();
     }
 
-    private void updateUiState() {
-        removeAllButtonUi.setEnabled(itemContainerUi.getWidgetCount() > 0);
-    }
+    public static class SelectableSuggestion<T> extends AbstractAsyncSuggestBoxFilter<T, T> {
+        private final Consumer<T> onPressedCallback;
 
-    public static class Filter<T> extends AbstractAsyncSuggestBoxFilter<T, T> {
-        private final Consumer<T> selectionCallback;
-
-        public Filter(final SuggestedMultiSelectionPresenter<T, ?> presenter,
-                Consumer<T> selectionCallback, String placeholderText) {
+        public SelectableSuggestion(final SuggestedMultiSelectionPresenter<T, ?> presenter,
+                Consumer<T> onPressedCallback, String placeholderText) {
             super(buildOracle(presenter), placeholderText);
-            this.selectionCallback = selectionCallback;
+            this.onPressedCallback = onPressedCallback;
         }
 
         private static <T> AbstractSuggestOracle<T> buildOracle(final SuggestedMultiSelectionPresenter<T, ?> presenter) {
@@ -151,8 +146,8 @@ public final class SuggestedMultiSelection<T> extends Composite implements Sugge
 
         @Override
         protected final void onSuggestionSelected(T selectedItem) {
-            Filter.this.clear();
-            selectionCallback.accept(selectedItem);
+            SelectableSuggestion.this.clear();
+            onPressedCallback.accept(selectedItem);
         }
     }
 }

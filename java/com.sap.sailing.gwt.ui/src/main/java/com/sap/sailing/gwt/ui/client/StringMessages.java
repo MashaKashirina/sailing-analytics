@@ -2570,4 +2570,6 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String youWillNowReceiveUpdatesOnNewResultsForYourFavoredBoatClasses();
     String youWillNotReceiveNotificationsForFavoriteBoatClassNewResultsAnymore();
     String failedToSetStatusOfUpdatesOnNewResultsForYourFavoredBoatClasses();
+    String failedToAddNewFavoriteCompetitor();
+    String newFavoriteCompetitorAdded();
 }

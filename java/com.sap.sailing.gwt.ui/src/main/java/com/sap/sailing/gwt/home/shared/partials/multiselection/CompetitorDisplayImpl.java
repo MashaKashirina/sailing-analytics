@@ -48,24 +48,37 @@ public class CompetitorDisplayImpl implements IsWidget, CompetitorSelectionPrese
     }
 
     private SuggestedMultiSelection<SimpleCompetitorWithIdDTO> composeFilter(FlagImageResolver flagImageResolver) {
-        final SuggestedMultiSelection.WidgetProvider<SimpleCompetitorWithIdDTO> widgetProvider = new SuggestedMultiSelection.WidgetProvider<SimpleCompetitorWithIdDTO>() {
+        final SuggestedMultiSelection.WidgetFactory<SimpleCompetitorWithIdDTO> widgetFactory = new SuggestedMultiSelection.WidgetFactory<SimpleCompetitorWithIdDTO>() {
             @Override
-            public IsWidget getItemDescriptionWidget(SimpleCompetitorWithIdDTO item) {
+            public IsWidget generateItemDescriptionWidget(SimpleCompetitorWithIdDTO item) {
                 return new SuggestedMultiSelectionCompetitorItemDescription(item, flagImageResolver);
             }
 
             @Override
-            public AbstractSuggestBoxFilter<SimpleCompetitorWithIdDTO, SimpleCompetitorWithIdDTO> getSuggestBoxFilter(
-                    Consumer<SimpleCompetitorWithIdDTO> selectionCallback) {
+            public AbstractSuggestBoxFilter<SimpleCompetitorWithIdDTO, SimpleCompetitorWithIdDTO> generateSuggestionSearchBar(
+                    Consumer<SimpleCompetitorWithIdDTO> onSuggestionSelectedCallback) {
                 final String text = StringMessages.INSTANCE.add(StringMessages.INSTANCE.competitor());
-                return new SuggestedMultiSelection.Filter<SimpleCompetitorWithIdDTO>(presenter, selectionCallback,
+                return new SuggestedMultiSelection.SelectableSuggestion<SimpleCompetitorWithIdDTO>(presenter, onSuggestionSelectedCallback,
                         text);
             }
         };
-        presenter.setSelectionPersistenceCallback(wrapCallbackWithToastResponse(tileUi.getValue(), null));
-        return new SuggestedMultiSelection<>(presenter, widgetProvider);
+        // TODO add different messages to toast response here
+        final AsyncCallback<VoidResult> selectionPersistenceCallback = new AsyncCallback<VoidResult>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                Notification.notify(StringMessages.INSTANCE.failedToAddNewFavoriteCompetitor(), NotificationType.ERROR);
+            }
+
+            @Override
+            public void onSuccess(VoidResult result) {
+                Notification.notify(StringMessages.INSTANCE.newFavoriteCompetitorAdded(), NotificationType.SUCCESS);
+            }
+        };
+        presenter.setSelectionPersistenceCallback(selectionPersistenceCallback);
+        return new SuggestedMultiSelection<>(presenter, widgetFactory);
     }
 
+    // TODO add different messages to toast response here
     private CheckBoxTile composeTile() {
         final BiConsumer<Boolean, AsyncCallback<VoidResult>> onToggle = (isNowTrue, callback) -> {
             presenter.persistResults(isNowTrue, wrapCallbackWithToastResponse(isNowTrue, callback),
@@ -112,6 +125,6 @@ public class CompetitorDisplayImpl implements IsWidget, CompetitorSelectionPrese
     @Override
     public void initResults(boolean notifyAboutResults, Collection<SimpleCompetitorWithIdDTO> latestSelectedItems) {
         filterUi.setSelectedItems(latestSelectedItems);
-        tileUi.setValue(notifyAboutResults);
+        tileUi.setValue(notifyAboutResults, false);
     }
 }

@@ -61,17 +61,17 @@ public class BoatClassDisplayImpl implements IsWidget, BoatClassSelectionPresent
     }
 
     private SuggestedMultiSelection<BoatClassDTO> composeFilter() {
-        final SuggestedMultiSelection.WidgetProvider<BoatClassDTO> widgetProvider = new SuggestedMultiSelection.WidgetProvider<BoatClassDTO>() {
+        final SuggestedMultiSelection.WidgetFactory<BoatClassDTO> widgetProvider = new SuggestedMultiSelection.WidgetFactory<BoatClassDTO>() {
             @Override
-            public IsWidget getItemDescriptionWidget(BoatClassDTO item) {
+            public IsWidget generateItemDescriptionWidget(BoatClassDTO item) {
                 return new SuggestedMultiSelectionBoatClassItemDescription(item);
             }
 
             @Override
-            public AbstractSuggestBoxFilter<BoatClassDTO, BoatClassDTO> getSuggestBoxFilter(
+            public AbstractSuggestBoxFilter<BoatClassDTO, BoatClassDTO> generateSuggestionSearchBar(
                     Consumer<BoatClassDTO> selectionCallback) {
                 final String text = StringMessages.INSTANCE.add(StringMessages.INSTANCE.boatClass());
-                return new SuggestedMultiSelection.Filter<BoatClassDTO>(presenter, selectionCallback, text);
+                return new SuggestedMultiSelection.SelectableSuggestion<BoatClassDTO>(presenter, selectionCallback, text);
             }
         };
         presenter.setSelectionPersistenceCallback(wrapCallbackWithToastResponse(upcomingRacesUi.getValue(),
