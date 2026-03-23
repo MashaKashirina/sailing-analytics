@@ -121,4 +121,24 @@ public class EventService {
                 newGroup.getOverallLeaderboardDiscardThresholds(), newGroup.getOverallLeaderboardScoringSchemeType(),
                 new MarkedAsyncCallback<>(leaderboardGroupCallback));
     }
+
+    public void getEvent(final UUID eventId, final AsyncCallback<EventDTO> callback) {
+        sailingService.getEventById(eventId, /* withStatisticalData */ false, callback);
+    }
+
+    public void updateEvent(final EventDTO eventDTO, final AsyncCallback<EventDTO> callback) {
+        sailingService.updateEvent(eventDTO, new AsyncCallback<EventDTO>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                callback.onFailure(caught);
+            }
+
+            @Override
+            public void onSuccess(EventDTO result) {
+                // Invalidate the event list cache so it gets reloaded
+                eventIdToEventMap.clear();
+                callback.onSuccess(result);
+            }
+        });
+    }
 }

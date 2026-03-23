@@ -2380,6 +2380,12 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String createEventSeriesSubtitle();
     String createEventButton();
     String createEventSeriesButton();
+    String editEvent();
+    String editEventSubtitle();
+    String startDateLabel();
+    String endDateLabel();
+    String descriptionLabel();
+    String isPublicLabel();
     String nameLabel();
     String eventNamePlaceholder();
     String eventSeriesNamePlaceholder();

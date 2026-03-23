@@ -12,6 +12,7 @@ import com.sap.sailing.gwt.managementconsole.events.EventListResponseEvent;
 import com.sap.sailing.gwt.managementconsole.partials.contextmenu.ContextMenu;
 import com.sap.sailing.gwt.managementconsole.places.AbstractManagementConsoleActivity;
 import com.sap.sailing.gwt.managementconsole.places.event.create.CreateEventPlace;
+import com.sap.sailing.gwt.managementconsole.places.event.edit.EditEventPlace;
 import com.sap.sailing.gwt.managementconsole.places.regatta.overview.RegattaOverviewPlace;
 import com.sap.sailing.gwt.managementconsole.resources.ManagementConsoleResources;
 import com.sap.sailing.gwt.ui.client.StringMessages;
@@ -58,6 +59,11 @@ public class EventOverviewActivity extends AbstractManagementConsoleActivity<Eve
     @Override
     public void navigateToCreateEvent() {
         getClientFactory().getPlaceController().goTo(new CreateEventPlace());
+    }
+
+    @Override
+    public void editEvent(final EventMetadataDTO event) {
+        getClientFactory().getPlaceController().goTo(new EditEventPlace(event.getId()));
     }
 
     @Override

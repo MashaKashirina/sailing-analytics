@@ -1,0 +1,100 @@
+package com.sap.sailing.gwt.managementconsole.places.event.edit;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.InputElement;
+import com.google.gwt.uibinder.client.UiBinder;
+import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.ui.Anchor;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.user.client.ui.Widget;
+import com.sap.sailing.domain.common.dto.CourseAreaDTO;
+import com.sap.sailing.gwt.managementconsole.partials.inputs.listofstrings.ListOfStringsInput;
+import com.sap.sailing.gwt.managementconsole.places.UiUtils;
+import com.sap.sailing.gwt.ui.shared.EventDTO;
+import com.sap.sailing.gwt.ui.shared.VenueDTO;
+import com.sap.sse.gwt.client.controls.datetime.DateInput;
+
+public class EditEventViewImpl extends Composite implements EditEventView {
+
+    interface EditEventViewUiBinder extends UiBinder<Widget, EditEventViewImpl> {}
+    private static EditEventViewUiBinder uiBinder = GWT.create(EditEventViewUiBinder.class);
+
+    @UiField
+    Button saveEventButton;
+    @UiField
+    Anchor back;
+    @UiField
+    DateInput startDateInput;
+    @UiField
+    DateInput endDateInput;
+    @UiField
+    ListOfStringsInput courseAreasInput;
+    @UiField
+    InputElement venueInput, nameInput, isPublicCheckbox;
+    @UiField
+    TextArea descriptionInput;
+
+    private Presenter presenter;
+
+    public EditEventViewImpl() {
+        initWidget(uiBinder.createAndBindUi(this));
+        back.addClickHandler(e -> presenter.cancelEdit());
+        saveEventButton.addClickHandler(e -> validateAndSaveEvent());
+    }
+
+    @Override
+    public void populateForm(EventDTO event) {
+        nameInput.setValue(event.getName() != null ? event.getName() : "");
+        descriptionInput.setValue(event.getDescription() != null ? event.getDescription() : "");
+
+        VenueDTO venue = event.getVenue();
+        venueInput.setValue(venue != null && venue.getName() != null ? venue.getName() : "");
+
+        startDateInput.setValue(event.startDate);
+        endDateInput.setValue(event.endDate);
+        isPublicCheckbox.setChecked(event.isPublic);
+
+        // Populate course areas
+        List<String> courseAreaNames = new ArrayList<>();
+        if (venue != null && venue.getCourseAreas() != null) {
+            for (CourseAreaDTO ca : venue.getCourseAreas()) {
+                courseAreaNames.add(ca.getName());
+            }
+        }
+        courseAreasInput.setValue(courseAreaNames);
+    }
+
+    private void validateAndSaveEvent() {
+        if (validate()) {
+            presenter.saveEvent(
+                    nameInput.getValue(),
+                    descriptionInput.getValue(),
+                    venueInput.getValue(),
+                    startDateInput.getValue(),
+                    endDateInput.getValue(),
+                    courseAreasInput.getNotEmptyValues(),
+                    isPublicCheckbox.isChecked());
+        }
+    }
+
+    private boolean validate() {
+        return UiUtils.isNotBlank(nameInput.getValue())
+                && UiUtils.isNotBlank(venueInput.getValue());
+    }
+
+    @Override
+    public void setPresenter(Presenter presenter) {
+        this.presenter = presenter;
+    }
+
+    @Override
+    public void onResize() {
+        // No special resize handling needed
+    }
+
+}
