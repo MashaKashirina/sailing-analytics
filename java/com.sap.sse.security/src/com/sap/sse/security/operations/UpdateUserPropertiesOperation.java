@@ -6,11 +6,10 @@ import com.sap.sse.security.impl.ReplicableSecurityService;
 
 public class UpdateUserPropertiesOperation implements SecurityOperation<Void> {
     private static final long serialVersionUID = -6267523788529623080L;
-    private final String username;
+    protected final String username;
     /** When null, an update to this property will not be processed */
-    private final String company;
+    protected final String fullName;
     /** When null, an update to this property will not be processed */
-    private final Boolean didOptOutOfFeatureAndCommunityEmails;
     protected final String company;
     /** When null, an update to this property will not be processed */
     protected final Locale locale;
