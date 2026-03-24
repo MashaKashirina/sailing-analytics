@@ -2,7 +2,6 @@ package com.sap.sailing.gwt.managementconsole.places.event.edit;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
