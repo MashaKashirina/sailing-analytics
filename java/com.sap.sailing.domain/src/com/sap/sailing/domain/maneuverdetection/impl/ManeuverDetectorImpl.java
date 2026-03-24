@@ -11,12 +11,9 @@ import java.util.logging.Logger;
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.Waypoint;
-import com.sap.sailing.domain.common.BearingChangeAnalyzer;
 import com.sap.sailing.domain.common.ManeuverType;
 import com.sap.sailing.domain.common.NauticalSide;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.Wind;
 import com.sap.sailing.domain.common.WindSourceType;
@@ -40,9 +37,12 @@ import com.sap.sailing.domain.tracking.impl.ManeuverWithMainCurveBoundariesImpl;
 import com.sap.sailing.domain.tracking.impl.ManeuverWithStableSpeedAndCourseBoundariesImpl;
 import com.sap.sailing.domain.tracking.impl.SpeedWithBearingStepImpl;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.BearingChangeAnalyzer;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
@@ -55,6 +55,13 @@ import com.sap.sse.common.impl.MillisecondsTimePoint;
  *
  */
 public class ManeuverDetectorImpl extends AbstractManeuverDetectorImpl {
+    
+    /**
+     * This {@link #DETECTOR_VERSION} variable indicates the version of the {@link ManeuverDetector} and must be changed
+     * manually when changing the calculator. It should be changed by adding +1;
+     */
+    public static final int DETECTOR_VERSION = 1;
+
 
     private static final Logger logger = Logger.getLogger(ManeuverDetectorImpl.class.getName());
 
