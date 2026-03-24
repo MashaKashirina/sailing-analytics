@@ -24,8 +24,8 @@ import com.jcraft.jsch.JSchException;
 import com.sap.sailing.landscape.SailingAnalyticsHost;
 import com.sap.sailing.landscape.SailingAnalyticsMetrics;
 import com.sap.sailing.landscape.SailingAnalyticsProcess;
-import com.sap.sailing.landscape.SailingAnalyticsProcessConfigurationVariable;
 import com.sap.sailing.landscape.SailingReleaseRepository;
+import com.sap.sailing.landscape.procedures.SailingProcessConfigurationVariables;
 import com.sap.sailing.landscape.procedures.StartSailingAnalyticsHost;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.TimePoint;
@@ -38,7 +38,6 @@ import com.sap.sse.landscape.aws.ApplicationProcessHost;
 import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.MongoUriParser;
 import com.sap.sse.landscape.aws.impl.AwsApplicationProcessImpl;
-import com.sap.sse.landscape.impl.ReleaseImpl;
 import com.sap.sse.landscape.mongodb.Database;
 import com.sap.sse.shared.util.Wait;
 import com.sap.sse.util.HttpUrlConnectionHelper;
@@ -52,20 +51,28 @@ implements SailingAnalyticsProcess<ShardingKey> {
     private static final String STATUS_SERVERDIRECTORY_PROPERTY_NAME = "serverdirectory";
     private static final String STATUS_RELEASE_PROPERTY_NAME = "release";
     private static final String MONGODB_CONFIGURATION_PROPERTY_NAME = "mongoDbConfiguration";
+    private static final String SYSTEM_LOAD_AVERAGE_LAST_MINUTE_NAME = "systemloadaveragelastminute";
+    private static final String DEFAULT_BACKGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NAME = "defaultbackgroundthreadpoolexecutorqueuelength";
+    private static final String DEFAULT_FOREGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NAME = "defaultforegroundthreadpoolexecutorqueuelength";
+    private static final String DEFAULT_BACKGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NONDELAYED_NAME = "defaultbackgroundthreadpoolexecutorqueuelengthnondelayed";
+    private static final String DEFAULT_FOREGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NONDELAYED_NAME = "defaultforegroundthreadpoolexecutorqueuelengthnondelayed";
     private Integer expeditionUdpPort;
+    private Integer igtimiRiotPort;
     private Release release;
     private TimePoint startTimePoint;
     
-    public SailingAnalyticsProcessImpl(int port, SailingAnalyticsHost<ShardingKey> host, String serverDirectory, Integer expeditionUdpPort, AwsLandscape<ShardingKey> landscape) {
+    public SailingAnalyticsProcessImpl(int port, SailingAnalyticsHost<ShardingKey> host, String serverDirectory, Integer expeditionUdpPort, Integer igtimiRiotPort, AwsLandscape<ShardingKey> landscape) {
         super(port, host, serverDirectory, landscape);
         this.expeditionUdpPort = expeditionUdpPort;
+        this.igtimiRiotPort = igtimiRiotPort;
     }
 
     public SailingAnalyticsProcessImpl(int port,
             SailingAnalyticsHost<ShardingKey> host,
-            String serverDirectory, Integer telnetPort, String serverName, Integer expeditionUdpPort, AwsLandscape<ShardingKey> landscape) {
+            String serverDirectory, Integer telnetPort, String serverName, Integer expeditionUdpPort, Integer igtimiRiotPort, AwsLandscape<ShardingKey> landscape) {
         super(port, host, serverDirectory, telnetPort, serverName, landscape);
         this.expeditionUdpPort = expeditionUdpPort;
+        this.igtimiRiotPort = igtimiRiotPort;
     }
 
     @Override
@@ -99,7 +106,7 @@ implements SailingAnalyticsProcess<ShardingKey> {
     private boolean updateReleaseFromStatus(JSONObject status) {
         final boolean success;
         if (status.containsKey(STATUS_RELEASE_PROPERTY_NAME)) {
-            release = new ReleaseImpl((String) status.get(STATUS_RELEASE_PROPERTY_NAME), SailingReleaseRepository.INSTANCE);
+            release = SailingReleaseRepository.INSTANCE.getRelease((String) status.get(STATUS_RELEASE_PROPERTY_NAME));
             success = true;
         } else {
             success = false;
@@ -122,6 +129,36 @@ implements SailingAnalyticsProcess<ShardingKey> {
             }
         }
         return release;
+    }
+    
+    @Override
+    public double getLastMinuteSystemLoadAverage(Optional<Duration> optionalTimeout) throws TimeoutException, Exception {
+        final JSONObject status = getStatus(optionalTimeout);
+        return ((Number) status.get(SYSTEM_LOAD_AVERAGE_LAST_MINUTE_NAME)).doubleValue();
+    }
+    
+    @Override
+    public int getDefaultBackgroundThreadPoolExecutorQueueSize(Optional<Duration> optionalTimeout) throws TimeoutException, Exception {
+        final JSONObject status = getStatus(optionalTimeout);
+        return ((Number) status.get(DEFAULT_BACKGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NAME)).intValue();
+    }
+    
+    @Override
+    public int getDefaultForegroundThreadPoolExecutorQueueSize(Optional<Duration> optionalTimeout) throws TimeoutException, Exception {
+        final JSONObject status = getStatus(optionalTimeout);
+        return ((Number) status.get(DEFAULT_FOREGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NAME)).intValue();
+    }
+    
+    @Override
+    public int getDefaultBackgroundThreadPoolExecutorQueueSizeNondelayed(Optional<Duration> optionalTimeout) throws TimeoutException, Exception {
+        final JSONObject status = getStatus(optionalTimeout);
+        return ((Number) status.get(DEFAULT_BACKGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NONDELAYED_NAME)).intValue();
+    }
+    
+    @Override
+    public int getDefaultForegroundThreadPoolExecutorQueueSizeNondelayed(Optional<Duration> optionalTimeout) throws TimeoutException, Exception {
+        final JSONObject status = getStatus(optionalTimeout);
+        return ((Number) status.get(DEFAULT_FOREGROUND_THREAD_POOL_EXECUTOR_QUEUE_LENGTH_NONDELAYED_NAME)).intValue();
     }
     
     @Override
@@ -221,11 +258,46 @@ implements SailingAnalyticsProcess<ShardingKey> {
     public int getExpeditionUdpPort(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase)
             throws Exception {
         if (expeditionUdpPort == null) {
-            expeditionUdpPort = Integer.parseInt(getEnvShValueFor(SailingAnalyticsProcessConfigurationVariable.EXPEDITION_PORT.name(),
+            expeditionUdpPort = Integer.parseInt(getEnvShValueFor(SailingProcessConfigurationVariables.EXPEDITION_PORT.name(),
                 optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase));
         }
         return expeditionUdpPort;
     }
+    
+    @Override
+    public Integer getIgtimiRiotPort(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        if (igtimiRiotPort == null) {
+            final String igtimiRiotPortEnvVar = getEnvShValueFor(SailingProcessConfigurationVariables.IGTIMI_RIOT_PORT.name(),
+                    optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+            igtimiRiotPort = Util.hasLength(igtimiRiotPortEnvVar) ? Integer.parseInt(igtimiRiotPortEnvVar) : null;
+        }
+        return igtimiRiotPort;
+    }
+
+    @Override
+    public int[] getAllTCPPorts(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final Integer igtimiRiotPort = getIgtimiRiotPort(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        final int[] result;
+        if (igtimiRiotPort == null) {
+            result = super.getAllTCPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        } else {
+            final int[] superTCPPorts = super.getAllTCPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+            result = new int[superTCPPorts.length + 1];
+            System.arraycopy(superTCPPorts, 0, result, 0, superTCPPorts.length);
+            result[result.length-1] = igtimiRiotPort;
+        }
+        return result;
+    }
+
+    @Override
+    public int[] getAllUDPPorts(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final int[] superUDPPorts = super.getAllUDPPorts(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        final int[] result = new int[superUDPPorts.length + 1];
+        System.arraycopy(superUDPPorts, 0, result, 0, superUDPPorts.length);
+        result[result.length-1] = getExpeditionUdpPort(optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
+        return result;
+    }
+
 
     @Override
     public void stopAndTerminateIfLast(Optional<Duration> optionalTimeout, Optional<String> optionalKeyName,

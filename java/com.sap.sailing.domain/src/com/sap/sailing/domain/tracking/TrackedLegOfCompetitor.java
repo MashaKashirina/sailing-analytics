@@ -7,7 +7,6 @@ import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.Leg;
 import com.sap.sailing.domain.common.LegType;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.TackType;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.leaderboard.caching.LeaderboardDTOCalculationReuseCache;
@@ -16,6 +15,7 @@ import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 
@@ -413,6 +413,7 @@ public interface TrackedLegOfCompetitor extends Serializable {
     Double getExpeditionJibCarPortIfAvailable(TimePoint at);
     Double getExpeditionJibCarStbdIfAvailable(TimePoint at);
     Double getExpeditionMastButtIfAvailable(TimePoint at);
+    Double getExpeditionKickerTensionIfAvailable(TimePoint at);
     Double getAverageExpeditionAWA(TimePoint at);
     Double getAverageExpeditionAWS(TimePoint at);
     Double getAverageExpeditionTWA(TimePoint at);
@@ -452,4 +453,5 @@ public interface TrackedLegOfCompetitor extends Serializable {
     Double getAverageExpeditionJibCarPortIfAvailable(TimePoint at);
     Double getAverageExpeditionJibCarStbdIfAvailable(TimePoint at);
     Double getAverageExpeditionMastButtIfAvailable(TimePoint at);
+    Double getAverageExpeditionKickerTensionIfAvailable(TimePoint at);
 }

@@ -18,7 +18,8 @@ Import-Package: com.sap.sailing.domain.igtimiadapter.shared,
  org.json.simple,
  org.json.simple.parser,
  org.osgi.framework;version="1.3.0",
- org.osgi.util.tracker;version="1.3.1"
+ org.osgi.util.tracker;version="1.3.1",
+ slash.common.io
 Require-Bundle: com.sap.sailing.domain,
  com.sap.sailing.expeditionconnector,
  com.sap.sailing.declination,
@@ -69,7 +70,8 @@ Require-Bundle: com.sap.sailing.domain,
  com.sap.sailing.shared.server.gateway,
  org.apache.httpcomponents.httpclient,
  org.apache.httpcomponents.httpcore,
- com.sap.sailing.server.gateway.interfaces
+ com.sap.sailing.server.gateway.interfaces,
+ com.sap.sailing.landscape.common
 Bundle-ClassPath: .
 Web-ContextPath: /sailingserver
 Export-Package: com.sap.sailing.server.gateway,

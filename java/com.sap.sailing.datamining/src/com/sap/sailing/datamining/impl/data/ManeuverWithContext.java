@@ -4,10 +4,8 @@ import com.sap.sailing.datamining.data.HasManeuverContext;
 import com.sap.sailing.datamining.data.HasTrackedLegOfCompetitorContext;
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.common.ManeuverType;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.tracking.GPSFixTrack;
 import com.sap.sailing.domain.tracking.Maneuver;
@@ -15,8 +13,10 @@ import com.sap.sailing.domain.tracking.ManeuverCurveBoundaries;
 import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util.Pair;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 
 /**
  * Equality is based on the {@link #getManeuver() maneuver} only.
@@ -33,6 +33,7 @@ public class ManeuverWithContext implements HasManeuverContext {
     private final double directionChangeInDegreesForAnalysis;
     private final Maneuver previousManeuver;
     private final Maneuver nextManeuver;
+    private Wind wind;
 
     public ManeuverWithContext(HasTrackedLegOfCompetitorContext trackedLegOfCompetitor, Maneuver maneuver,
             boolean mainCurveAnalysis, Maneuver previousManeuver, Maneuver nextManeuver) {
@@ -70,6 +71,16 @@ public class ManeuverWithContext implements HasManeuverContext {
         } else if (!maneuver.equals(other.maneuver))
             return false;
         return true;
+    }
+
+    @Override
+    public Wind getWindInternal() {
+        return wind;
+    }
+
+    @Override
+    public void setWindInternal(Wind wind) {
+        this.wind = wind;
     }
 
     public TimePoint getTimePointBeforeForAnalysis() {

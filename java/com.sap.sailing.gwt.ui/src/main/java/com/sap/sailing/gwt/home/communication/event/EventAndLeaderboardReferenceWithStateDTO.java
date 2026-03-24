@@ -2,8 +2,8 @@ package com.sap.sailing.gwt.home.communication.event;
 
 import java.util.UUID;
 
-import com.sap.sailing.gwt.common.communication.event.EventReferenceDTO;
 import com.sap.sailing.gwt.common.communication.event.EventState;
+import com.sap.sailing.gwt.ui.shared.EventReferenceDTO;
 
 public class EventAndLeaderboardReferenceWithStateDTO extends EventReferenceDTO {
     

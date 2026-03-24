@@ -17,12 +17,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
 
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.tracking.GPSFix;
 import com.sap.sailing.expeditionconnector.ExpeditionListener;
 import com.sap.sailing.expeditionconnector.ExpeditionMessage;
 import com.sap.sailing.expeditionconnector.ExpeditionTrackerFactory;
 import com.sap.sailing.expeditionconnector.UDPExpeditionReceiver;
+import com.sap.sse.common.SpeedWithBearing;
 
 public class ExpeditionWindMeasureStatusGetServlet extends SailingServerHttpServletWithPostBasedContentReplacing implements ExpeditionListener {
     private static final long serialVersionUID = -6791613843435009810L;
@@ -44,7 +44,7 @@ public class ExpeditionWindMeasureStatusGetServlet extends SailingServerHttpServ
         if (!isExpeditionListenerRegistered) {
             isExpeditionListenerRegistered = registerExpeditionListener();
         }
-        writePostRefreshingHeadAndBodyWithRefreshForm(req, resp, "Expedition Wind Status");
+        writePostRefreshingHeadAndBodyWithRefreshForm(req, resp, "Expedition Wind Status", "/sailingserver/expeditionWindStatus");
     }
     
     @Override

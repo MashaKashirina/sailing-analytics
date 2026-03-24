@@ -44,9 +44,12 @@ import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
+import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.RaceLogStore;
 import com.sap.sailing.domain.regattalog.RegattaLogStore;
+import com.sap.sailing.domain.shared.tracking.impl.TrackingConnectorInfoImpl;
 import com.sap.sailing.domain.tracking.AbstractRaceTrackerImpl;
 import com.sap.sailing.domain.tracking.DynamicRaceDefinitionSet;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
@@ -60,7 +63,6 @@ import com.sap.sailing.domain.tracking.WindStore;
 import com.sap.sailing.domain.tracking.WindTrack;
 import com.sap.sailing.domain.tracking.impl.AbstractRaceChangeListener;
 import com.sap.sailing.domain.tracking.impl.TrackedRaceStatusImpl;
-import com.sap.sailing.domain.tracking.impl.TrackingConnectorInfoImpl;
 import com.sap.sailing.domain.yellowbrickadapter.YellowBrickRace;
 import com.sap.sailing.domain.yellowbrickadapter.YellowBrickRaceTrackingConnectivityParams;
 import com.sap.sailing.domain.yellowbrickadapter.YellowBrickTrackingAdapter;
@@ -125,7 +127,9 @@ implements TrackingDataLoader {
             RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
             long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, RaceLogStore raceLogStore,
             RegattaLogStore regattaLogStore, DomainFactory baseDomainFactory,
-            YellowBrickTrackingAdapter yellowBrickTrackingAdapter) throws IOException, ParseException {
+            YellowBrickTrackingAdapter yellowBrickTrackingAdapter,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws IOException, ParseException {
         super(connectivityParams);
         visitors = new HashMap<>();
         this.timePointOfLastFixPerDeviceSerialNumber = new HashMap<>();
@@ -148,7 +152,8 @@ implements TrackingDataLoader {
                     }
                 }, /* useInternalMarkPassingAlgorithm */ true, raceLogResolver,
                 /* Not needed because the RaceTracker is not active on a replica */ Optional.empty(),
-                new TrackingConnectorInfoImpl(YellowBrickTrackingAdapter.NAME, "https://www.ybtracking.com/", /* TODO any default YB tracker URL? */ null), /* markPassingRaceFingerprintRegistry */ null);
+                new TrackingConnectorInfoImpl(YellowBrickTrackingAdapter.NAME, "https://www.ybtracking.com/", /* TODO any default YB tracker URL? */ null),
+                markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
         addRaceLogListenerForCourseUpdates();
         loadStoredData();
         schedulePeriodicPollingTask();

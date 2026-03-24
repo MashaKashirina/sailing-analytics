@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.maneuverdetection.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -12,14 +12,13 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.WindSourceType;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.common.impl.WindSourceImpl;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
@@ -34,6 +33,7 @@ import com.sap.sailing.domain.tracking.impl.DynamicTrackedRaceImpl;
 import com.sap.sailing.domain.tractracadapter.ReceiverType;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
@@ -48,7 +48,7 @@ public class IncrementalManeuverComputationTest extends AbstractManeuverDetectio
     public IncrementalManeuverComputationTest() throws MalformedURLException, URISyntaxException {
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         URI storedUri = new URI("file:///"
@@ -70,7 +70,7 @@ public class IncrementalManeuverComputationTest extends AbstractManeuverDetectio
     // version
     @SuppressWarnings("deprecation")
     @Test
-    @Ignore
+    @Disabled
     public void testIncrementalDouglasPeucker() throws NoWindException {
         Competitor competitor = getCompetitorByName("Findel");
         DynamicTrackedRaceImpl trackedRace = getTrackedRace();
@@ -94,8 +94,8 @@ public class IncrementalManeuverComputationTest extends AbstractManeuverDetectio
                 competitor);
         Iterable<GPSFixMoving> normallyApproximatedFixes = normalDouglasPeucker
                 .approximate(trackTimeInfo.getTrackStartTimePoint(), trackTimeInfo.getTrackEndTimePoint());
-        assertEquals("Incrementally calculated douglas peucker fixes differ from normally calculated fixes",
-                normallyApproximatedFixes, incrementallyApproximatedFixes);
+        assertEquals(normallyApproximatedFixes,
+                incrementallyApproximatedFixes, "Incrementally calculated douglas peucker fixes differ from normally calculated fixes");
     }
 
     @Test
@@ -135,12 +135,12 @@ public class IncrementalManeuverComputationTest extends AbstractManeuverDetectio
         int performanceBenefitOfIncrementalManeuverDetectionInPercent = (int) ((1.0
                 * (millisForNormalManeuverDetection - millisForIncrementalManeuverDetection)
                 / millisForNormalManeuverDetection) * 100);
-        assertEquals("Incrementally calculated maneuvers differ from normally calculated maneuvers",
-                normallyDetectedManeuvers, incrementallyDetectedManeuvers);
+        assertEquals(normallyDetectedManeuvers,
+                incrementallyDetectedManeuvers, "Incrementally calculated maneuvers differ from normally calculated maneuvers");
         assertTrue(
+                performanceBenefitOfIncrementalManeuverDetectionInPercent >= 20,
                 "Incremental maneuver detection was not 20% faster in detecting maneuvers incrementally, than the full maneuver detection. The actual performance benefit was: "
-                        + performanceBenefitOfIncrementalManeuverDetectionInPercent + "%",
-                performanceBenefitOfIncrementalManeuverDetectionInPercent >= 20);
+                        + performanceBenefitOfIncrementalManeuverDetectionInPercent + "%");
     }
 
 }

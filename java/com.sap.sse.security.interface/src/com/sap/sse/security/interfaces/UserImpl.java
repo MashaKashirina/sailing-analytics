@@ -19,6 +19,7 @@ import java.util.Set;
 
 import org.apache.shiro.crypto.hash.Sha256Hash;
 
+import com.sap.sse.common.TimedLock;
 import com.sap.sse.security.shared.Account;
 import com.sap.sse.security.shared.Account.AccountType;
 import com.sap.sse.security.shared.RoleDefinition;
@@ -99,23 +100,26 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
     private List<Role> roleListForSerialization;
 
     private Subscription[] subscriptions;
+    
+    private final TimedLock timedLock;
 
     public UserImpl(String name, String email, Map<String, UserGroup> defaultTenantForServer,
-            UserGroupProvider userGroupProvider, Account... accounts) {
-        this(name, email, defaultTenantForServer, Arrays.asList(accounts), userGroupProvider);
+            UserGroupProvider userGroupProvider, TimedLock timedLock, Account... accounts) {
+        this(name, email, defaultTenantForServer, Arrays.asList(accounts), userGroupProvider, timedLock);
     }
 
     public UserImpl(String name, String email, Map<String, UserGroup> defaultTenantForServer,
-            Collection<Account> accounts, UserGroupProvider userGroupProvider) {
+            Collection<Account> accounts, UserGroupProvider userGroupProvider, TimedLock timedLock) {
         this(name, email, /* fullName */ null, /* company */ null, /* locale */ null, /* is email validated */ false,
                 /* password reset secret */ null, /* validation secret */ null, defaultTenantForServer, accounts,
-                userGroupProvider);
+                userGroupProvider, timedLock);
     }
 
     public UserImpl(String name, String email, String fullName, String company, Locale locale, Boolean emailValidated,
             String passwordResetSecret, String validationSecret, Map<String, UserGroup> defaultTenantForServer,
-            Collection<Account> accounts, UserGroupProvider userGroupProvider) {
+            Collection<Account> accounts, UserGroupProvider userGroupProvider, TimedLock timedLock) {
         super(name);
+        this.timedLock = timedLock;
         this.defaultTenantForServer = defaultTenantForServer;
         this.fullName = fullName;
         this.company = company;
@@ -462,5 +466,10 @@ public class UserImpl extends SecurityUserImpl<RoleDefinition, Role, UserGroup, 
             }
         }
         return false;
+    }
+
+    @Override
+    public TimedLock getTimedLock() {
+        return timedLock;
     }
 }

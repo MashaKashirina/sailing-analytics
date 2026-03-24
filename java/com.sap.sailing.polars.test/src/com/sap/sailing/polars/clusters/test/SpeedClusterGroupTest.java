@@ -3,13 +3,14 @@ package com.sap.sailing.polars.clusters.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.Test;
-
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
 import com.sap.sailing.polars.datamining.data.impl.SpeedClusterGroup;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 import com.sap.sse.datamining.data.Cluster;
 
 public class SpeedClusterGroupTest {

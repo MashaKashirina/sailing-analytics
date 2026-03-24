@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.test.tractrac;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,8 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import com.sap.sailing.domain.test.AbstractTracTracLiveTest;
 import com.sap.sse.common.Duration;
 import com.tractrac.model.lib.api.ModelLocator;
 import com.tractrac.model.lib.api.data.IControlPassing;
@@ -67,11 +68,10 @@ public class JorgesTracTracParallelLoadingTest {
             threads.add(new Thread(()->{
                     try {
                         // Download the parameters file and load the race
-                        IRace race = ModelLocator.getEventFactory().createRace(new URI(paramsURIs.get(index)), (int) /* timeout in milliseconds */ Duration.ONE_MINUTE.asMillis());
-
+                        IRace race = ModelLocator.getEventFactory().createRace(AbstractTracTracLiveTest.getTracTracApiToken(), new URI(paramsURIs.get(index)), (int) /* timeout in milliseconds */ Duration.ONE_MINUTE.asMillis());
                         // Create the subscriptions
                         SubscriptionLogger subscriptionLogger = new SubscriptionLogger(race);
-                        IRaceSubscriber raceSubscriber = SubscriptionLocator.getSusbcriberFactory().createRaceSubscriber(race);
+                        IRaceSubscriber raceSubscriber = SubscriptionLocator.getSusbcriberFactory().createRaceSubscriber(AbstractTracTracLiveTest.getTracTracApiToken(), race);
                         raceSubscriber.subscribePositions(subscriptionLogger);
                         raceSubscriber.subscribePositionedItemPositions(subscriptionLogger);
                         raceSubscriber.subscribeControlPassings(subscriptionLogger);
@@ -249,7 +249,7 @@ public class JorgesTracTracParallelLoadingTest {
             fail("Key set differs: a-b="+diff1+", b-a="+diff2+"; in the meantime the following keys were updated: "+outputs.keySet());
         }
         for (String key : firstRunsOutput.keySet()) {
-            assertEquals("values for key "+key+" differ", firstRunsOutput.get(key).toString(), secondRunsOutput.get(key).toString());
+            assertEquals(firstRunsOutput.get(key).toString(), secondRunsOutput.get(key).toString(), "values for key "+key+" differ");
         }
     }
 }

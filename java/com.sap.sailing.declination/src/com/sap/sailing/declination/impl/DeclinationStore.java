@@ -19,12 +19,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 import com.sap.sailing.declination.Declination;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.common.quadtree.QuadTree;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 /**
@@ -207,7 +207,7 @@ public class DeclinationStore {
             existingDeclinationRecord = storedDeclinations.get(point);
         }
         if (existingDeclinationRecord == null
-                || DeclinationServiceImpl.timeAndSpaceDistance(existingDeclinationRecord.getPosition().getDistance(point),
+                || DeclinationServiceImplWithStore.timeAndSpaceDistance(existingDeclinationRecord.getPosition().getDistance(point),
                 timePoint, existingDeclinationRecord.getTimePoint()) > 0.1) {
             // less than ~6 nautical miles and/or ~.6 months off
             fetchAndAppendDeclination(timePoint, point, importer, out);

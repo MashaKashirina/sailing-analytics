@@ -5,8 +5,8 @@ import java.util.Date;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.base.LatLngBounds;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.gwt.ui.client.shared.racemap.CoordinateSystem;
+import com.sap.sse.common.Position;
 
 /**
  * A field of vectors to display in a streamlet {@link Swarm}. The {@link Vector}s returned by {@link #getVector(Position, Date)}
@@ -53,7 +53,7 @@ public interface VectorField {
     /**
      * @param zoomLevel the zoom level as returned by {@link MapWidget#getZoom()}
      */
-    double getMotionScale(int zoomLevel);
+    double getMotionScale(double zoomLevel);
 
     /**
      * A weight between 0.0 and 1.0 (inclusive) that tells the probability at which a particle at position

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.sap.sse.security.shared.HasPermissions;
+import com.sap.sse.security.shared.IPAddress;
 import com.sap.sse.security.shared.RoleDefinition;
 
 /**
@@ -41,14 +42,20 @@ public class SecuredSecurityTypes extends HasPermissionsImpl {
 
     public static enum UserActions implements Action {
         /** Update a user's password without knowing the old password. */
-        FORCE_OVERWRITE_PASSWORD, ADD_SUBSCRIPTION, BE_PREMIUM
+        FORCE_OVERWRITE_PASSWORD, ADD_SUBSCRIPTION, BE_PREMIUM, MANAGE_LOCK
     };
     /**
      * type-relative identifier is the {@link User#getName() username}.
      */
     public static final HasPermissions USER = new SecuredSecurityTypes("USER", DefaultActions
-            .plus(UserActions.FORCE_OVERWRITE_PASSWORD, PublicReadableActions.READ_PUBLIC, UserActions.ADD_SUBSCRIPTION
-                    , UserActions.BE_PREMIUM));
+            .plus(UserActions.FORCE_OVERWRITE_PASSWORD, PublicReadableActions.READ_PUBLIC,
+                  UserActions.ADD_SUBSCRIPTION, UserActions.BE_PREMIUM, UserActions.MANAGE_LOCK));
+
+
+    /**
+     * type-relative identifier is the {@link IPAddress#getName() ip address as String}.
+     */
+    public static final HasPermissions LOCKED_IP = new SecuredSecurityTypes("LOCKED_IP", DefaultActions.values());
 
     /**
      * type-relative identifier is the {@link RoleDefinition#getId() role ID's} string representation
@@ -100,13 +107,23 @@ public class SecuredSecurityTypes extends HasPermissionsImpl {
         /**
          * Access to the {@code ThreadManager} API, e.g., as RESTlet under {@code /threadmanager/api/threads}
          */
-        THREADS;
+        THREADS,
+        /**
+         * Access to the AI Agent and its configuration
+         */
+        CONFIGURE_AI_AGENT,
+        /**
+         * Access to the CORS configuration that controls through which URLs web browser clients may
+         * access this server's REST APIs. See also {@code CORSFilter}.
+         */
+        CONFIGURE_CORS_FILTER
+        ;
 
         private static final Action[] ALL_ACTIONS = new Action[] { CONFIGURE_FILE_STORAGE, CONFIGURE_LOCAL_SERVER,
                 CONFIGURE_REMOTE_INSTANCES, CREATE_OBJECT, CAN_IMPORT_MASTERDATA, CAN_EXPORT_MASTERDATA, DATA_MINING,
-                REPLICATE, START_REPLICATION, READ_REPLICATOR, THREADS,
-                DefaultActions.CHANGE_OWNERSHIP, DefaultActions.CHANGE_ACL, DefaultActions.CREATE, DefaultActions.DELETE,
-                DefaultActions.READ, DefaultActions.UPDATE };
+                REPLICATE, START_REPLICATION, READ_REPLICATOR, THREADS, CONFIGURE_AI_AGENT, CONFIGURE_CORS_FILTER,
+                DefaultActions.CHANGE_OWNERSHIP, DefaultActions.CHANGE_ACL, DefaultActions.CREATE,
+                DefaultActions.DELETE, DefaultActions.READ, DefaultActions.UPDATE };
     }
 
     /**

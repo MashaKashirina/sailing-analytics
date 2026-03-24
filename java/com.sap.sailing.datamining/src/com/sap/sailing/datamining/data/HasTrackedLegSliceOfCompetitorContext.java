@@ -10,7 +10,7 @@ import com.sap.sse.datamining.annotations.Dimension;
  * @author Axel Uhl (d043530)
  *
  */
-public interface HasTrackedLegSliceOfCompetitorContext extends AbstractHasTrackedLegSliceOfCompetitorContext {
+public interface HasTrackedLegSliceOfCompetitorContext extends TerminalHasTrackedLegSliceOfCompetitorContext {
     /**
      * one-based; e.g., if there are ten slices, they have slice numbers 1..10
      */

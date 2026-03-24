@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -18,9 +19,11 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -33,6 +36,7 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 
 import com.sap.sailing.domain.common.LeaderboardNameConstants;
+import com.sap.sailing.landscape.common.SharedLandscapeConstants;
 import com.sap.sailing.server.gateway.serialization.LeaderboardGroupConstants;
 import com.sap.sailing.shared.server.gateway.jaxrs.AbstractSailingServerResource;
 import com.sap.sse.common.Util;
@@ -47,8 +51,8 @@ public class CompareServersResource extends AbstractSailingServerResource {
 
     public static final Logger logger = Logger.getLogger(CompareServersResource.class.getName());
 
-    private static final String LEADERBOARDGROUPSPATH = "/sailingserver/api/v1/leaderboardgroups";
-    private static final String LEADERBOARDGROUPSIDENTIFIABLEPATH = LEADERBOARDGROUPSPATH+"/identifiable";
+    private static final String LEADERBOARDGROUPSPATH = "/sailingserver/api"+LeaderboardGroupsResource.V1_LEADERBOARDGROUPS;
+    private static final String LEADERBOARDGROUPSIDENTIFIABLEPATH = LEADERBOARDGROUPSPATH+LeaderboardGroupsResource.IDENTIFIABLE;
     public static final String SERVER1_FORM_PARAM = "server1";
     public static final String SERVER2_FORM_PARAM = "server2";
     public static final String USER1_FORM_PARAM = "user1";
@@ -104,6 +108,25 @@ public class CompareServersResource extends AbstractSailingServerResource {
     UriInfo uriInfo;
     
     /**
+     * Forwards to the POST method; user authentication is taken from the request's authentication. Therefore, no
+     * separate authentications for the two servers to compare can be provided. The server receiving this request will
+     * act as the default for "server1". This is a convenience method for quick comparisons of two
+     * servers without needing to provide authentication information, assuming that the server receiving this request
+     * shares its security service with the server specified as "server2" through replication, and that the user
+     * authenticated for this request has access to both servers. For more complex use cases, use the POST method
+     * directly.
+     */
+    @GET
+    @Produces("application/json;charset=UTF-8")
+    public Response compareServersGet(
+            @QueryParam(SERVER1_FORM_PARAM) String server1, 
+            @QueryParam(SERVER2_FORM_PARAM) String server2,
+            @QueryParam(LEADERBOARDGROUP_UUID_FORM_PARAM) Set<String> uuidset) throws MalformedURLException {
+        return compareServers(server1, server2, uuidset, /* user1 */ null, /* user2 */ null, /* password1 */ null,
+                /* password2 */ null, /* bearer1 */ null, /* bearer2 */ null);
+    }
+    
+    /**
      * @param server1
      *            optional; if not provided, the server receiving this request will act as the default for "server1"
      * @param user1
@@ -153,12 +176,18 @@ public class CompareServersResource extends AbstractSailingServerResource {
             @FormParam(PASSWORD1_FORM_PARAM) String password1,
             @FormParam(PASSWORD2_FORM_PARAM) String password2,
             @FormParam(BEARER1_FORM_PARAM) String bearer1,
-            @FormParam(BEARER2_FORM_PARAM) String bearer2) {
+            @FormParam(BEARER2_FORM_PARAM) String bearer2) throws MalformedURLException {
         final Map<String, Set<Object>> result = new HashMap<>();
         Response response = null;
         final String effectiveServer1 = !Util.hasLength(server1) ? uriInfo.getBaseUri().getAuthority() : server1;
-        if (!validateParameters(server2, uuidset, user1, user2, password1, password2, bearer1, bearer2)) {
-            response = badRequest("Specify two server names and optionally a set of valid leaderboardgroup UUIDs.");
+        final URL url1 = RemoteServerUtil.createBaseUrl(effectiveServer1);
+        final URL url2 = RemoteServerUtil.createBaseUrl(server2);
+        if (!SharedLandscapeConstants.isTrustedDomain(url1.getHost())) {
+            response = badRequest("Untrusted domain for "+url1);
+        } else if (!SharedLandscapeConstants.isTrustedDomain(url2.getHost())) {
+            response = badRequest("Untrusted domain for "+url2);
+        } else if (!validateParameters(server2, uuidset, user1, user2, password1, password2, bearer1, bearer2)) {
+            response = badRequest("Specify two trusted server names and optionally a set of valid leaderboardgroup UUIDs.");
         } else {
             final String token1 = getSecurityService().getOrCreateTargetServerBearerToken(effectiveServer1, user1, password1, bearer1);
             final String token2 = getSecurityService().getOrCreateTargetServerBearerToken(server2, user2, password2, bearer2);
@@ -196,7 +225,7 @@ public class CompareServersResource extends AbstractSailingServerResource {
                         }
                     }
                 }
-                JSONObject json = new JSONObject();
+                final JSONObject json = new JSONObject();
                 for (Entry<String, Set<Object>> entry : result.entrySet()) {
                     json.put(entry.getKey(), entry.getValue());
                 }

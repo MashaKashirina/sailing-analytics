@@ -1,14 +1,14 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import com.sap.sailing.domain.common.SpeedWithBearing;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.MeterPerSecondSpeedImpl;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
+import com.sap.sse.common.impl.MeterPerSecondSpeedImpl;
 
 public class SpeedUnitTest {
     @Test

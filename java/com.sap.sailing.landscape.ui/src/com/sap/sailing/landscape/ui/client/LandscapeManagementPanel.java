@@ -39,6 +39,7 @@ import com.sap.sailing.landscape.ui.client.CreateApplicationReplicaSetDialog.Cre
 import com.sap.sailing.landscape.ui.client.MoveMasterProcessDialog.MoveMasterToOtherInstanceInstructions;
 import com.sap.sailing.landscape.ui.client.SwitchToReplicaOnSharedInstanceDialog.SwitchToReplicaOnSharedInstanceDialogInstructions;
 import com.sap.sailing.landscape.ui.client.UpgradeApplicationReplicaSetDialog.UpgradeApplicationReplicaSetInstructions;
+import com.sap.sailing.landscape.ui.client.UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions;
 import com.sap.sailing.landscape.ui.client.i18n.StringMessages;
 import com.sap.sailing.landscape.ui.shared.AmazonMachineImageDTO;
 import com.sap.sailing.landscape.ui.shared.AvailabilityZoneDTO;
@@ -323,8 +324,19 @@ public class LandscapeManagementPanel extends SimplePanel {
                 applicationReplicaSetToArchive -> archiveApplicationReplicaSet(stringMessages,
                         regionsTable.getSelectionModel().getSelectedObject(), applicationReplicaSetToArchive));
         applicationReplicaSetsActionColumn.addAction(ApplicationReplicaSetsImagesBarCell.ACTION_UPGRADE,
-                applicationReplicaSetToUpgrade -> upgradeApplicationReplicaSet(stringMessages,
-                        regionsTable.getSelectionModel().getSelectedObject(), Collections.singleton(applicationReplicaSetToUpgrade)));
+                applicationReplicaSetToUpgrade -> {
+                    if (applicationReplicaSetToUpgrade.isArchive()) {
+                        upgradeArchiveServer(stringMessages,
+                            regionsTable.getSelectionModel().getSelectedObject(), applicationReplicaSetToUpgrade);
+                    } else {
+                        upgradeApplicationReplicaSet(stringMessages,
+                            regionsTable.getSelectionModel().getSelectedObject(), Collections.singleton(applicationReplicaSetToUpgrade));
+                    }
+                }
+        );
+        applicationReplicaSetsActionColumn.addAction(ApplicationReplicaSetsImagesBarCell.ACTION_ACTIVATE_ARCHIVE_CANDIDATE,
+                applicationReplicaSetToActivateAsNewArchive -> makeCandidateArchiveServerGoLive(stringMessages,
+                        regionsTable.getSelectionModel().getSelectedObject(), applicationReplicaSetToActivateAsNewArchive));
         applicationReplicaSetsActionColumn.addAction(ApplicationReplicaSetsImagesBarCell.ACTION_DEFINE_LANDING_PAGE,
                 applicationReplicaSetForWhichToDefineLandingPage -> defineLandingPage(stringMessages,
                         regionsTable.getSelectionModel().getSelectedObject(), applicationReplicaSetForWhichToDefineLandingPage));
@@ -353,7 +365,11 @@ public class LandscapeManagementPanel extends SimplePanel {
                         regionsTable.getSelectionModel().getSelectedObject(),
                         Collections.singleton(applicationReplicaSetToUpgrade)));
         applicationReplicaSetsActionColumn.addAction(ApplicationReplicaSetsImagesBarCell.ACTION_OPEN_SHARD_MANAGEMENT,
-                selectedReplicaSet -> openShardManagementPanel(stringMessages, regionsTable.getSelectionModel().getSelectedObject(), selectedReplicaSet));
+                selectedReplicaSet -> openShardManagementPanel(stringMessages, regionsTable.getSelectionModel().getSelectedObject(), selectedReplicaSet,
+                        sshKeyManagementPanel.getSelectedKeyPair().getName(),
+                        sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
+                                ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes()
+                                : null));
         applicationReplicaSetsActionColumn.addAction(ApplicationReplicaSetsImagesBarCell.ACTION_MOVE_ALL_APPLICATION_PROCESSES_AWAY_FROM,
                 applicationReplicaSetWhoseMastersHostToDecommission -> moveAllApplicationProcessesAwayFrom(stringMessages,
                         applicationReplicaSetWhoseMastersHostToDecommission));
@@ -529,10 +545,12 @@ public class LandscapeManagementPanel extends SimplePanel {
        proxiesTable.addColumn(reverseProxyDTO -> reverseProxyDTO.getName(), stringMessages.name());
        proxiesTable.addColumn(instanceIdProxiesColumn, stringMessages.instanceId());
        proxiesTable.addColumn(amiProxyProxiesColumn, stringMessages.id());
-       proxiesTable.addColumn(instancePublicIpProxiesColumn  , stringMessages.publicIp());
+       proxiesTable.addColumn(instancePublicIpProxiesColumn, stringMessages.publicIp());
        proxiesTable.addColumn(instancePrivateIpProxiesColumn, stringMessages.privateIp());
        proxiesTable.addColumn(reverseProxyDTO -> reverseProxyDTO.getAvailabilityZoneName(), stringMessages.availabilityZone());
        proxiesTable.addColumn(reverseProxyDTO -> reverseProxyDTO.getHealth(), stringMessages.state());
+       proxiesTable.addColumn(reverseProxyDTO -> reverseProxyDTO.getLaunchTimePoint().toString(), stringMessages.startTimePoint(),
+               (rp1, rp2)->rp1.getLaunchTimePoint().compareTo(rp2.getLaunchTimePoint())); // don't compare by string representation but time point4
        //setup actions
        final ActionsColumn<ReverseProxyDTO, ReverseProxyImagesBarCell> proxiesActionColumn = new ActionsColumn<ReverseProxyDTO, ReverseProxyImagesBarCell>(
                new ReverseProxyImagesBarCell(stringMessages), (revProxy, action) -> true);
@@ -601,8 +619,9 @@ public class LandscapeManagementPanel extends SimplePanel {
        // TODO upon region selection show RabbitMQ, and Central Reverse Proxy clusters in region
    }
 
-    private void openShardManagementPanel(StringMessages stringMessages, String region, SailingApplicationReplicaSetDTO<String> replicaset) {
-        new ShardManagementDialog(landscapeManagementService, replicaset, region, errorReporter, stringMessages, new DialogCallback<Boolean>() {
+    private void openShardManagementPanel(StringMessages stringMessages, String region, SailingApplicationReplicaSetDTO<String> replicaset, String optionalKeyName, byte[] privateKeyEncryptionPassphrase) {
+        new ShardManagementDialog(landscapeManagementService, replicaset, region, errorReporter, stringMessages,
+                optionalKeyName, privateKeyEncryptionPassphrase, new DialogCallback<Boolean>() {
             @Override
             public void ok(Boolean hasAnythingChanged) {
                 if (hasAnythingChanged) {
@@ -941,9 +960,9 @@ public class LandscapeManagementPanel extends SimplePanel {
                                         applicationReplicaSetToDefineLandingPageFor.getMaster(),
                                         applicationReplicaSetToDefineLandingPageFor.getReplicas(),
                                         applicationReplicaSetToDefineLandingPageFor.getVersion(),
+                                        applicationReplicaSetToDefineLandingPageFor.getReleaseNotesLink(),
                                         applicationReplicaSetToDefineLandingPageFor.getHostname(),
-                                        newDefaultRedirect,
-                                        applicationReplicaSetToDefineLandingPageFor.getAutoScalingGroupAmiId()));
+                                        newDefaultRedirect, applicationReplicaSetToDefineLandingPageFor.getAutoScalingGroupAmiId()));
                                 Notification.notify(stringMessages.successfullyUpdatedLandingPage(), NotificationType.SUCCESS);
                             }
                         });
@@ -984,6 +1003,7 @@ public class LandscapeManagementPanel extends SimplePanel {
                         /* maximum auto-scaling group size remains at default: */ null,
                         instructions.getOptionalMemoryInMegabytesOrNull(),
                         instructions.getOptionalMemoryTotalSizeFactorOrNull(),
+                        instructions.getOptionalIgtimiRiotPort(),
                         new AsyncCallback<SailingApplicationReplicaSetDTO<String>>() {
                          @Override
                          public void onFailure(Throwable caught) {
@@ -1067,6 +1087,7 @@ public class LandscapeManagementPanel extends SimplePanel {
                                                 /* minimum auto-scaling group size: */ instructions.isFirstReplicaOnSharedInstance() ? 0 : null,
                                                 /* maximum auto-scaling group size (use default) */ null,
                                                 instructions.getOptionalMemoryInMegabytesOrNull(), instructions.getOptionalMemoryTotalSizeFactorOrNull(),
+                                                instructions.getOptionalIgtimiRiotPort(),
                                                 getMasterHostFromFirstSelectedApplicationReplicaSetThatIsNot(applicationReplicaSetOnWhichToDeployMaster),
                                                 new AsyncCallback<SailingApplicationReplicaSetDTO<String>>() {
                                  @Override
@@ -1397,7 +1418,7 @@ public class LandscapeManagementPanel extends SimplePanel {
                                     new Timer() {
                                         @Override
                                         public void run() {
-                                            landscapeManagementService.upgradeApplicationReplicaSet(regionId, replicaSet,
+                                            landscapeManagementService.upgradeApplicationReplicaSet(regionId, replicaSet, 
                                                     upgradeInstructions.getReleaseNameOrNullForLatestMaster(),
                                                     sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
                                                             sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
@@ -1437,6 +1458,86 @@ public class LandscapeManagementPanel extends SimplePanel {
                 }).show();
             }
         });
+    }
+    
+    private void upgradeArchiveServer(StringMessages stringMessages, String regionId,
+            SailingApplicationReplicaSetDTO<String> archiveReplicaSet) {
+        applicationReplicaSetsBusy.setBusy(true);
+        landscapeManagementService.getReleases(new AsyncCallback<ArrayList<ReleaseDTO>>() {
+            @Override
+            public void onFailure(Throwable caught) {
+                applicationReplicaSetsBusy.setBusy(false);
+                errorReporter.reportError(caught.getMessage());
+            }
+            
+            @Override
+            public void onSuccess(ArrayList<ReleaseDTO> releases) {
+                new UpgradeArchiveServerDialog(landscapeManagementService, archiveReplicaSet.getMaster().getHost().getInstanceType(),
+                        releases.stream().map(r->r.getName())::iterator,
+                        stringMessages, errorReporter, new DialogCallback<UpgradeArchiveServerDialog.UpgradeArchiveServerInstructions>() {
+                            @Override
+                            public void ok(UpgradeArchiveServerInstructions upgradeInstructions) {
+                                landscapeManagementService.createArchiveReplicaSet(regionId, archiveReplicaSet, upgradeInstructions.getInstanceTypeOrNull(), 
+                                        upgradeInstructions.getReleaseNameOrNullForLatestMaster(), sshKeyManagementPanel.getSelectedKeyPair()==null?null:sshKeyManagementPanel.getSelectedKeyPair().getName(),
+                                        sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
+                                        ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes() : null,
+                                                upgradeInstructions.getMasterReplicationBearerToken(), upgradeInstructions.getReplicaReplicationBearerToken(),
+                                                upgradeInstructions.getOptionalMemoryInMegabytesOrNull(), upgradeInstructions.getOptionalMemoryTotalSizeFactorOrNull(),
+                                        new AsyncCallback<Void>() {
+                                    @Override
+                                    public void onFailure(Throwable caught) {
+                                        applicationReplicaSetsBusy.setBusy(false);
+                                        errorReporter.reportError(caught.getMessage());
+                                    }
+
+                                    @Override
+                                    public void onSuccess(Void result) {
+                                        applicationReplicaSetsBusy.setBusy(false);
+                                                Notification.notify(
+                                                        stringMessages.successfullyLaunchedNewArchiveCandidate(
+                                                                archiveReplicaSet.getName(),
+                                                                upgradeInstructions
+                                                                        .getReleaseNameOrNullForLatestMaster() == null
+                                                                                ? "Default"
+                                                                                : upgradeInstructions
+                                                                                        .getReleaseNameOrNullForLatestMaster()),
+                                                        NotificationType.SUCCESS);
+                                            }
+                                });
+                            }
+
+                            @Override
+                            public void cancel() {
+                                applicationReplicaSetsBusy.setBusy(false);
+                            }
+                }).show();
+            }
+        });
+    }
+
+    private void makeCandidateArchiveServerGoLive(StringMessages stringMessages, String regionId, SailingApplicationReplicaSetDTO<String> archiveReplicaSetToUpgrade) {
+        if (Window.confirm(stringMessages.reallySwitchToNewArchiveCandidate())) {
+            applicationReplicaSetsBusy.setBusy(true);
+            landscapeManagementService.makeCandidateArchiveServerGoLive(regionId, archiveReplicaSetToUpgrade,
+                    sshKeyManagementPanel.getSelectedKeyPair() == null ? null
+                            : sshKeyManagementPanel.getSelectedKeyPair().getName(),
+                    sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption() != null
+                            ? sshKeyManagementPanel.getPassphraseForPrivateKeyDecryption().getBytes()
+                            : null,
+                    new AsyncCallback<Void>() {
+                        @Override
+                public void onFailure(Throwable caught) {
+                    applicationReplicaSetsBusy.setBusy(false);
+                    errorReporter.reportError(caught.getMessage());
+                }
+    
+                @Override
+                public void onSuccess(Void result) {
+                    applicationReplicaSetsBusy.setBusy(false);
+                    Notification.notify(stringMessages.successfullySwitchedToNewArchiveCandidate(archiveReplicaSetToUpgrade.getName()), NotificationType.SUCCESS);
+                }
+            });
+        }
     }
 
     private void refreshRegionsTable(UserService userService) {

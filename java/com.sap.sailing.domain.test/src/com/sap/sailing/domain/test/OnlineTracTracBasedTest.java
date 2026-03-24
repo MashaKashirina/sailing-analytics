@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 import java.io.FileNotFoundException;
@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.DomainFactory;
@@ -25,9 +25,7 @@ import com.sap.sailing.domain.base.Mark;
 import com.sap.sailing.domain.base.RaceDefinition;
 import com.sap.sailing.domain.base.Regatta;
 import com.sap.sailing.domain.base.Waypoint;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixImpl;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
@@ -51,7 +49,9 @@ import com.sap.sailing.domain.tractracadapter.ReceiverType;
 import com.sap.sailing.domain.tractracadapter.TracTracConnectionConstants;
 import com.sap.sailing.domain.tractracadapter.impl.AbstractLoadingQueueDoneCallBack;
 import com.sap.sailing.domain.tractracadapter.impl.DomainFactoryImpl;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.tractrac.model.lib.api.event.CreateModelException;
 import com.tractrac.model.lib.api.event.IRace;
@@ -91,7 +91,7 @@ public abstract class OnlineTracTracBasedTest extends AbstractTracTracLiveTest i
         super();
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         domainFactory = new DomainFactoryImpl(new com.sap.sailing.domain.base.impl.DomainFactoryImpl(DomainFactory.TEST_RACE_LOG_RESOLVER));
         // keep superclass implementation from automatically setting up for a Weymouth event and force subclasses
@@ -133,8 +133,8 @@ public abstract class OnlineTracTracBasedTest extends AbstractTracTracLiveTest i
         ArrayList<Receiver> receivers = new ArrayList<Receiver>();
         for (Receiver r : domainFactory.getUpdateReceivers(trackedRegatta, getTracTracRace(), EmptyWindStore.INSTANCE, /* delayToLiveInMillis */0l, /* simulator */null, createRaceDefinitionSet(),
                 /* trackedRegattaRegistry */ null,
-                mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */null, /* tracTracPassword */
-                /* tracTracUsername */null, null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
+                mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null,/* maneuverRaceFingerprintRegistry */ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */null, /* tracTracPassword */
+                /* tracTracApiToken */null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
                 RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS, new DefaultRaceTrackingHandler(), /* raceAndCompetitorStatusWithRaceLogReconciler */ null, receiverTypes)) {
             receivers.add(r);
         }
@@ -149,12 +149,9 @@ public abstract class OnlineTracTracBasedTest extends AbstractTracTracLiveTest i
                 case Begin:
                     logger.info("Stored data begin");
                     lastStatus = new TrackedRaceStatusImpl(TrackedRaceStatusEnum.LOADING, 0);
-                    new Thread(()->{
-                        final RaceDefinition raceDefinition = domainFactory.getAndWaitForRaceDefinition(getTracTracRace().getId(), /* timeout in millis */ 10000);
-                        if (trackedRegatta != null && raceDefinition != null && trackedRegatta.getTrackedRace(raceDefinition) != null) {
-                            trackedRegatta.getTrackedRace(raceDefinition).onStatusChanged(OnlineTracTracBasedTest.this, lastStatus);
-                        }
-                    }, "waiting for race definition for race "+getTracTracRace().getId()).start();
+                    if (getTrackedRace() != null) {
+                        getTrackedRace().onStatusChanged(OnlineTracTracBasedTest.this, lastStatus);
+                    }
                     break;
                 case End:
                     logger.info("Stored data end. Delaying status update on tracked race "+getTrackedRace()+" until all events queued in receivers so far have been processed");

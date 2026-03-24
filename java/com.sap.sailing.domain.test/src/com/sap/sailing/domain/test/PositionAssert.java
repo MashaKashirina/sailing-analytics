@@ -1,17 +1,17 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Set;
 
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
 import com.sap.sailing.domain.common.tracking.GPSFix;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 
 /**
  * Contains equality assertions for "compact" fixes, allowing for deltas to be specified, assuming

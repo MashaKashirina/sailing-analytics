@@ -28,7 +28,7 @@ public abstract class RegattaFactory {
         regatta.canBoatsOfCompetitorsChangePerRace = false;
         regatta.buoyZoneRadiusInHullLengths = Regatta.DEFAULT_BUOY_ZONE_RADIUS_IN_HULL_LENGTHS;
         regatta.courseAreas = new ArrayList<>();
-        Util.addAll(event.venue.getCourseAreas(), regatta.courseAreas);
+        Util.addAll(event.getVenue().getCourseAreas(), regatta.courseAreas);
         return regatta;
     }
 }

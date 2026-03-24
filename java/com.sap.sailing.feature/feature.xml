@@ -50,6 +50,10 @@ Computes leaderboard information for sailing races and offers RESTful APIs to al
          version="0.0.0"/>
 
    <plugin
+         id="com.sap.sailing.domain.vakarosadapter"
+         version="0.0.0"/>
+
+   <plugin
          id="com.sap.sailing.domain.windfinderadapter"
          version="0.0.0"/>
 
@@ -127,6 +131,10 @@ Computes leaderboard information for sailing races and offers RESTful APIs to al
 
    <plugin
          id="com.sap.sailing.sailwave.resultimport"
+         version="0.0.0"/>
+
+   <plugin
+         id="com.sap.sailing.sailwave.html.resultimport"
          version="0.0.0"/>
 
    <plugin
@@ -331,6 +339,22 @@ Computes leaderboard information for sailing races and offers RESTful APIs to al
 
    <plugin
          id="com.sap.sailing.domain.queclinkadapter"
+         version="0.0.0"/>
+
+   <plugin
+         id="com.sap.sailing.aiagent.interfaces"
+         version="0.0.0"/>
+
+   <plugin
+         id="com.sap.sailing.aiagent"
+         version="0.0.0"/>
+
+   <plugin
+         id="com.sap.sailing.aiagent.persistence"
+         version="0.0.0"/>
+
+   <plugin
+         id="com.sap.sailing.aiagent.gateway"
          version="0.0.0"/>
 
 </feature>

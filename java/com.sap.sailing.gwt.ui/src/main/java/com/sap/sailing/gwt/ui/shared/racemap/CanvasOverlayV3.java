@@ -40,9 +40,9 @@ import com.google.gwt.maps.client.overlays.overlayhandlers.OverlayViewMethods;
 import com.google.gwt.maps.client.overlays.overlayhandlers.OverlayViewOnAddHandler;
 import com.google.gwt.maps.client.overlays.overlayhandlers.OverlayViewOnDrawHandler;
 import com.google.gwt.maps.client.overlays.overlayhandlers.OverlayViewOnRemoveHandler;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.gwt.ui.client.shared.racemap.CoordinateSystem;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.impl.DegreeBearingImpl;
 
 /**
@@ -50,7 +50,6 @@ import com.sap.sse.common.impl.DegreeBearingImpl;
  * @author Frank
  */
 public abstract class CanvasOverlayV3 {
-    
     private OverlayView customOverlayView;
     
     /**
@@ -78,8 +77,6 @@ public abstract class CanvasOverlayV3 {
      */
     protected final int zIndex;
 
-    protected MapCanvasProjection mapProjection;
-    
     protected final CoordinateSystem coordinateSystem;
     
     /**
@@ -102,7 +99,6 @@ public abstract class CanvasOverlayV3 {
         this.transitionTimeInMilliseconds = -1; // no animated position transition initially
         this.map = map;
         this.zIndex = zIndex;
-        this.mapProjection = null;
         this.coordinateSystem = coordinateSystem;
         canvas = Canvas.createIfSupported();
         canvas.getElement().getStyle().setZIndex(zIndex);
@@ -236,7 +232,7 @@ public abstract class CanvasOverlayV3 {
         this.latLngPosition = latLngPosition;
     }
 
-    protected MapWidget getMap() {
+    public MapWidget getMap() {
         return map;
     }
 
@@ -261,7 +257,6 @@ public abstract class CanvasOverlayV3 {
         return new OverlayViewOnDrawHandler() {
             @Override
             public void onDraw(OverlayViewMethods methods) {
-                mapProjection = methods.getProjection();
                 draw();
             }
         };
@@ -434,10 +429,6 @@ public abstract class CanvasOverlayV3 {
         }
     }
 
-    public MapCanvasProjection getMapProjection() {
-        return mapProjection;
-    }
-
     protected void updateTransition(long timeForPositionTransitionMillis) {
         if (timeForPositionTransitionMillis == -1) {
             removeCanvasPositionAndRotationTransition();
@@ -448,5 +439,9 @@ public abstract class CanvasOverlayV3 {
 
     public int getZIndex() {
         return zIndex;
+    }
+
+    public MapCanvasProjection getMapProjection() {
+        return customOverlayView.getProjection();
     }
 }

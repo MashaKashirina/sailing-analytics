@@ -1,9 +1,9 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.text.ParseException;
@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.BoatClass;
@@ -37,16 +37,8 @@ import com.sap.sailing.domain.base.impl.RaceDefinitionImpl;
 import com.sap.sailing.domain.base.impl.RegattaImpl;
 import com.sap.sailing.domain.base.impl.TeamImpl;
 import com.sap.sailing.domain.common.CompetitorRegistrationType;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.ScoringSchemeType;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.confidence.Weigher;
-import com.sap.sailing.domain.common.confidence.impl.PositionAndTimePointWeigher;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.common.tracking.impl.CompactionNotPossibleException;
 import com.sap.sailing.domain.common.tracking.impl.VeryCompactWindImpl;
@@ -69,10 +61,18 @@ import com.sap.sailing.domain.tracking.impl.WindWithConfidenceImpl;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Color;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
+import com.sap.sse.common.confidence.Weigher;
+import com.sap.sse.common.confidence.impl.PositionAndTimePointWeigher;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
+import com.sap.sse.common.impl.MeterDistance;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 public class WindTest {
@@ -356,7 +356,7 @@ public class WindTest {
                 EmptyWindStore.INSTANCE, /* delayToLiveInMillis */ 1000,
                         /* millisecondsOverWhichToAverageWind */ 30000,
                         /* millisecondsOverWhichToAverageSpeed */ 30000, /*useMarkPassingCalculator*/ false, OneDesignRankingMetric::new,
-                        mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                        mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         TimePoint start = MillisecondsTimePoint.now();
         TimePoint topMarkRounding = start.plus(30000);
         TimePoint finish = topMarkRounding.plus(30000);

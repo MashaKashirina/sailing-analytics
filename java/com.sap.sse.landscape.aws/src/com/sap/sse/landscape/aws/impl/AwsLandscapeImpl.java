@@ -155,6 +155,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTarg
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetGroupsResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetHealthResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.IpAddressType;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.LoadBalancer;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.LoadBalancerAttribute;
@@ -197,6 +198,9 @@ import software.amazon.awssdk.services.route53.model.TestDnsAnswerResponse;
 import software.amazon.awssdk.services.route53.paginators.ListResourceRecordSetsIterable;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.Credentials;
+import software.amazon.awssdk.services.wafv2.Wafv2Client;
+import software.amazon.awssdk.services.wafv2.model.ListWebAcLsResponse;
+import software.amazon.awssdk.services.wafv2.model.Scope;
 
 public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> {
     private static final String SSL_SECURITY_POLICY = "ELBSecurityPolicy-FS-1-2-Res-2019-08";
@@ -305,6 +309,10 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
         return getClient(ElasticLoadBalancingV2Client.builder(), region);
     }
     
+    private Wafv2Client getWafClient(Region region) {
+        return getClient(Wafv2Client.builder(), region);
+    }
+    
     private ElasticLoadBalancingV2AsyncClient getLoadBalancingAsyncClient(Region region) {
         return getClient(ElasticLoadBalancingV2AsyncClient.builder(), region);
     }
@@ -341,6 +349,7 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
         final CreateLoadBalancerResponse response = client
                 .createLoadBalancer(CreateLoadBalancerRequest.builder()
                         .name(name)
+                        .ipAddressType(IpAddressType.DUALSTACK) // IPv4 and IPv6
                         .subnetMappings(subnetMappings)
                         .securityGroups(getDefaultSecurityGroupForApplicationLoadBalancer(region).getId())
                         .build());
@@ -352,7 +361,26 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
         final ApplicationLoadBalancer<ShardingKey> result = new ApplicationLoadBalancerImpl<>(region, response.loadBalancers().iterator().next(), this);
         createLoadBalancerHttpListener(result);
         createLoadBalancerHttpsListener(result);
+        getWafACLsByTagAndAssociateWithALB(LandscapeConstants.WEB_ACL_PURPOSE_TAG, LandscapeConstants.WEB_ACL_GEOBLOCKING_PURPOSE, result.getArn(), awsRegion);
         return result;
+    }
+    
+    private void getWafACLsByTagAndAssociateWithALB(String tagKey, String tagValue, String albArn, Region region) {
+        logger.info("Trying to find WAF ACLs with tag "+tagKey+"="+tagValue+" to associate with ALB "+albArn+" in region "+region.id());
+        final Wafv2Client wafClient = getWafClient(region);
+        // Step 1: list all REGIONAL Web ACLs
+        final ListWebAcLsResponse listResp = wafClient.listWebACLs(b->b.scope(Scope.REGIONAL));
+        listResp.webACLs().stream().filter(aclSummary ->
+            // Step 2: filter the ACLs down to those with the right tag
+            wafClient.listTagsForResource(b->b.resourceARN(aclSummary.arn())).tagInfoForResource().tagList().stream()
+                    .anyMatch(tag -> tag.key().equals(tagKey) && tag.value().equals(tagValue)))
+        .forEach(aclSummary -> {
+            // Step 3: associate the ALB with those Web ACLs
+            logger.info("Associating WAF ACL "+aclSummary.arn()+" with ALB "+albArn);
+            wafClient.associateWebACL(b->b
+                        .webACLArn(aclSummary.arn())
+                        .resourceArn(albArn));
+        });
     }
     
     private Subnet getSubnetForAvailabilityZoneInSameVpcAsSecurityGroup(AwsAvailabilityZone az, SecurityGroup securityGroup, Region region) {
@@ -617,24 +645,59 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
     public <HostT extends AwsInstance<ShardingKey>> HostT getHostByPublicIpAddress(com.sap.sse.landscape.Region region, String publicIpAddress, HostSupplier<ShardingKey, HostT> hostSupplier) {
         return getHost(region, getInstanceByPublicIpAddress(region, publicIpAddress), hostSupplier);
     }
-
+    
+    private Instance getFirstInstance(DescribeInstancesResponse response) {
+        for (Reservation reservation : response.reservations()) {
+            for (Instance instance : reservation.instances()) {
+                return instance;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Searches for an instance that matches the private dns name if this fails it tries the to resolve the private ip address
+     */
     @Override
-    public Instance getInstanceByPrivateIpAddress(com.sap.sse.landscape.Region region, String privateIpAddress) {
+    public Instance getInstanceByPrivateDnsNameOrIpAddress(com.sap.sse.landscape.Region region, String privateDnsNameOrIpAddress) {
         InetAddress inetAddress;
         try {
-            inetAddress = InetAddress.getByName(privateIpAddress);
-            return getEc2Client(getRegion(region))
-                    .describeInstances(b->b.filters(Filter.builder().name("private-ip-address").values(inetAddress.getHostAddress()).build())).reservations()
-                    .iterator().next().instances().iterator().next();
-        } catch (UnknownHostException | NoSuchElementException e) {
-            logger.warning("IP address for "+privateIpAddress+" not found");
-            return null;
-        }
-    }
+            DescribeInstancesResponse response = getEc2Client(getRegion(region))
+                .describeInstances(b -> b.filters(
+                        Filter.builder().name("private-dns-name").values(privateDnsNameOrIpAddress).build())
+                );
+            Instance instance = getFirstInstance(response);
+            if (instance != null) {
+                return instance;
+            }
 
+            inetAddress = InetAddress.getByName(privateDnsNameOrIpAddress);
+            response = getEc2Client(getRegion(region))
+                .describeInstances(b -> b.filters(
+                        Filter.builder().name("private-ip-address").values(inetAddress.getHostAddress()).build())
+                );
+            instance = getFirstInstance(response);
+            if (instance != null) {
+                return instance;
+            }
+        } catch (UnknownHostException | NoSuchElementException e) {
+            logger.severe("An error occurred while trying to find the instance: " + e.getMessage());
+        }
+
+        logger.warning("Instance for " + privateDnsNameOrIpAddress + " not found");
+        return null;
+    }
+    
+    /**
+     * Returns a host first by private dns name and alternatively by private ip address
+     */
     @Override
-    public <HostT extends AwsInstance<ShardingKey>> HostT getHostByPrivateIpAddress(com.sap.sse.landscape.Region region, String privateIpAddress, HostSupplier<ShardingKey, HostT> hostSupplier) {
-        return getHost(region, getInstanceByPrivateIpAddress(region, privateIpAddress), hostSupplier);
+    public <HostT extends AwsInstance<ShardingKey>> HostT getHostByPrivateDnsNameOrIpAddress(com.sap.sse.landscape.Region region, String privateIpAddress, HostSupplier<ShardingKey, HostT> hostSupplier) {
+        final Instance instanceByPrivateDnsNameOrIpAddress = getInstanceByPrivateDnsNameOrIpAddress(region, privateIpAddress);
+        if (instanceByPrivateDnsNameOrIpAddress == null) {
+            throw new IllegalArgumentException("Couldn't find instance with IP/hostname "+privateIpAddress+" in region "+region);
+        }
+        return getHost(region, instanceByPrivateDnsNameOrIpAddress, hostSupplier);
     }
 
     private Route53Client getRoute53Client() {
@@ -970,7 +1033,6 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
         }
         final Ec2Client ec2Client = getEc2Client(getRegion(az.getRegion()));
         final Builder runInstancesRequestBuilder = RunInstancesRequest.builder()
-            .additionalInfo("Test " + getClass().getName())
             .imageId(fromImage.getId().toString())
             .minCount(numberOfHostsToLaunch)
             .maxCount(numberOfHostsToLaunch)
@@ -1008,6 +1070,21 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
             awsTags.add(Tag.builder().key(tag.getKey()).value(tag.getValue()).build());
         }
         return awsTags;
+    }
+
+    @Override
+    public void setTerminationProtection(AwsInstance<ShardingKey> host, boolean terminationProtection) {
+        logger.info("Setting termination protection for instance "+host+" to "+terminationProtection);
+        getEc2Client(getRegion(host.getAvailabilityZone().getRegion())).modifyInstanceAttribute(b->b
+                .instanceId(host.getInstanceId())
+                .disableApiTermination(a->a.value(terminationProtection)));
+    }
+
+    @Override
+    public void setInstanceName(AwsInstance<ShardingKey> host, String newInstanceName) {
+        logger.info("Setting Name tag for instance "+host+" to "+newInstanceName);
+        getEc2Client(getRegion(host.getAvailabilityZone().getRegion()))
+                .createTags(b -> b.resources(host.getInstanceId()).tags(Tag.builder().key("Name").value(newInstanceName).build()));
     }
 
     @Override
@@ -1168,7 +1245,7 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
                         DescribeTargetHealthRequest.builder().targetGroupArn(targetGroup.getTargetGroupArn()).build())
                 .targetHealthDescriptions().forEach(targetHealthDescription -> {
                     if (targetHealthDescription.target().id().matches("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+")) {
-                        AwsInstance<ShardingKey> awsInstance = getHostByPrivateIpAddress(targetGroup.getRegion(), targetHealthDescription.target().id().trim(),
+                        AwsInstance<ShardingKey> awsInstance = getHostByPrivateDnsNameOrIpAddress(targetGroup.getRegion(), targetHealthDescription.target().id().trim(),
                                 AwsInstanceImpl::new);
                         result.put(awsInstance, targetHealthDescription.targetHealth());
                     } else {
@@ -1682,7 +1759,8 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
                 final Set<ProcessT> replicas = replicasByServerName.get(serverName);
                 final AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> replicaSet = getApplicationReplicaSet(
                         serverName, master, replicas, allLoadBalancersInRegion, allTargetGroupsInRegion,
-                        allLoadBalancerRulesInRegion, allAutoScalingGroups, allLaunchTemplates, allLaunchTemplateDefaultVersions, dnsCache);
+                        allLoadBalancerRulesInRegion, allAutoScalingGroups, allLaunchTemplates, allLaunchTemplateDefaultVersions, dnsCache, 
+                        optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
                 result.add(replicaSet);
             }
         }
@@ -1692,7 +1770,8 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
     @Override
     public <MetricsT extends ApplicationProcessMetrics, ProcessT extends AwsApplicationProcess<ShardingKey, MetricsT, ProcessT>>
     AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> getApplicationReplicaSet(com.sap.sse.landscape.Region region,
-            final String serverName, final ProcessT master, final Iterable<ProcessT> replicas) throws InterruptedException, ExecutionException, TimeoutException {
+            final String serverName, final ProcessT master, final Iterable<ProcessT> replicas, Optional<Duration> optionalTimeout,
+            Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws InterruptedException, ExecutionException, TimeoutException {
         final CompletableFuture<Iterable<ApplicationLoadBalancer<ShardingKey>>> allLoadBalancersInRegion = getLoadBalancersAsync(region);
         final CompletableFuture<Map<TargetGroup<ShardingKey>, Iterable<TargetHealthDescription>>> allTargetGroupsInRegion = getTargetGroupsAsync(region);
         final CompletableFuture<Map<Listener, Iterable<Rule>>> allLoadBalancerRulesInRegion = getLoadBalancerListenerRulesAsync(region, allLoadBalancersInRegion);
@@ -1701,7 +1780,8 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
         final CompletableFuture<Iterable<LaunchTemplateVersion>> launchTemplateDefaultVersions = getLaunchTemplateDefaultVersionsAsync(region);
         final DNSCache dnsCache = getNewDNSCache();
         return getApplicationReplicaSet(serverName, master, replicas, allLoadBalancersInRegion, allTargetGroupsInRegion,
-                allLoadBalancerRulesInRegion, autoScalingGroups, launchTemplates, launchTemplateDefaultVersions, dnsCache);
+                allLoadBalancerRulesInRegion, autoScalingGroups, launchTemplates, launchTemplateDefaultVersions, dnsCache,
+                optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
     }
 
     private <MetricsT extends ApplicationProcessMetrics, ProcessT extends AwsApplicationProcess<ShardingKey, MetricsT, ProcessT>>
@@ -1712,10 +1792,11 @@ public class AwsLandscapeImpl<ShardingKey> implements AwsLandscape<ShardingKey> 
             final CompletableFuture<Map<Listener, Iterable<Rule>>> allLoadBalancerRulesInRegion,
             final CompletableFuture<Iterable<AutoScalingGroup>> allAutoScalingGroups,
             final CompletableFuture<Iterable<LaunchTemplate>> allLaunchTemplates, CompletableFuture<Iterable<LaunchTemplateVersion>> allLaunchTemplateDefaultVersions,
-            final DNSCache dnsCache) throws InterruptedException, ExecutionException, TimeoutException {
+            final DNSCache dnsCache, Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws InterruptedException, ExecutionException, TimeoutException {
         final AwsApplicationReplicaSet<ShardingKey, MetricsT, ProcessT> replicaSet = new AwsApplicationReplicaSetImpl<ShardingKey, MetricsT, ProcessT>(
                 serverName, master, Optional.ofNullable(replicas), allLoadBalancersInRegion, allTargetGroupsInRegion,
-                allLoadBalancerRulesInRegion, this, allAutoScalingGroups, allLaunchTemplates, allLaunchTemplateDefaultVersions, dnsCache, pathPrefixForShardingKey);
+                allLoadBalancerRulesInRegion, this, allAutoScalingGroups, allLaunchTemplates, allLaunchTemplateDefaultVersions, dnsCache, pathPrefixForShardingKey,
+                optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
         return replicaSet;
     }
     

@@ -1,6 +1,5 @@
 package com.sap.sailing.gwt.managementconsole.places.event.overview.partials;
 
-import static com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil.formatDateRange;
 import static java.util.Optional.ofNullable;
 
 import com.google.gwt.core.client.GWT;
@@ -11,6 +10,7 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Widget;
 import com.sap.sailing.gwt.common.communication.event.EventMetadataDTO;
 import com.sap.sailing.gwt.managementconsole.places.event.overview.EventOverviewResources;
+import com.sap.sse.gwt.client.DateAndTimeFormatterUtil;
 
 public class EventInfo extends Widget {
 
@@ -31,7 +31,7 @@ public class EventInfo extends Widget {
         this.title.setInnerSafeHtml(SafeHtmlUtils.fromString(event.getDisplayName()));
 
         final String venue = ofNullable(event.getVenue()).orElse("-");
-        final String time = formatDateRange(event.getStartDate(), event.getEndDate());
+        final String time = DateAndTimeFormatterUtil.formatDateRange(event.getStartDate(), event.getEndDate());
         this.details.setInnerSafeHtml(SafeHtmlUtils.fromString(venue + ", " + time));
     }
 

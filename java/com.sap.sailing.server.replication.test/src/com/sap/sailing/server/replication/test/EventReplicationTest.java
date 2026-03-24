@@ -1,9 +1,9 @@
 package com.sap.sailing.server.replication.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,16 +11,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.CourseArea;
 import com.sap.sailing.domain.base.Event;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroup;
 import com.sap.sailing.server.operationaltransformation.AddLeaderboardGroupToEvent;
 import com.sap.sailing.server.operationaltransformation.CreateLeaderboardGroup;
 import com.sap.sailing.server.operationaltransformation.RemoveLeaderboardGroupFromEvent;
 import com.sap.sse.common.Distance;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
@@ -69,7 +69,7 @@ public class EventReplicationTest extends AbstractServerReplicationTest {
         Event replicatedEvent = replica.getEvent(masterEvent.getId());
         assertEquals(1, Util.size(replicatedEvent.getLeaderboardGroups()));
         assertEquals(leaderboardGroupName, replicatedEvent.getLeaderboardGroups().iterator().next().getName());
-        assertTrue(master.apply(new RemoveLeaderboardGroupFromEvent(masterEvent.getId(), lg.getId())));
+        assertTrue(()->master.apply(new RemoveLeaderboardGroupFromEvent(masterEvent.getId(), lg.getId())));
         Thread.sleep(1000);
         assertTrue(Util.isEmpty(replicatedEvent.getLeaderboardGroups()));
     }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.sap.sse.common.Named;
+import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
 import com.sap.sse.security.shared.WildcardPermission;
@@ -26,10 +27,11 @@ public class UserDTO extends
     private List<AccountDTO> accounts;
     private boolean emailValidated;
     private List<StrippedUserGroupDTO> groups;
+    private TimePoint lockedUntil;
     private SecurityInformationDTO securityInformation = new SecurityInformationDTO();
     private StrippedUserGroupDTO defaultTenantForCurrentServer;
 
-    private Set<RoleWithSecurityDTO> roles;
+    private Set<RoleWithSecurityDTO> roles; // TODO turn to HashSet to reduce number of serializers to generate
 
     @Deprecated // gwt only
     UserDTO() {
@@ -42,7 +44,7 @@ public class UserDTO extends
     public UserDTO(String name, String email, String fullName, String company, String locale, boolean emailValidated,
             List<AccountDTO> accounts, Iterable<RoleWithSecurityDTO> roles, StrippedUserGroupDTO defaultTenant,
             Iterable<WildcardPermissionWithSecurityDTO> permissions,
-            Iterable<StrippedUserGroupDTO> groups) {
+            Iterable<StrippedUserGroupDTO> groups, TimePoint lockedUntil) {
         super(name, permissions);
         this.defaultTenantForCurrentServer = defaultTenant;
         this.email = email;
@@ -55,8 +57,24 @@ public class UserDTO extends
         Util.addAll(groups, this.groups);
         this.roles = new HashSet<>();
         Util.addAll(roles, this.getRolesInternal());
+        this.lockedUntil = lockedUntil;
     }
-    
+
+    public UserDTO copyWithTimePoint(TimePoint lockedUntil) {
+        final List<AccountDTO> accountsCopy = new ArrayList<AccountDTO>();
+        Util.addAll(this.accounts, accountsCopy);
+        final HashSet<RoleWithSecurityDTO> rolesCopy = new HashSet<>();
+        Util.addAll(this.roles, rolesCopy);
+        final List<WildcardPermissionWithSecurityDTO> permissionsCopy = new ArrayList<WildcardPermissionWithSecurityDTO>();
+        for (WildcardPermission wp : this.getPermissions()) {
+            permissionsCopy.add((WildcardPermissionWithSecurityDTO) wp);
+        }
+        final List<StrippedUserGroupDTO> groupsCopy = new ArrayList<StrippedUserGroupDTO>();
+        Util.addAll(this.groups, groupsCopy);
+        return new UserDTO(this.getName(), this.email, this.fullName, this.company, this.locale, this.emailValidated,
+                accountsCopy, rolesCopy, this.defaultTenantForCurrentServer, permissionsCopy, groupsCopy, lockedUntil);
+    }
+
     @Override
     protected Set<RoleWithSecurityDTO> getRolesInternal() {
         return roles;
@@ -161,5 +179,9 @@ public class UserDTO extends
      */
     public void clearNonPublicFields() {
         this.email = null;
+    }
+    
+    public TimePoint getLockedUntil() {
+        return lockedUntil;
     }
 }

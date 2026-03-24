@@ -3,10 +3,10 @@ package com.sap.sailing.domain.igtimiadapter.impl;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.sap.sailing.domain.igtimiadapter.IgtimiConnection;
 import com.sap.sailing.domain.igtimiadapter.IgtimiConnectionFactory;
-import com.sap.sse.shared.util.WeakValueCache;
 
 public class IgtimiConnectionFactoryImpl implements IgtimiConnectionFactory {
     private final URL baseUrl;
@@ -23,7 +23,7 @@ public class IgtimiConnectionFactoryImpl implements IgtimiConnectionFactory {
      * connection anymore it can be garbage-collected. Keys are the bearer tokens used when creating the
      * connection. The {@code null} key is escaped using the empty string.
      */
-    private final WeakValueCache<String, IgtimiConnection> connectionPool;
+    private final ConcurrentMap<String, IgtimiConnection> connectionPool;
 
     /**
      * @param baseUrl
@@ -37,7 +37,7 @@ public class IgtimiConnectionFactoryImpl implements IgtimiConnectionFactory {
     public IgtimiConnectionFactoryImpl(URL baseUrl, String defaultBearerToken) throws MalformedURLException {
         this.baseUrl = (baseUrl.toString().endsWith("/") ? new URL(baseUrl.toString().substring(0, baseUrl.toString().length()-1)) : baseUrl);
         this.defaultBearerToken = defaultBearerToken;
-        this.connectionPool = new WeakValueCache<>(new ConcurrentHashMap<>());
+        this.connectionPool = new ConcurrentHashMap<>();
     }
 
     @Override

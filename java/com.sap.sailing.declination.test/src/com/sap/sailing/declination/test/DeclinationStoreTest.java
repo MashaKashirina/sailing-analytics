@@ -1,10 +1,10 @@
 package com.sap.sailing.declination.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,27 +23,27 @@ import java.io.Writer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.declination.Declination;
 import com.sap.sailing.declination.impl.DeclinationImporter;
 import com.sap.sailing.declination.impl.DeclinationRecordImpl;
 import com.sap.sailing.declination.impl.DeclinationStore;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.domain.common.quadtree.QuadTree;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 public abstract class DeclinationStoreTest<I extends DeclinationImporter> extends AbstractDeclinationTest<I> {
     private DeclinationStore store;
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     
-    @Before
+    @BeforeEach
     public void setUp() {
         store = new DeclinationStore(importer);
     }
@@ -322,7 +322,7 @@ public abstract class DeclinationStoreTest<I extends DeclinationImporter> extend
         }
     }
     
-    @Ignore("This was a one-time-only conversion")
+    @Disabled("This was a one-time-only conversion")
     @Test
     public void copyExistingDeclinationsToNewFormat() throws IOException, ClassNotFoundException, ParseException {
         File resourcesDir = new File("../com.sap.sailing.declination/resources/");

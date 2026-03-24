@@ -8,9 +8,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.abstractlog.AbstractLogEventAuthor;
 import com.sap.sailing.domain.abstractlog.impl.LogEventAuthorImpl;
@@ -35,15 +35,11 @@ import com.sap.sailing.domain.base.impl.PersonImpl;
 import com.sap.sailing.domain.base.impl.RaceDefinitionImpl;
 import com.sap.sailing.domain.base.impl.RegattaImpl;
 import com.sap.sailing.domain.base.impl.TeamImpl;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RegattaName;
 import com.sap.sailing.domain.common.RegattaNameAndRaceName;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
 import com.sap.sailing.domain.common.WindSource;
 import com.sap.sailing.domain.common.WindSourceType;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.leaderboard.impl.LowPoint;
 import com.sap.sailing.domain.persistence.MongoObjectFactory;
@@ -62,9 +58,13 @@ import com.sap.sailing.server.operationaltransformation.CreateFlexibleLeaderboar
 import com.sap.sailing.server.operationaltransformation.CreateTrackedRace;
 import com.sap.sailing.server.operationaltransformation.TrackRegatta;
 import com.sap.sse.common.Color;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 import com.sap.sse.mongodb.MongoDBService;
 
@@ -77,7 +77,7 @@ public class RaceColumnReloadTest {
     private RaceLogWindFixEventImpl testWindEvent1, testWindEvent2;
     private Fleet defaultFleet;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MongoDBService.INSTANCE.getDB().drop();
         final RacingEventServiceImpl service = new RacingEventServiceImpl();
@@ -212,7 +212,7 @@ public class RaceColumnReloadTest {
         }
 
         private void assertWindFixCount(int expected) {
-            Assert.assertEquals(expected, loggedWindFixes.size());
+            Assertions.assertEquals(expected, loggedWindFixes.size());
         }
     }
 
@@ -232,7 +232,7 @@ public class RaceColumnReloadTest {
         }
 
         private void assertWindFixCount(int expected) {
-            Assert.assertEquals(expected, loggedWindFixes.size());
+            Assertions.assertEquals(expected, loggedWindFixes.size());
         }
     }
     

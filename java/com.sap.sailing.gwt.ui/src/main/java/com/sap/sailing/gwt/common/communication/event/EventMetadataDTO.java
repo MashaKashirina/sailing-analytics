@@ -2,6 +2,8 @@ package com.sap.sailing.gwt.common.communication.event;
 
 import java.util.Date;
 
+import com.sap.sailing.gwt.ui.shared.EventReferenceDTO;
+
 public class EventMetadataDTO extends EventReferenceDTO {
 
     private EventState state;

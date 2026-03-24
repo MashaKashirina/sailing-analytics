@@ -1,4 +1,6 @@
 compress
+delaycompress
+
 /var/log/mongodb/mongod.log
 {
    rotate 5

@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.igtimiadapter.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,15 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import com.sap.sailing.declination.DeclinationService;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.igtimiadapter.IgtimiWindListener;
 import com.sap.sailing.domain.igtimiadapter.datatypes.AWA;
 import com.sap.sailing.domain.igtimiadapter.datatypes.AWS;
@@ -27,13 +25,14 @@ import com.sap.sailing.domain.igtimiadapter.datatypes.GpsLatLong;
 import com.sap.sailing.domain.igtimiadapter.datatypes.HDG;
 import com.sap.sailing.domain.igtimiadapter.datatypes.SOG;
 import com.sap.sailing.domain.igtimiadapter.shared.IgtimiWindReceiver;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
+@Timeout(value = 2, unit=TimeUnit.MINUTES) // 2 minutes timeout for the test
 public class WindReceiverTest {
-    @Rule public Timeout AbstractTracTracLiveTestTimeout = Timeout.millis(2 * 60 * 1000);
-
     @Test
     public void simpleWindReceiverTest() {
         final List<Wind> windReceived = new ArrayList<>();
@@ -180,5 +179,5 @@ public class WindReceiverTest {
         SpeedWithBearing expectedTrueWind2 = apparentWind2.add(boatSogCog2);
         assertEquals(expectedTrueWind2.getKnots(), wind2.getKnots(), 0.00000001);
         assertEquals(expectedTrueWind2.getBearing().getDegrees(), wind2.getBearing().getDegrees(), 0.00000001);
-}
+    }
 }

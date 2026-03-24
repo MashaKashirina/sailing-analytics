@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -17,8 +17,8 @@ import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.logging.Logger;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.impl.DouglasPeucker;
@@ -26,8 +26,6 @@ import com.sap.sailing.domain.common.ManeuverType;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.WindSourceType;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.common.impl.WindSourceImpl;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
@@ -38,6 +36,8 @@ import com.sap.sailing.domain.tractracadapter.ReceiverType;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
+import com.sap.sse.common.impl.MeterDistance;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 public class ManeuverDetectionOnKielerWoche505Race2DataTest extends AbstractManeuverDetectionTestCase {
@@ -47,7 +47,7 @@ public class ManeuverDetectionOnKielerWoche505Race2DataTest extends AbstractMane
     public ManeuverDetectionOnKielerWoche505Race2DataTest() throws MalformedURLException, URISyntaxException {
     }
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         URI storedUri = new URI("file:////"+new File("resources/event_20110609_KielerWoch-505_Race_2.mtb").getCanonicalPath().replace('\\', '/'));

@@ -102,6 +102,7 @@ com.sap.sse.gwt.adminconsole.StringMessages {
     String successfullyUpgradedApplicationReplicaSet(String name, String version);
     String upgradingApplicationReplicaSetFailed(String name);
     String upgradeApplicationReplicaSet();
+    String upgradeArchiveServer();
     String successfullyArchivedReplicaSet(String name);
     String removeArchivedReplicaSet();
     String bearerTokenOrNullForApplicationReplicaSetToArchive(String replicaSetName);
@@ -177,4 +178,10 @@ com.sap.sse.gwt.adminconsole.StringMessages {
     String runOnExisting();
     String publicIp();
     String privateIp();
+    String igtimiRiotPort();
+    String examplePort(int examplePort);
+    String successfullyLaunchedNewArchiveCandidate(String replicaSetName, String releaseName);
+    String successfullySwitchedToNewArchiveCandidate(String replicaSetName);
+    String activateArchiveCandidate();
+    String reallySwitchToNewArchiveCandidate();
 }

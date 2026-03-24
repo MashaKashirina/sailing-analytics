@@ -11,8 +11,9 @@ import com.sap.sailing.landscape.SailingAnalyticsMetrics;
 import com.sap.sailing.landscape.SailingAnalyticsProcess;
 import com.sap.sailing.landscape.SailingReleaseRepository;
 import com.sap.sailing.landscape.common.SharedLandscapeConstants;
+import com.sap.sse.branding.BrandingConfigurationService;
+import com.sap.sse.branding.sap.SAPBrandingConfiguration;
 import com.sap.sse.common.Util;
-import com.sap.sse.debranding.ClientConfigurationListener;
 import com.sap.sse.landscape.DefaultProcessConfigurationVariables;
 import com.sap.sse.landscape.ProcessConfigurationVariable;
 import com.sap.sse.landscape.Release;
@@ -33,7 +34,7 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
      * <li>If no {@link #setTelnetPort(int) telnet port} is provided, the {@link #DEFAULT_TELNET_PORT} is used (14888).</li>
      * <li>If no {@link #setExpeditionPort(int) expedition UDP port} is provided, the {@link #DEFAULT_EXPEDITION_PORT} is used (2010).</li>
      * <li>If no {@link #setServerDirectory(String) server directory} is specified, it defaults to {@link ApplicationProcessHost#DEFAULT_SERVER_PATH}.</li>
-     * <li>If no {@link #setRelease(Release) release} is specified, it defaults to {@link SailingReleaseRepository#getLatestMasterRelease()}.</li>
+     * <li>If no {@link #setRelease(Release) release} is specified, it defaults to {@link SailingReleaseRepository#getLatestDefaultRelease()}.</li>
      * <li>The {@link DefaultProcessConfigurationVariables#ADDITIONAL_JAVA_ARGS} variable is extended by system properties that configure
      *     security, landscape data, and basic sailing master data to be shared across the {@link SharedLandscapeConstants#DEFAULT_DOMAIN_NAME} domain.</li>
      * </ul>
@@ -52,6 +53,8 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
         BuilderT setTelnetPort(int telnetPort);
         
         BuilderT setExpeditionPort(int expeditionPort);
+        
+        BuilderT setIgtimiRiotPort(int igtimiRiotPort);
 
         BuilderT setServerDirectory(String serverDirectory);
     }
@@ -67,6 +70,7 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
         private Integer port;
         private Integer telnetPort;
         private Integer expeditionPort;
+        private Integer igtimiRiotPort;
         private String serverDirectory;
 
         protected Integer getPort() {
@@ -111,6 +115,20 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
             return self();
         }
 
+        protected Integer getIgtimiRiotPort() {
+            return igtimiRiotPort;
+        }
+        
+        protected boolean isIgtimiRiotPortSet() {
+            return igtimiRiotPort != null;
+        }
+        
+        @Override
+        public BuilderT setIgtimiRiotPort(int igtimiRiotPort) {
+            this.igtimiRiotPort = igtimiRiotPort;
+            return self();
+        }
+
         protected String getServerDirectory() {
             return serverDirectory == null ? ApplicationProcessHost.DEFAULT_SERVERS_PATH + "/" + getServerName() : serverDirectory;
         }
@@ -127,7 +145,7 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
 
         @Override
         protected Optional<Release> getRelease() {
-            return Optional.of(super.getRelease().orElse(SailingReleaseRepository.INSTANCE.getLatestMasterRelease()));
+            return Optional.of(super.getRelease().orElse(SailingReleaseRepository.INSTANCE.getLatestDefaultRelease()));
         }
 
         /**
@@ -160,6 +178,9 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
             addUserDataForPort(result, DefaultProcessConfigurationVariables.SERVER_PORT, getPort());
             addUserDataForPort(result, DefaultProcessConfigurationVariables.TELNET_PORT, getTelnetPort());
             addUserDataForPort(result, SailingProcessConfigurationVariables.EXPEDITION_PORT, getExpeditionPort());
+            if (getIgtimiRiotPort() != null) {
+                addUserDataForPort(result, SailingProcessConfigurationVariables.IGTIMI_RIOT_PORT, getIgtimiRiotPort());
+            }
             final List<String> newAdditionalJavaArgsVariableValue = new ArrayList<>();
             newAdditionalJavaArgsVariableValue.add("${"+DefaultProcessConfigurationVariables.ADDITIONAL_JAVA_ARGS.name()+"}");
             Util.addAll(getAdditionalJavaArgs(), newAdditionalJavaArgsVariableValue);
@@ -181,7 +202,8 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
         protected Iterable<String> getAdditionalJavaArgs() {
             final List<String> result = new ArrayList<>();
             Util.addAll(getAdditionalJavaArgsForSharedSecurity(SharedLandscapeConstants.DEFAULT_DOMAIN_NAME, SharedLandscapeConstants.DEFAULT_SECURITY_SERVICE_REPLICA_SET_NAME), result);
-            result.add("-D"+ClientConfigurationListener.DEBRANDING_PROPERTY_NAME+"=false"); // activate branding when running under default SAP domain
+            // TODO check whether we're really running under the default sapsailing.com domain, before activating SAP branding...
+            result.add("-D"+BrandingConfigurationService.BRANDING_ID_PROPERTY_NAME+"="+SAPBrandingConfiguration.ID); // activate branding when running under default SAP domain
             return result;
         }
 
@@ -221,6 +243,7 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
     private final Integer port;
     private final Integer telnetPort;
     private final Integer expeditionPort;
+    private final Integer igtimiRiotPort;
     private final String serverDirectory;
     
     public static <BuilderT extends Builder<BuilderT, T, ShardingKey>,
@@ -236,6 +259,7 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
         this.port = builder.getPort();
         this.telnetPort = builder.getTelnetPort();
         this.expeditionPort = builder.getExpeditionPort();
+        this.igtimiRiotPort = builder.getIgtimiRiotPort();
         this.serverDirectory = builder.getServerDirectory();
     }
 
@@ -249,6 +273,10 @@ extends AwsApplicationConfiguration<ShardingKey, SailingAnalyticsMetrics, Sailin
 
     protected Integer getExpeditionPort() {
         return expeditionPort;
+    }
+    
+    protected Integer getIgtimiRiotPort() {
+        return igtimiRiotPort;
     }
 
     protected String getServerDirectory() {

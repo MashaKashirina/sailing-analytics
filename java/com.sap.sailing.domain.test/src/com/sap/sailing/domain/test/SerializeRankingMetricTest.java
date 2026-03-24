@@ -1,13 +1,13 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.BoatClass;
@@ -42,7 +42,7 @@ public class SerializeRankingMetricTest extends AbstractSerializationTest {
                 new RaceDefinitionImpl("Race", new CourseImpl("Course", Collections.<Waypoint>emptyList()) , 
                         /* boatClass */ _49er, Collections.<Competitor,Boat>emptyMap()),
                 Collections.<Sideline> emptyList(), EmptyWindStore.INSTANCE, 0l, 0l, 0l,
-                false, TimeOnTimeAndDistanceRankingMetric::new, null, /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                false, TimeOnTimeAndDistanceRankingMetric::new, null, /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* mneuverRaceFingerprintRegistry */ null);
         RankingMetric clone = cloneBySerialization(trackedRace.getRankingMetric(), DomainFactory.INSTANCE);
         assertNotNull(clone);
         assertTrue(clone instanceof TimeOnTimeAndDistanceRankingMetric);

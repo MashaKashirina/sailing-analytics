@@ -1,8 +1,8 @@
 package com.sap.sailing.mongodb.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -14,8 +14,8 @@ import java.util.UUID;
 
 import org.bson.Document;
 import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoException;
 import com.sap.sailing.domain.abstractlog.AbstractLogEventAuthor;
@@ -25,7 +25,6 @@ import com.sap.sailing.domain.abstractlog.orc.impl.RaceLogORCLegDataEventImpl;
 import com.sap.sailing.domain.abstractlog.race.RaceLogEvent;
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.DomainFactory;
-import com.sap.sailing.domain.common.impl.NauticalMileDistance;
 import com.sap.sailing.domain.common.orc.ORCPerformanceCurveLegTypes;
 import com.sap.sailing.domain.persistence.FieldNames;
 import com.sap.sailing.domain.persistence.PersistenceFactory;
@@ -37,6 +36,7 @@ import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.DegreeBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.common.impl.NauticalMileDistance;
 import com.sap.sse.shared.json.JsonDeserializationException;
 
 /**
@@ -62,7 +62,7 @@ public class TestStoringAndLoadingRaceORCLegDataEvent extends AbstractMongoDBTes
         super();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         logIdentifier = mock(RaceLogIdentifier.class);
         when(logIdentifier.getIdentifier()).thenReturn(

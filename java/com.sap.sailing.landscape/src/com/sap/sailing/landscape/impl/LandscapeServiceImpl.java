@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -66,7 +67,6 @@ import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.common.mail.MailException;
 import com.sap.sse.i18n.ResourceBundleStringMessages;
-import com.sap.sse.i18n.impl.ResourceBundleStringMessagesImpl;
 import com.sap.sse.landscape.DefaultProcessConfigurationVariables;
 import com.sap.sse.landscape.InboundReplicationConfiguration;
 import com.sap.sse.landscape.Landscape;
@@ -84,6 +84,7 @@ import com.sap.sse.landscape.aws.AwsLandscape;
 import com.sap.sse.landscape.aws.AwsShard;
 import com.sap.sse.landscape.aws.HostSupplier;
 import com.sap.sse.landscape.aws.ReverseProxy;
+import com.sap.sse.landscape.aws.ReverseProxyCluster;
 import com.sap.sse.landscape.aws.Tags;
 import com.sap.sse.landscape.aws.TargetGroup;
 import com.sap.sse.landscape.aws.common.shared.RedirectDTO;
@@ -107,8 +108,6 @@ import com.sap.sse.security.SecurityService;
 import com.sap.sse.security.SessionUtils;
 import com.sap.sse.security.shared.HasPermissions.Action;
 import com.sap.sse.security.shared.HasPermissions.DefaultActions;
-import com.sap.sse.security.shared.OwnershipAnnotation;
-import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.ServerAdminRole;
 import com.sap.sse.security.shared.TypeRelativeObjectIdentifier;
 import com.sap.sse.security.shared.WildcardPermission;
@@ -135,7 +134,7 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 public class LandscapeServiceImpl implements LandscapeService {
     private static final Logger logger = Logger.getLogger(LandscapeServiceImpl.class.getName());
     
-    private static final String STRING_MESSAGES_BASE_NAME = "stringmessages/SailingLandscape_StringMessages";
+    public static final String STRING_MESSAGES_BASE_NAME = "stringmessages/SailingLandscape_StringMessages";
 
     private static final String TEMPORARY_UPGRADE_REPLICA_NAME_SUFFIX = " (Upgrade Replica)";
 
@@ -154,8 +153,10 @@ public class LandscapeServiceImpl implements LandscapeService {
                 (host, port, serverDirectory, telnetPort, serverName, additionalProperties)->{
                     try {
                         final Number expeditionUdpPort = (Number) additionalProperties.get(SailingProcessConfigurationVariables.EXPEDITION_PORT.name());
+                        final Number igtimiRiotPort = (Number) additionalProperties.get(SailingProcessConfigurationVariables.IGTIMI_RIOT_PORT.name());
                         return new SailingAnalyticsProcessImpl<String>(port, host, serverDirectory, telnetPort, serverName,
-                                expeditionUdpPort == null ? null : expeditionUdpPort.intValue(), getLandscape());
+                                expeditionUdpPort == null ? null : expeditionUdpPort.intValue(),
+                                igtimiRiotPort == null ? null : igtimiRiotPort.intValue(), getLandscape());
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -168,8 +169,8 @@ public class LandscapeServiceImpl implements LandscapeService {
             String dedicatedInstanceType, boolean dynamicLoadBalancerMapping, String releaseNameOrNullForLatestMaster,
             String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String masterReplicationBearerToken,
             String replicaReplicationBearerToken, String optionalDomainName, Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, Optional<Integer> minimumAutoScalingGroupSize,
-            Optional<Integer> maximumAutoScalingGroupSize) throws Exception {
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort,
+            Optional<Integer> minimumAutoScalingGroupSize, Optional<Integer> maximumAutoScalingGroupSize) throws Exception {
         final AwsLandscape<String> landscape = getLandscape();
         final String hostname = getHostname(name, optionalDomainName);
         final Iterable<ResourceRecordSet> existingDNSRulesForHostname = landscape.getResourceRecordSets(hostname);
@@ -181,10 +182,10 @@ public class LandscapeServiceImpl implements LandscapeService {
         final Release release = getRelease(releaseNameOrNullForLatestMaster);
         final com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<?, String> masterConfigurationBuilder =
                 createMasterConfigurationBuilder(name, masterReplicationBearerToken, optionalMemoryInMegabytesOrNull,
-                        newSharedMasterInstance ? optionalMemoryTotalSizeFactorOrNull : null, region, release);
+                        newSharedMasterInstance ? optionalMemoryTotalSizeFactorOrNull : null, optionalIgtimiRiotPort, region, release);
         final String bearerTokenUsedByReplicas = getEffectiveBearerToken(replicaReplicationBearerToken);
         final InboundReplicationConfiguration inboundMasterReplicationConfiguration = masterConfigurationBuilder.getInboundReplicationConfiguration().get();
-        establishServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(name, bearerTokenUsedByReplicas,
+        establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(name, bearerTokenUsedByReplicas,
                 inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
         final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
         masterHostBuilder
@@ -208,7 +209,7 @@ public class LandscapeServiceImpl implements LandscapeService {
             createLoadBalancingAndAutoScalingSetup(landscape, region, name, master, release, dedicatedInstanceType,
                 dynamicLoadBalancerMapping, optionalKeyName, privateKeyEncryptionPassphrase, optionalDomainName,
                 Optional.of(masterHostBuilder.getMachineImage()), bearerTokenUsedByReplicas,
-                minimumAutoScalingGroupSize, maximumAutoScalingGroupSize);
+                minimumAutoScalingGroupSize, maximumAutoScalingGroupSize, optionalIgtimiRiotPort);
         final Optional<SailingAnalyticsProcess<String>> unmanagedReplica = minimumAutoScalingGroupSize.map(minASGSize->{
             final List<SailingAnalyticsProcess<String>> unmanagedReplicas = new ArrayList<>();
             if (minASGSize == 0) {
@@ -216,8 +217,8 @@ public class LandscapeServiceImpl implements LandscapeService {
                 try {
                     unmanagedReplicas.add(launchUnmanagedReplica(result, region, optionalKeyName, privateKeyEncryptionPassphrase,
                             bearerTokenUsedByReplicas, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull,
-                            Optional.of(InstanceType.valueOf(sharedInstanceType)),
-                            /* optionalPreferredInstanceToDeployTo */ Optional.empty()));
+                            optionalIgtimiRiotPort,
+                            Optional.of(InstanceType.valueOf(sharedInstanceType)), /* optionalPreferredInstanceToDeployTo */ Optional.empty()));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -227,12 +228,167 @@ public class LandscapeServiceImpl implements LandscapeService {
         // if an unmanaged replica process was launched, return a replica set that contains it; otherwise use the one we already have (without any replica)
         return unmanagedReplica.map(ur->{
                 try {
-                    return getLandscape().getApplicationReplicaSet(region, name, master, Collections.singleton(ur));
+                    return getLandscape().getApplicationReplicaSet(region, name, master, Collections.singleton(ur), Landscape.WAIT_FOR_PROCESS_TIMEOUT,
+                            Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     throw new RuntimeException(e);
                 }
             
         }).orElse(result);
+    }
+    
+    @Override
+    public void createArchiveReplicaSet(
+            String regionId, String replicaSetName, String instanceType, String releaseNameOrNullForLatestMaster, Database databaseConfiguration, 
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicaReplicationBearerToken, String optionalDomainName,
+            Integer optionalMemoryInMegabytesOrNull, String securityServiceReplicationBearerToken,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, URL continuationBaseURL) throws Exception {
+        assert getSecurityService().getCurrentUser() != null;
+        final AwsLandscape<String> landscape = getLandscape();
+        final String candidateHostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
+        final Iterable<ResourceRecordSet> existingDNSRulesForHostname = landscape.getResourceRecordSets(candidateHostname);
+        // Failing early in case DNS record already exists (see also bug 5826):
+        if (existingDNSRulesForHostname != null && !Util.isEmpty(existingDNSRulesForHostname)) {
+            throw new IllegalArgumentException("DNS record for "+candidateHostname+" already exists");
+        }
+        final AwsRegion region = new AwsRegion(regionId, landscape);
+        final Release release = getRelease(releaseNameOrNullForLatestMaster);
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> oldArchiveReplicaSet = getApplicationReplicaSet(
+                region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
+                optionalKeyName, privateKeyEncryptionPassphrase);
+        final Integer oldArchiveMemoryInMB = getMemoryInMegabytes(optionalKeyName, privateKeyEncryptionPassphrase, oldArchiveReplicaSet.getMaster());
+        final com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<?, String> masterConfigurationBuilder =
+                createArchiveConfigurationBuilder(replicaSetName, databaseConfiguration, securityServiceReplicationBearerToken,
+                        // if no memory size is specified, use that of existing production ARCHIVE server
+                        optionalMemoryInMegabytesOrNull == null && optionalMemoryTotalSizeFactorOrNull == null ? oldArchiveMemoryInMB : optionalMemoryInMegabytesOrNull,
+                        optionalMemoryTotalSizeFactorOrNull, optionalIgtimiRiotPort, region, release);
+        final String bearerTokenUsedByReplicas = getEffectiveBearerToken(replicaReplicationBearerToken);
+        final InboundReplicationConfiguration inboundMasterReplicationConfiguration = masterConfigurationBuilder.getInboundReplicationConfiguration().get();
+        establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
+                inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
+        final ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
+                getLandscape().getReverseProxyCluster(region);
+        final com.sap.sailing.landscape.procedures.StartSailingAnalyticsMasterHost.Builder<?, String> masterHostBuilder = StartSailingAnalyticsMasterHost.masterHostBuilder(masterConfigurationBuilder);
+        masterHostBuilder
+            .setAvailabilityZone(getBestAvailabilityZoneForArchiveCandidate(region, landscape, oldArchiveReplicaSet.getMaster(), reverseProxyCluster, optionalKeyName, privateKeyEncryptionPassphrase))
+            .setInstanceName(SharedLandscapeConstants.ARCHIVE_SERVER_NEW_CANDIDATE_INSTANCE_NAME)
+            .setInstanceType(InstanceType.valueOf(instanceType))
+            .setOptionalTimeout(Landscape.WAIT_FOR_HOST_TIMEOUT)
+            .setLandscape(landscape)
+            .setRegion(region)
+            .setPrivateKeyEncryptionPassphrase(privateKeyEncryptionPassphrase);
+        if (optionalKeyName != null) {
+            masterHostBuilder.setKeyName(optionalKeyName);
+        }
+        final StartSailingAnalyticsMasterHost<String> masterHostStartProcedure = masterHostBuilder.build();
+        masterHostStartProcedure.run();
+        final SailingAnalyticsProcess<String> master = masterHostStartProcedure.getSailingAnalyticsProcess();
+        master.getHost().setTerminationProtection(true);
+        master.waitUntilAlive(Optional.of(Landscape.WAIT_FOR_HOST_TIMEOUT.get().plus(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get())));
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet = landscape
+                .getApplicationReplicaSet(region, replicaSetName, master, /* replicas */ Collections.emptySet(),
+                        Optional.of(Landscape.WAIT_FOR_HOST_TIMEOUT.get().plus(Landscape.WAIT_FOR_PROCESS_TIMEOUT.get())),
+                        Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        final String privateIpAdress = master.getHost().getPrivateAddress().getHostAddress();
+        logger.info("Adding reverse proxy rule for archive candidate with hostname "+ candidateHostname + " and private ip address " + privateIpAdress);
+        reverseProxyCluster.setPlainRedirect(candidateHostname, master, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+        sendMailAboutNewArchiveCandidate(replicaSet);
+        final ScheduledExecutorService monitorTaskExecutor = ThreadPoolUtil.INSTANCE.getDefaultBackgroundTaskThreadPoolExecutor();
+        final ArchiveCandidateMonitoringBackgroundTask monitoringTask = new ArchiveCandidateMonitoringBackgroundTask(
+                getSecurityService().getCurrentUser(), this, replicaSet, candidateHostname, monitorTaskExecutor,
+                bearerTokenUsedByReplicas, continuationBaseURL);
+        monitorTaskExecutor.execute(monitoringTask);
+    }
+    
+    private AwsAvailabilityZone getBestAvailabilityZoneForArchiveCandidate(AwsRegion region, AwsLandscape<String> landscape,
+            SailingAnalyticsProcess<String> oldArchivePrimary, ReverseProxyCluster<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster,
+            String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+        final AwsAvailabilityZone oldArchiveAZ = oldArchivePrimary.getHost().getAvailabilityZone();
+        AwsAvailabilityZone result = null;
+        for (final AwsInstance<String> reverseProxyHost : reverseProxyCluster.getHosts()) {
+            final AwsAvailabilityZone az = reverseProxyHost.getAvailabilityZone();
+            if (!az.equals(oldArchiveAZ)) {
+                result = az;
+                logger.info("Identified availability zone (AZ) " + result
+                        + " for new ARCHIVE server; it differs from current ARCHIVE's AZ " + oldArchiveAZ
+                        + " and has reverse proxy host " + reverseProxyHost.getInstanceId() + " in that AZ.");
+                break;
+            }
+        }
+        if (result == null) {
+            logger.warning(
+                    "Couldn't find a reverse proxy in an availabililty zone different from that of the current ARCHIVE server ("
+                            + oldArchiveAZ + "). Reverse proxies in AZs " + Util.joinStrings(", ",
+                                    Util.map(reverseProxyCluster.getHosts(), host -> host.getAvailabilityZone())));
+            // no AZ found that is not the same as for the current ARCHIVE server and also has a reverse proxy;
+            // now we have to choose between "a rock and a hard place:" either launch in an AZ where we don't have
+            // a reverse proxy and hence will see slightly less throughput and some additional cost for cross-AZ
+            // traffic; or launch in the same AZ the current ARCHIVE runs in; this will put the new failover (the
+            // current production ARCHIVE) and the new production ARCHIVE into the same AZ, not benefiting from
+            // the availability improvements incurred by running in multiple AZs.
+            result = Util.first(reverseProxyCluster.getHosts()).getAvailabilityZone();
+            logger.info("Choosing the AZ of the first reverse proxy to avoid cost and performance reduction by cross-AZ traffic: "+result);
+        }
+        return result;
+    }
+
+    @Override
+    public void makeCandidateArchiveServerGoLive(String regionId, String optionalKeyNameOrNull,
+            byte[] privateKeyEncryptionPassphrase, String optionalDomainName)
+            throws Exception {
+        final AwsLandscape<String> landscape = getLandscape();
+        final AwsRegion region = new AwsRegion(regionId, landscape);
+        final String candidateHostname = getHostname(SharedLandscapeConstants.ARCHIVE_CANDIDATE_SUBDOMAIN, optionalDomainName);
+        final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> archiveReplicaSet = getApplicationReplicaSet(
+                region, SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME,
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT.map(Duration::asMillis).orElse(null),
+                optionalKeyNameOrNull, privateKeyEncryptionPassphrase);
+        if (archiveReplicaSet == null) {
+            throw new IllegalArgumentException("Couldn't find candidate replica set with name "
+                    + SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME + " in region " + regionId);
+        }
+        final SailingAnalyticsProcess<String> candidate = archiveReplicaSet.getMaster();
+        final ReverseProxy<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>, RotatingFileBasedLog> reverseProxyCluster =
+                getLandscape().getCentralReverseProxy(region);
+        final Optional<String> optionalKeyName = Optional.ofNullable(optionalKeyNameOrNull);
+        final Pair<String, String> archiveAndFailoverIPs = reverseProxyCluster
+                .getArchiveAndFailoverIPs(optionalKeyName, privateKeyEncryptionPassphrase);
+        logger.info("Found new candidate " + candidate.getHost()
+                .getInstanceId() + " with internal IP "
+                + candidate.getHost().getPrivateAddress() + " and current production ARCHIVE "
+                + archiveAndFailoverIPs.getA() + ". Turning production into failover and candidate into production.");
+        reverseProxyCluster.setArchiveAndFailoverIPs(candidate.getHost().getPrivateAddress().getHostAddress(),
+                archiveAndFailoverIPs.getA(), optionalKeyName, privateKeyEncryptionPassphrase);
+        try {
+            final SailingAnalyticsHost<String> oldProductionArchive = getLandscape().getHostByPrivateDnsNameOrIpAddress(region, archiveAndFailoverIPs.getA(), new SailingAnalyticsHostSupplier<>());
+            getLandscape().setInstanceName(oldProductionArchive, SharedLandscapeConstants.ARCHIVE_SERVER_FAILOVER_INSTANCE_NAME);
+        } catch (Exception e) {
+            logger.warning("Couldn't find old production ARCHIVE with IP "+archiveAndFailoverIPs.getA()+", so couldn't update its Name tag");
+        }
+        getLandscape().setInstanceName(candidate.getHost(), SharedLandscapeConstants.ARCHIVE_SERVER_INSTANCE_NAME);
+        logger.info("Removing reverse proxy rule for archive candidate with hostname "+ candidateHostname);
+        reverseProxyCluster.removeRedirect(candidateHostname, optionalKeyName, privateKeyEncryptionPassphrase);
+        try {
+            final SailingAnalyticsHost<String> oldFailover = getLandscape().getHostByPrivateDnsNameOrIpAddress(region,
+                    archiveAndFailoverIPs.getB(), new SailingAnalyticsHostSupplier<>());
+            oldFailover.setTerminationProtection(false);
+            logger.info("Terminating old failover process, and hence probably host " + oldFailover.getInstanceId()
+                    + " with internal IP " + oldFailover.getPrivateAddress());
+            for (final SailingAnalyticsProcess<String> applicationProcessOnOldFailover : oldFailover
+                    .getApplicationProcesses(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName,
+                            privateKeyEncryptionPassphrase)) {
+                if (applicationProcessOnOldFailover
+                        .getServerName(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName,
+                                privateKeyEncryptionPassphrase)
+                        .equals(SharedLandscapeConstants.ARCHIVE_SERVER_APPLICATION_REPLICA_SET_NAME)) {
+                    applicationProcessOnOldFailover.stopAndTerminateIfLast(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
+                }
+            }
+        } catch (Exception e) {
+            logger.warning("Issue trying to clean up old failover instance: "+e.getMessage());
+        }
+        sendMailAboutNewArchiveServerLive(archiveReplicaSet);
     }
     
     @Override
@@ -242,13 +398,15 @@ public class LandscapeServiceImpl implements LandscapeService {
             String masterReplicationBearerToken, String replicaReplicationBearerToken,
             String optionalDomainName, Optional<Integer> optionalMinimumAutoScalingGroupSize, Optional<Integer> optionalMaximumAutoScalingGroupSize,
             Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, Optional<InstanceType> optionalSharedInstanceTypeForNewReplicaHost, Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployUnmanagedReplicaTo) throws Exception {
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort,
+            Optional<InstanceType> optionalSharedInstanceTypeForNewReplicaHost, Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployUnmanagedReplicaTo) throws Exception {
         return deployApplicationToExistingHostInternal(hostToDeployTo.getRegion(),
                 replicaSetName, hostToDeployTo,
                 replicaInstanceType, dynamicLoadBalancerMapping, releaseNameOrNullForLatestMaster, optionalKeyName,
                 privateKeyEncryptionPassphrase, masterReplicationBearerToken, replicaReplicationBearerToken,
                 optionalDomainName, optionalMinimumAutoScalingGroupSize, optionalMaximumAutoScalingGroupSize,
-                optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull, optionalSharedInstanceTypeForNewReplicaHost, optionalPreferredInstanceToDeployUnmanagedReplicaTo);
+                optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull, optionalIgtimiRiotPort,
+                optionalSharedInstanceTypeForNewReplicaHost, optionalPreferredInstanceToDeployUnmanagedReplicaTo);
     }
     
     @Override
@@ -256,14 +414,22 @@ public class LandscapeServiceImpl implements LandscapeService {
     MultiServerDeployerBuilderT extends DeployProcessOnMultiServer.Builder<MultiServerDeployerBuilderT, String, SailingAnalyticsHost<String>, SailingAnalyticsReplicaConfiguration<String>, AppConfigBuilderT>>
     SailingAnalyticsProcess<String> deployReplicaToExistingHost(final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             SailingAnalyticsHost<String> hostToDeployTo, String optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicaReplicationBearerToken,
-            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull) throws Exception {
+            Integer optionalMemoryInMegabytesOrNull, Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort) throws Exception {
         logger.info("Deploying replica for application replica set "+replicaSet.getName()+" to host "+hostToDeployTo);
         return spinUpReplicaAndRegisterInPublicTargetGroup(hostToDeployTo.getRegion(), replicaSet, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase, replicaReplicationBearerToken,
-                /* processLauncher: */ (AppConfigBuilderT replicaConfigurationBuilder)->{
+                optionalIgtimiRiotPort, /* processLauncher: */ (AppConfigBuilderT replicaConfigurationBuilder)->{
                     if (optionalMemoryInMegabytesOrNull != null) {
                         replicaConfigurationBuilder.setMemoryInMegabytes(optionalMemoryInMegabytesOrNull);
                     } else if (optionalMemoryTotalSizeFactorOrNull != null) {
                         replicaConfigurationBuilder.setMemoryTotalSizeFactor(optionalMemoryTotalSizeFactorOrNull);
+                    }
+                    try {
+                        Integer igtimiRiotPort = replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+                        if (igtimiRiotPort != null) {
+                            replicaConfigurationBuilder.setIgtimiRiotPort(igtimiRiotPort);
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
                     // the process launcher uses the DeployProcessOnMultiServer procedure to launch the process based on the replica config 
                     final DeployProcessOnMultiServer.Builder<MultiServerDeployerBuilderT, String, SailingAnalyticsHost<String>, SailingAnalyticsReplicaConfiguration<String>, AppConfigBuilderT> replicaDeploymentProcessBuilder =
@@ -289,17 +455,21 @@ public class LandscapeServiceImpl implements LandscapeService {
      * Starts a first master process of a new replica set whose name is provided by the {@code replicaSetName}
      * parameter. The process is started on the host identified by the {@code hostToDeployTo} parameter. A set of
      * available ports is identified and chosen automatically. The target groups and load balancing set-up is created.
-     * The {@code replicaInstanceType} is used to configure the launch template used by the auto-scaling group
-     * which is also created so that when dedicated replicas need to be provided during auto-scaling, their instance
-     * type is known.
+     * The {@code replicaInstanceType} is used to configure the launch template used by the auto-scaling group which is
+     * also created so that when dedicated replicas need to be provided during auto-scaling, their instance type is
+     * known.
      * <p>
      * 
      * The "internal" method exists in order to declare a few type parameters which wouldn't be possible on the GWT RPC
      * interface method as some of these types are not seen by clients.
+     * 
      * @param optionalMinimumAutoScalingGroupSize
      *            defaults to 1; if 0, a replica process will be launched on an eligible shared instance in an
-     *            availability zone different from that of the instance hosting the master process. Otherwise,
-     *            at least one auto-scaling replica will ensure availability of the replica set.
+     *            availability zone different from that of the instance hosting the master process. Otherwise, at least
+     *            one auto-scaling replica will ensure availability of the replica set.
+     * @param optionalIgtimiRiotPort
+     *            if non-{@code null}, this will be used to configure the
+     *            {@link SailingProcessConfigurationVariables#IGTIMI_RIOT_PORT} variable for the process
      * @param optionalInstanceType
      *            if a new instance must be launched because no eligible one is found, this parameter can be used to
      *            specify its instance type. It defaults to {@link InstanceType#I3_2_XLARGE} which is reasonably suited
@@ -323,8 +493,8 @@ public class LandscapeServiceImpl implements LandscapeService {
                     String replicaReplicationBearerToken, String optionalDomainName,
                     Optional<Integer> optionalMinimumAutoScalingGroupSize,
                     Optional<Integer> optionalMaximumAutoScalingGroupSize, Integer optionalMemoryInMegabytesOrNull,
-                    Integer optionalMemoryTotalSizeFactorOrNull, Optional<InstanceType> optionalInstanceType,
-                    Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployTo) throws Exception {
+                    Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort,
+                    Optional<InstanceType> optionalInstanceType, Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployTo) throws Exception {
         final AwsLandscape<String> landscape = getLandscape();
         final String hostname = getHostname(replicaSetName, optionalDomainName);
         final Iterable<ResourceRecordSet> existingDNSRulesForHostname = landscape.getResourceRecordSets(hostname);
@@ -335,27 +505,28 @@ public class LandscapeServiceImpl implements LandscapeService {
         final Release release = getRelease(releaseNameOrNullForLatestMaster);
         final AppConfigBuilderT masterConfigurationBuilder = createMasterConfigurationBuilder(replicaSetName,
                 masterReplicationBearerToken, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull,
-                region, release);
+                optionalIgtimiRiotPort, region, release);
         final InboundReplicationConfiguration inboundMasterReplicationConfiguration = masterConfigurationBuilder.getInboundReplicationConfiguration().get();
         final String bearerTokenUsedByReplicas = getEffectiveBearerToken(replicaReplicationBearerToken);
-        establishServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
+        establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(replicaSetName, bearerTokenUsedByReplicas,
                 inboundMasterReplicationConfiguration.getMasterHostname(), inboundMasterReplicationConfiguration.getMasterHttpPort());
         final SailingAnalyticsProcess<String> master = deployProcessToSharedInstance(hostToDeployTo,
                 masterConfigurationBuilder, optionalKeyName, privateKeyEncryptionPassphrase);
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet =
             createLoadBalancingAndAutoScalingSetup(landscape, region, replicaSetName, master, release, replicaInstanceType, dynamicLoadBalancerMapping,
                 optionalKeyName, privateKeyEncryptionPassphrase, optionalDomainName, /* use default AMI as replica machine image */ Optional.empty(),
-                bearerTokenUsedByReplicas, optionalMinimumAutoScalingGroupSize, optionalMaximumAutoScalingGroupSize);
+                bearerTokenUsedByReplicas, optionalMinimumAutoScalingGroupSize, optionalMaximumAutoScalingGroupSize, optionalIgtimiRiotPort);
         final Iterable<SailingAnalyticsProcess<String>> replicas;
         if (optionalMinimumAutoScalingGroupSize.isPresent() && optionalMinimumAutoScalingGroupSize.get() == 0) {
             replicas = Collections.singleton(launchUnmanagedReplica(replicaSet, region, optionalKeyName,
                 privateKeyEncryptionPassphrase, bearerTokenUsedByReplicas, optionalMemoryInMegabytesOrNull,
-                optionalMemoryTotalSizeFactorOrNull, optionalInstanceType, optionalPreferredInstanceToDeployTo));
+                optionalMemoryTotalSizeFactorOrNull, optionalIgtimiRiotPort, optionalInstanceType, optionalPreferredInstanceToDeployTo));
         } else {
             replicas = Collections.emptySet();
         }
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSetWithReplica =
-                landscape.getApplicationReplicaSet(region, replicaSet.getServerName(), master, replicas);
+                landscape.getApplicationReplicaSet(region, replicaSet.getServerName(), master, replicas,
+                        Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         return replicaSetWithReplica;
     }
 
@@ -392,6 +563,9 @@ public class LandscapeServiceImpl implements LandscapeService {
      * with large fast swap space and a reasonable amount of physical RAM that would allow somewhere between two and
      * four processes to share the physical RAM even during a live event.
      * 
+     * @param optionalIgtimiRiotPort
+     *            if non-{@code null}, configures the {@link SailingProcessConfigurationVariables#IGTIMI_RIOT_PORT}
+     *            variable of the replica
      * @param optionalInstanceType
      *            defaults to {@link SharedLandscapeConstants#DEFAULT_SHARED_INSTANCE_TYPE_NAME}
      */
@@ -399,8 +573,8 @@ public class LandscapeServiceImpl implements LandscapeService {
             final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             AwsRegion region, String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             String replicaReplicationBearerToken, Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, Optional<InstanceType> optionalInstanceType,
-            Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployTo) throws Exception {
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort,
+            Optional<InstanceType> optionalInstanceType, Optional<SailingAnalyticsHost<String>> optionalPreferredInstanceToDeployTo) throws Exception {
         final EligibleInstanceForReplicaSetFindingStrategy strategyForFindingOrLaunchingInstanceForUnmangedReplica =
                 new EligibleInstanceForReplicaSetFindingStrategyImpl(this, region, optionalKeyName,
                         privateKeyEncryptionPassphrase, /* master==false because we'd like to deploy a replica */ false,
@@ -408,7 +582,9 @@ public class LandscapeServiceImpl implements LandscapeService {
                         optionalPreferredInstanceToDeployTo);
         final SailingAnalyticsProcess<String> replica = deployReplicaToExistingHost(
                 replicaSet, strategyForFindingOrLaunchingInstanceForUnmangedReplica.getInstanceToDeployTo(replicaSet),
-                optionalKeyName, privateKeyEncryptionPassphrase, replicaReplicationBearerToken, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull);
+                optionalKeyName, privateKeyEncryptionPassphrase, replicaReplicationBearerToken,
+                optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull,
+                optionalIgtimiRiotPort);
         return replica;
     }
     
@@ -781,11 +957,11 @@ public class LandscapeServiceImpl implements LandscapeService {
     @Override
     public Release getRelease(String releaseNameOrNullForLatestMaster) {
         return releaseNameOrNullForLatestMaster==null
-                ? SailingReleaseRepository.INSTANCE.getLatestMasterRelease()
+                ? SailingReleaseRepository.INSTANCE.getLatestDefaultRelease()
                 : SailingReleaseRepository.INSTANCE.getRelease(releaseNameOrNullForLatestMaster);
     }
 
-    private void establishServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(String serverName,
+    private void establishServerAndServerGroupAndTryToMakeCurrentUserItsOwnerAndMember(String serverName,
             String bearerTokenUsedByReplicas, String securityServiceHostname,
             Integer securityServicePort)
             throws MalformedURLException, ClientProtocolException, IOException, ParseException, IllegalAccessException {
@@ -795,6 +971,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 RemoteServerUtil.getBaseServerUrl(securityServiceHostname, securityServicePort==null?443:securityServicePort), bearerTokenUsedByReplicas);
         final UUID userGroupId = securityServiceServer.getUserGroupIdByName(serverGroupName);
         final UUID groupId;
+        final String securityServiceServerUsername = securityServiceServer.getUsername();
         if (userGroupId != null) {
             groupId = userGroupId;
             final TypeRelativeObjectIdentifier serverGroupTypeRelativeObjectId = new TypeRelativeObjectIdentifier(userGroupId.toString());
@@ -809,7 +986,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                     SecuredSecurityTypes.SERVER.getPermissionForTypeRelativeIdentifier(DefaultActions.DELETE, serverGroupTypeRelativeObjectId)));
             for (final Pair<WildcardPermission, Boolean> permission : permissions) {
                 if (!permission.getB()) {
-                    final String msg = "Subject "+securityServiceServer.getUsername()+" on server "+securityServiceHostname+
+                    final String msg = "Subject "+securityServiceServerUsername+" on server "+securityServiceHostname+
                             " is not allowed "+permission.getA()+". Not allowing to create application replica set for "+serverName;
                     logger.warning(msg);
                     throw new AuthorizationException(msg);
@@ -821,12 +998,12 @@ public class LandscapeServiceImpl implements LandscapeService {
         } else {
             groupId = securityServiceServer.createUserGroupAndAddCurrentUser(serverGroupName);
             try {
-                securityServiceServer.addRoleToUser(ServerAdminRole.getInstance().getId(), securityServiceServer.getUsername(),
+                securityServiceServer.addRoleToUser(ServerAdminRole.getInstance().getId(), securityServiceServerUsername,
                         /* qualified for server group: */ groupId, null, /* transitive */ true);
             } catch (Exception e) {
                 // this didn't work, but it's not the end of the world if we cannot grant the requesting user the
                 // event_manager:{group-name} role; the user may end up not having SERVER:CREATE_OBJECT...
-                logger.warning("Couldn't grant role "+ServerAdminRole.getInstance().getName()+" to user "+securityServiceServer.getUsername()+": "+e.getMessage());
+                logger.warning("Couldn't grant role "+ServerAdminRole.getInstance().getName()+" to user "+securityServiceServerUsername+": "+e.getMessage());
             }
             try {
                 // try to set the group owner of the new group to the group itself, allowing all users with role user:{group-name} to
@@ -841,6 +1018,14 @@ public class LandscapeServiceImpl implements LandscapeService {
             }
         }
         ensureGroupMembersCanReadGroup(securityServiceServer, groupId);
+        final TypeRelativeObjectIdentifier serverTypeRelativeObjectId = new TypeRelativeObjectIdentifier(serverName);
+        final Pair<UUID, String> serverOwningGroupIdAndUsername = securityServiceServer.getGroupAndUserOwner(SecuredSecurityTypes.SERVER, serverTypeRelativeObjectId);
+        if (serverOwningGroupIdAndUsername == null || serverOwningGroupIdAndUsername.getA() == null && serverOwningGroupIdAndUsername.getB() == null) {
+            logger.info("Setting ownership for SERVER object "+serverName+" to group "+serverGroupName+" and user "+securityServiceServerUsername);
+            securityServiceServer.setGroupAndUserOwner(SecuredSecurityTypes.SERVER, serverTypeRelativeObjectId,
+                    Optional.of(SecuredSecurityTypes.SERVER.getName()+"/"+serverName),
+                    Optional.of(groupId), Optional.of(securityServiceServerUsername));
+        }
     }
 
     private void ensureGroupMembersCanReadGroup(SailingServer securityServiceServer, UUID groupId) throws ClientProtocolException, IOException, ParseException {
@@ -855,7 +1040,7 @@ public class LandscapeServiceImpl implements LandscapeService {
 
     private <AppConfigBuilderT extends com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<AppConfigBuilderT, String>> AppConfigBuilderT createMasterConfigurationBuilder(
             String replicaSetName, String optionalMasterReplicationBearerTokenOrNull, Integer optionalMemoryInMegabytesOrNull,
-            Integer optionalMemoryTotalSizeFactorOrNull, final AwsRegion region, final Release release) {
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, final AwsRegion region, final Release release) {
         final AppConfigBuilderT masterConfigurationBuilder = SailingAnalyticsMasterConfiguration.masterBuilder();
         final String bearerTokenUsedByMaster = getEffectiveBearerToken(optionalMasterReplicationBearerTokenOrNull);
         final User currentUser = getSecurityService().getCurrentUser();
@@ -869,6 +1054,32 @@ public class LandscapeServiceImpl implements LandscapeService {
             .setRegion(region)
             // TODO bug5684: probably this is the place to add the REPLICATE_MASTER_SERVLET_HOST/REPLICATE_MASTER_EXCHANGE_NAME variables to point to a default security service?
             .setInboundReplicationConfiguration(InboundReplicationConfiguration.builder().setCredentials(new BearerTokenReplicationCredentials(bearerTokenUsedByMaster)).build());
+        if (optionalIgtimiRiotPort != null) {
+            masterConfigurationBuilder.setIgtimiRiotPort(optionalIgtimiRiotPort);
+        }
+        applyMemoryConfigurationToApplicationConfigurationBuilder(masterConfigurationBuilder, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull);
+        return masterConfigurationBuilder;
+    }
+    
+    private <AppConfigBuilderT extends com.sap.sailing.landscape.procedures.SailingAnalyticsMasterConfiguration.Builder<AppConfigBuilderT, String>> AppConfigBuilderT createArchiveConfigurationBuilder(
+            String replicaSetName, Database databaseConfiguration, String optionalMasterReplicationBearerTokenOrNull, Integer optionalMemoryInMegabytesOrNull,
+            Integer optionalMemoryTotalSizeFactorOrNull, Integer optionalIgtimiRiotPort, final AwsRegion region, final Release release) {
+        final AppConfigBuilderT masterConfigurationBuilder = SailingAnalyticsMasterConfiguration.masterBuilder();
+        final String bearerTokenUsedByMaster = getEffectiveBearerToken(optionalMasterReplicationBearerTokenOrNull);
+        final User currentUser = getSecurityService().getCurrentUser();
+        if (currentUser != null && currentUser.isEmailValidated() && currentUser.getEmail() != null) {
+            masterConfigurationBuilder.setCommaSeparatedEmailAddressesToNotifyOfStartup(currentUser.getEmail());
+        }
+        masterConfigurationBuilder
+            .setDatabaseConfiguration(databaseConfiguration)
+            .setLandscape(getLandscape())
+            .setServerName(replicaSetName)
+            .setRelease(release)
+            .setRegion(region)
+            .setInboundReplicationConfiguration(InboundReplicationConfiguration.builder().setCredentials(new BearerTokenReplicationCredentials(bearerTokenUsedByMaster)).build());
+        if (optionalIgtimiRiotPort != null) {
+            masterConfigurationBuilder.setIgtimiRiotPort(optionalIgtimiRiotPort);
+        }
         applyMemoryConfigurationToApplicationConfigurationBuilder(masterConfigurationBuilder, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull);
         return masterConfigurationBuilder;
     }
@@ -881,8 +1092,8 @@ public class LandscapeServiceImpl implements LandscapeService {
      */
     private <AppConfigBuilderT extends SailingAnalyticsReplicaConfiguration.Builder<AppConfigBuilderT, String>>
     AppConfigBuilderT createReplicaConfigurationBuilder(final AwsRegion region,
-            String replicaSetName, final int masterPort, final Release release,
-            final String bearerTokenUsedByReplicas, final String masterHostname) {
+            String replicaSetName, final int masterPort, Integer optionalIgtimiRiotPort,
+            final Release release, final String bearerTokenUsedByReplicas, final String masterHostname) {
         final AppConfigBuilderT replicaConfigurationBuilder = SailingAnalyticsReplicaConfiguration.replicaBuilder();
         final User currentUser = getSecurityService().getCurrentUser();
         if (currentUser != null && currentUser.isEmailValidated() && currentUser.getEmail() != null) {
@@ -900,6 +1111,9 @@ public class LandscapeServiceImpl implements LandscapeService {
                     .setMasterHostname(masterHostname) // don't set the master port; the replica set talks to "itself" through the load balancer using HTTPS
                     .setCredentials(new BearerTokenReplicationCredentials(bearerTokenUsedByReplicas))
                     .build());
+        if (optionalIgtimiRiotPort != null) {
+            replicaConfigurationBuilder.setIgtimiRiotPort(optionalIgtimiRiotPort);
+        }
         return replicaConfigurationBuilder;
     }
     
@@ -919,7 +1133,8 @@ public class LandscapeServiceImpl implements LandscapeService {
             boolean dynamicLoadBalancerMapping, String optionalKeyName, byte[] privateKeyEncryptionPassphrase,
             String optionalDomainName,
             final Optional<AmazonMachineImage<String>> replicaMachineImage,
-            final String bearerTokenUsedByReplicas, Optional<Integer> minimumNumberOfReplicas, Optional<Integer> maximumNumberOfReplicas)
+            final String bearerTokenUsedByReplicas, Optional<Integer> minimumNumberOfReplicas, Optional<Integer> maximumNumberOfReplicas,
+            Integer optionalIgtimiRiotPort)
             throws Exception, JSchException, IOException, InterruptedException, SftpException, TimeoutException {
         logger.info("Creating load balancing and auto-scaling set-up for replica set "+replicaSetName);
         if (dynamicLoadBalancerMapping && !region.getId().equals(SharedLandscapeConstants.REGION_WITH_DEFAULT_LOAD_BALANCER)) {
@@ -940,7 +1155,7 @@ public class LandscapeServiceImpl implements LandscapeService {
             .build();
         createLoadBalancerMapping.run();
         // construct a replica configuration which is used to produce the user data for the launch template used in an auto-scaling group
-        final Builder<?, String> replicaConfigurationBuilder = createReplicaConfigurationBuilder(region, replicaSetName, master.getPort(), release, bearerTokenUsedByReplicas, masterHostname);
+        final Builder<?, String> replicaConfigurationBuilder = createReplicaConfigurationBuilder(region, replicaSetName, master.getPort(), optionalIgtimiRiotPort, release, bearerTokenUsedByReplicas, masterHostname);
         // Now wait for master to become healthy before creating auto-scaling; otherwise it may happen that the replica tried to start
         // replication before the master is ready (see also bug 5527).
         master.waitUntilReady(Landscape.WAIT_FOR_HOST_TIMEOUT);
@@ -978,7 +1193,8 @@ public class LandscapeServiceImpl implements LandscapeService {
         final AwsApplicationReplicaSet<String,SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> applicationReplicaSet =
                 new AwsApplicationReplicaSetImpl<>(replicaSetName, masterHostname, master, /* no replicas yet */ Optional.empty(),
                         allLoadBalancersInRegion, allTargetGroupsInRegion, allLoadBalancerRulesInRegion,
-                        autoScalingGroups, launchTemplates, launchTemplateDefaultVersions, dnsCache, RemoteServiceMappingConstants.pathPrefixForShardingKey);
+                        autoScalingGroups, launchTemplates, launchTemplateDefaultVersions, dnsCache, RemoteServiceMappingConstants.pathPrefixForShardingKey,
+                        Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         return applicationReplicaSet;
     }
 
@@ -1045,6 +1261,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 + replicaSet.getPublicTargetGroup() + " and " + replicaSet.getMasterTargetGroup());
         replicaSet.getPublicTargetGroup().addTarget(master.getHost());
         replicaSet.getMasterTargetGroup().addTarget(master.getHost());
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(master.getHost()));
         sendMailAboutMasterAvailable(replicaSet);
         // the following map stores the assignment of the temporary upgrade replicas to the public / shard target groups
         // for later removal as the final auto-scaling replicas start to replace them:
@@ -1064,7 +1281,10 @@ public class LandscapeServiceImpl implements LandscapeService {
         // add all other temporary upgrade replicas not used for shards to the public target group:
         replicaSet.getPublicTargetGroup().addTargets(Util.map(temporaryUpgradeReplicasMutable,
                 temporaryUpgradeReplica -> temporaryUpgradeReplica.getHost()));
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.addTargets(Util.map(temporaryUpgradeReplicasMutable,
+                temporaryUpgradeReplica -> temporaryUpgradeReplica.getHost())));
         tempUpgradeReplicasByTargetGroup.put(replicaSet.getPublicTargetGroup(), Util.map(temporaryUpgradeReplicasMutable, temporaryUpgradeReplica->temporaryUpgradeReplica.getHost()));
+        replicaSet.getOtherTargetGroups().forEach(tg->tempUpgradeReplicasByTargetGroup.put(tg, Util.map(temporaryUpgradeReplicasMutable, temporaryUpgradeReplica->temporaryUpgradeReplica.getHost())));
         // if a replica was spun up (additionalReplicaStarted), remove from public target group and terminate:
         if (additionalReplicaStarted != null) {
             replicasToStopAfterUpgradingMaster.add(additionalReplicaStarted);
@@ -1083,6 +1303,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         final Set<SailingAnalyticsProcess<String>> newUpgradedUnmanagedReplicas = new HashSet<>();
         logger.info("Removing old replicas from public target group "+replicaSet.getPublicTargetGroup());
         replicaSet.getPublicTargetGroup().removeTargets(Util.map(replicasToStopAfterUpgradingMaster, replica->replica.getHost()));
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.removeTargets(Util.map(replicasToStopAfterUpgradingMaster, replica->replica.getHost())));
         for (final SailingAnalyticsProcess<String> replica : replicasToStopAfterUpgradingMaster) {
             // if managed by auto-scaling group or if it's an "unmanaged" / "explicit" replica and it's the one launched in order to have at least one, stop/terminate;
             final boolean managedByAutoScalingGroup = replica.getHost().isManagedByAutoScalingGroup(affectedAutoScalingGroups);
@@ -1095,6 +1316,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 replica.refreshToRelease(release, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
                 replica.waitUntilReady(Optional.of(Duration.ONE_DAY));
                 replicaSet.getPublicTargetGroup().addTarget(replica.getHost());
+                replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(replica.getHost()));
                 newUpgradedUnmanagedReplicas.add(replica);
             }
         }
@@ -1129,7 +1351,8 @@ public class LandscapeServiceImpl implements LandscapeService {
         }
         return getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), master,
                 // don't use those temporary upgrade replicas that just got terminated:
-                Util.filter(newUpgradedReplicas, newUpgradedReplica->!Util.contains(temporaryUpgradeReplicas, newUpgradedReplica)));
+                Util.filter(newUpgradedReplicas, newUpgradedReplica->!Util.contains(temporaryUpgradeReplicas, newUpgradedReplica)),
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
     }
 
     /**
@@ -1165,6 +1388,7 @@ public class LandscapeServiceImpl implements LandscapeService {
             Release release, String replicationBearerToken, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
         final Set<SailingAnalyticsProcess<String>> result = new HashSet<>();
         final SailingAnalyticsProcess<String> master = replicaSet.getMaster();
+        final Integer optionalIgtimiRiotPort = master.getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
         final AwsRegion region = master.getHost().getRegion();
         for (final SailingAnalyticsProcess<String> replica : replicaSet.getReplicas()) {
             final InstanceType instanceType = replica.getHost().getInstance().instanceType();
@@ -1178,7 +1402,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                     "MB. Using for upgrade replica configuration with instance type "+instanceType+".");
             final AppConfigBuilderT replicaConfigurationBuilder =
                     createReplicaConfigurationBuilder(region, replicaSet.getServerName(), master.getPort(),
-                            release, replicationBearerToken, replicaSet.getHostname());
+                            optionalIgtimiRiotPort, release, replicationBearerToken, replicaSet.getHostname());
             // regarding the dedicated temporary upgrade replica's memory configuration we can assume that either the
             // old replica was running on a dedicated instance and therefore had a memory configuration that uses the
             // instance's available RAM, so will fit into the new dedicated temporary upgrade instance; or the
@@ -1224,7 +1448,9 @@ public class LandscapeServiceImpl implements LandscapeService {
                 SharedLandscapeConstants.SAILING_ANALYTICS_APPLICATION_HOST_TAG, SharedLandscapeConstants.MULTI_PROCESS_INSTANCE_TAG_VALUE,
                 new SailingAnalyticsHostSupplier<String>()), h->{
                     try {
-                        return replicaSet.isEligibleForDeployment(h, Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+                        return isEligibleForDeployment(h, replicaSet.getServerName(), replicaSet.getPort(),
+                                replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase),
+                                Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -1282,6 +1508,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                 replicaSet.getPublicTargetGroup()+" and "+replicaSet.getMasterTargetGroup());
         replicaSet.getPublicTargetGroup().removeTarget(replicaSet.getMaster().getHost());
         replicaSet.getMasterTargetGroup().removeTarget(replicaSet.getMaster().getHost());
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.removeTarget(replicaSet.getMaster().getHost()));
         sendMailAboutMasterUnavailable(replicaSet);
         return additionalReplicaStarted;
     }
@@ -1308,18 +1535,21 @@ public class LandscapeServiceImpl implements LandscapeService {
         if (replicaSet.getAutoScalingGroup() != null) {
             spunUpReplica = spinUpReplicaByIncreasingAutoScalingGroupMinSize(replicaSet.getAutoScalingGroup(), replicaSet.getMaster());
         } else {
+            final Integer optionalIgtimiRiotPort = replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
             spunUpReplica = spinUpReplicaAndRegisterInPublicTargetGroup(replicaSet, optionalKeyName,
-                    privateKeyEncryptionPassphrase, replicationBearerToken);
+                    privateKeyEncryptionPassphrase, replicationBearerToken, optionalIgtimiRiotPort);
         }
+        // bug6083 comment #6: Note that the following won't happen when the auto-scaling group automatically reacts to scaling events
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(spunUpReplica.getHost()));
         return spunUpReplica;
     }
 
     private SailingAnalyticsProcess<String> spinUpReplicaAndRegisterInPublicTargetGroup(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
-            Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken) throws Exception {
+            Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken, Integer optionalIgtimiRiotPort) throws Exception {
         final AwsRegion region = replicaSet.getMaster().getHost().getRegion();
         return spinUpReplicaAndRegisterInPublicTargetGroup(region, replicaSet, optionalKeyName, privateKeyEncryptionPassphrase, replicationBearerToken,
-                /* processLauncher: */ replicaConfigurationBuilder->{
+                optionalIgtimiRiotPort, /* processLauncher: */ replicaConfigurationBuilder->{
                     // the process launcher determines the master's instance type and launches a host of the same type using the replica configuration for the process config
                     final InstanceType masterInstanceType = replicaSet.getMaster().getHost().getInstance().instanceType();
                     final com.sap.sailing.landscape.procedures.StartSailingAnalyticsReplicaHost.Builder<?, String> replicaHostBuilder = StartSailingAnalyticsReplicaHost.replicaHostBuilder(replicaConfigurationBuilder);
@@ -1348,6 +1578,10 @@ public class LandscapeServiceImpl implements LandscapeService {
      * configuration to parameterize a process deployment to an existing host (see the
      * {@link DeployProcessOnMultiServer} procedure).
      * 
+     * @param optionalIgtimiRiotPort
+     *            if non-{@code null}, used to configure the
+     *            {@link SailingProcessConfigurationVariables#IGTIMI_RIOT_PORT} variable of the replica launched
+     * 
      * @return the process that the {@code processLauncher} started
      */
     private <AppConfigBuilderT extends SailingAnalyticsReplicaConfiguration.Builder<AppConfigBuilderT, String>>
@@ -1355,10 +1589,11 @@ public class LandscapeServiceImpl implements LandscapeService {
             AwsRegion region,
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase, String replicationBearerToken,
-            Function<AppConfigBuilderT, SailingAnalyticsProcess<String>> processLauncher) throws Exception {
+            Integer optionalIgtimiRiotPort, Function<AppConfigBuilderT, SailingAnalyticsProcess<String>> processLauncher) throws Exception {
         final Release release = replicaSet.getVersion(Landscape.WAIT_FOR_PROCESS_TIMEOUT, optionalKeyName, privateKeyEncryptionPassphrase);
         final AppConfigBuilderT replicaConfigurationBuilder =
-                createReplicaConfigurationBuilder(region, replicaSet.getServerName(), replicaSet.getMaster().getPort(), release, replicationBearerToken, replicaSet.getHostname());
+                createReplicaConfigurationBuilder(region, replicaSet.getServerName(), replicaSet.getMaster().getPort(),
+                        optionalIgtimiRiotPort, release, replicationBearerToken, replicaSet.getHostname());
         final SailingAnalyticsProcess<String> sailingAnalyticsProcess = processLauncher.apply(replicaConfigurationBuilder);
         waitUntilHealthyAndThenRegisterReplicaInPublicTargetGroup(sailingAnalyticsProcess, replicaSet);
         return sailingAnalyticsProcess;
@@ -1376,6 +1611,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         if (replicaSet.getPublicTargetGroup() != null) {
             replicaSet.getPublicTargetGroup().addTarget(sailingAnalyticsProcess.getHost());
         }
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(sailingAnalyticsProcess.getHost()));
     }
 
     private SailingAnalyticsProcess<String> spinUpReplicaByIncreasingAutoScalingGroupMinSize(
@@ -1388,7 +1624,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         return Wait.wait(()->hasHealthyAutoScalingReplica(master, autoScalingGroup), healthyReplica->healthyReplica != null,
                 /* retryOnException */ true,
                 Landscape.WAIT_FOR_HOST_TIMEOUT, Duration.ONE_SECOND.times(5), Level.INFO,
-                "Waiting for auto-scaling group to produce healthy replica");
+                "Waiting for auto-scaling group "+autoScalingGroup.getName()+" to produce healthy replica");
     }
 
     /**
@@ -1432,7 +1668,8 @@ public class LandscapeServiceImpl implements LandscapeService {
     @Override
     public Iterable<AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>>> updateImageForReplicaSets(AwsRegion region,
             Iterable<AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>>> replicaSets,
-            Optional<AmazonMachineImage<String>> optionalAmi) throws InterruptedException, ExecutionException, TimeoutException {
+            Optional<AmazonMachineImage<String>> optionalAmi, Optional<Duration> optionalTimeout,
+            Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws InterruptedException, ExecutionException, TimeoutException {
         final Set<AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>>> result = new HashSet<>();
         for (final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet : replicaSets) {
             if (replicaSet.getAutoScalingGroup() != null) {
@@ -1440,7 +1677,8 @@ public class LandscapeServiceImpl implements LandscapeService {
                         ()->getLandscape().getLatestImageWithType(region, SharedLandscapeConstants.IMAGE_TYPE_TAG_VALUE_SAILING));
                 logger.info("Upgrading AMI in auto-scaling groups "+Util.join(", ", replicaSet.getAllAutoScalingGroups())+" of replica set "+replicaSet.getName()+" to "+ami.getId());
                 getLandscape().updateImageInAutoScalingGroups(region, replicaSet.getAllAutoScalingGroups(), replicaSet.getName(), ami);
-                result.add(getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), replicaSet.getMaster(), replicaSet.getReplicas()));
+                result.add(getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), replicaSet.getMaster(), replicaSet.getReplicas(),
+                        optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase));
             } else {
                 logger.info("No auto-scaling group found for replica set "+replicaSet.getName()+" to update AMI in");
             }
@@ -1463,6 +1701,8 @@ public class LandscapeServiceImpl implements LandscapeService {
                 result = replicaSet;
             } else {
                 final SailingAnalyticsProcess<String> replica = spinUpReplicaByIncreasingAutoScalingGroupMinSize(replicaSet.getAutoScalingGroup(), replicaSet.getMaster());
+                // bug6083 comment #6: this registration with other target groups won't happen when another scaling event triggers the launch
+                replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(replica.getHost()));
                 assert replica.isReady(Landscape.WAIT_FOR_PROCESS_TIMEOUT);
                 for (final SailingAnalyticsProcess<String> nonAutoScalingReplica : replicaSet.getReplicas()) {
                     if (!nonAutoScalingReplica.getHost().isManagedByAutoScalingGroup()) {
@@ -1473,7 +1713,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                     }
                 }
                 result = getLandscape().getApplicationReplicaSet(replicaSet.getMaster().getHost().getRegion(), replicaSet.getServerName(), replicaSet.getMaster(),
-                        Collections.singleton(replica));
+                        Collections.singleton(replica), Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
             }
         } else {
             logger.warning("No auto-scaling group found for replica set "+replicaSet+"; not terminating any replicas.");
@@ -1504,11 +1744,12 @@ public class LandscapeServiceImpl implements LandscapeService {
             logger.info("No replica found for replica set "+replicaSet.getName()+
                     " that is not managed by auto-scaling group "+(autoScalingGroup==null?"null":autoScalingGroup.getName())+
                     ". Launching one on an eligible shared instance.");
+            final Integer optionalIgtimiRiotPort = replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
             nonAutoScalingReplica.add(launchUnmanagedReplica(replicaSet, replicaSet.getMaster().getHost().getRegion(), optionalKeyName,
                     privateKeyEncryptionPassphrase, getEffectiveBearerToken(replicaReplicationBearerToken), optionalMemoryInMegabytesOrNull,
                     optionalMemoryTotalSizeFactorOrNull,
-                    Optional.of(optionalInstanceType.orElseGet(()->replicaSet.getMaster().getHost().getInstance().instanceType())),
-                    /* optionalPreferredInstanceToDeployTo */ Optional.empty()));
+                    optionalIgtimiRiotPort,
+                    Optional.of(optionalInstanceType.orElseGet(()->replicaSet.getMaster().getHost().getInstance().instanceType())), /* optionalPreferredInstanceToDeployTo */ Optional.empty()));
         }
         if (autoScalingGroup != null) {
             logger.info("Scaling down auto-scaling group for replica set "+replicaSet.getName()+" from minimum size "+
@@ -1517,7 +1758,8 @@ public class LandscapeServiceImpl implements LandscapeService {
         } else {
             logger.info("No auto-scaling group found for replica set "+replicaSet.getName()+"; nothing to scale down.");
         }
-        return getLandscape().getApplicationReplicaSet(replicaSet.getMaster().getHost().getRegion(), replicaSet.getServerName(), replicaSet.getMaster(), nonAutoScalingReplica);
+        return getLandscape().getApplicationReplicaSet(replicaSet.getMaster().getHost().getRegion(), replicaSet.getServerName(),
+                replicaSet.getMaster(), nonAutoScalingReplica, Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
     }
     
     @Override
@@ -1531,6 +1773,7 @@ public class LandscapeServiceImpl implements LandscapeService {
                     Integer optionalMemoryTotalSizeFactorOrNull)
                     throws MalformedURLException,
                     IOException, TimeoutException, InterruptedException, ExecutionException, Exception {
+        final Integer igtimiRiotPort = replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         if (replicaSet.isLocalReplicaSet()) {
             throw new IllegalArgumentException("A replica set cannot move its own master process. Current replica set: "+ServerInfo.getName());
         }
@@ -1552,7 +1795,7 @@ public class LandscapeServiceImpl implements LandscapeService {
         replicaSet.getMaster().stopAndTerminateIfLast(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         final AppConfigBuilderT masterConfigurationBuilder = createMasterConfigurationBuilder(replicaSet.getName(),
                 optionalMasterReplicationBearerTokenOrNull, optionalMemoryInMegabytesOrNull, optionalMemoryTotalSizeFactorOrNull,
-                region, release);
+                igtimiRiotPort, region, release);
         masterConfigurationBuilder.setPort(replicaSet.getPort()); // master must run on same port as the rest of the replica set
         final SailingAnalyticsProcess<String> newMaster;
         if (useSharedInstance) {
@@ -1581,6 +1824,8 @@ public class LandscapeServiceImpl implements LandscapeService {
         logger.info("Adding new master "+newMaster+" to target groups");
         replicaSet.getPublicTargetGroup().addTarget(hostToDeployTo);
         replicaSet.getMasterTargetGroup().addTarget(hostToDeployTo);
+        final SailingAnalyticsHost<String> finalHostToDeployTo = hostToDeployTo;
+        replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(finalHostToDeployTo));
         sendMailAboutMasterAvailable(replicaSet);
         if (newTemporaryReplica != null) {
             newTemporaryReplica.stopAndTerminateIfLast(Landscape.WAIT_FOR_HOST_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
@@ -1588,7 +1833,34 @@ public class LandscapeServiceImpl implements LandscapeService {
         // here, although we're waiting for a process to become healthy, that process may need to fetch a large
         // initial load before reaching the healthy state, so we'll use the longer HOST timeout here:
         replicaSet.restartAllReplicas(Landscape.WAIT_FOR_HOST_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
-        return getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), newMaster, replicaSet.getReplicas());
+        return getLandscape().getApplicationReplicaSet(region, replicaSet.getServerName(), newMaster, replicaSet.getReplicas(),
+                Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
+    }
+    
+    private void sendMailAboutNewArchiveCandidate(
+            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
+        sendMailToCurrentUser("StartingNewArchiveCandidateSubject", "StartingNewArchiveCandidateBody", replicaSet.getServerName());
+        sendMailToReplicaSetOwner(replicaSet, "RefrainFromArchivingSubject", "RefrainFromArchivingBody", Optional.empty());
+    }
+    
+    @Override
+    public void sendMailToCurrentUser(String messageSubjectKey, String messageBodyKey, String... messageParameters) throws MailException {
+        final User currentUser = getSecurityService().getCurrentUser();
+        sendMailToUser(currentUser, messageSubjectKey, messageBodyKey, messageParameters);
+    }
+
+    @Override
+    public void sendMailToUser(final User user, String messageSubjectKey, String messageBodyKey,
+            String... messageParameters) throws MailException {
+        final ResourceBundleStringMessages stringMessages = ResourceBundleStringMessages.create(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
+        if (user != null && user.isEmailValidated()) {
+            final String subject = stringMessages.get(user.getLocaleOrDefault(), messageSubjectKey, messageParameters);
+            final String body = stringMessages.get(user.getLocaleOrDefault(), messageBodyKey, messageParameters);
+            getSecurityService().sendMail(user.getName(), subject, body);
+        } else {
+            logger.warning("Not sending e-mail about new archive candidate to current user because no user is logged in or email address of logged in user "+
+                    (user == null ? "" : user.getName()+" ")+"is not validated");
+        }
     }
 
     private void sendMailAboutMasterUnavailable(
@@ -1611,19 +1883,12 @@ public class LandscapeServiceImpl implements LandscapeService {
      *            action on the {@code replicaSet} will receive the e-mail in addition to the server owner. No user
      *            will receive the e-mail twice.
      */
-    private void sendMailToReplicaSetOwner(
+    @Override
+    public void sendMailToReplicaSetOwner(
             AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
             final String subjectMessageKey, final String bodyMessageKey, Optional<Action> alsoSendToAllUsersWithThisPermissionOnReplicaSet) throws MailException {
-        final OwnershipAnnotation serverOwnership = getSecurityService().getOwnership(getReplicaSetQualifiedObjectIdentifier(replicaSet));
-        final User serverOwner;
-        final ResourceBundleStringMessages stringMessages = new ResourceBundleStringMessagesImpl(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
-        final Set<User> usersToSendMailTo = new HashSet<>();
-        if (serverOwnership != null && serverOwnership.getAnnotation() != null && (serverOwner = serverOwnership.getAnnotation().getUserOwner()) != null) {
-            usersToSendMailTo.add(serverOwner);
-        }
-        alsoSendToAllUsersWithThisPermissionOnReplicaSet.ifPresent(
-                serverAction -> getSecurityService().getUsersWithPermissions(getReplicaSetQualifiedObjectIdentifier(replicaSet).getPermission(serverAction))
-                .forEach(usersToSendMailTo::add));
+        final Iterable<User> usersToSendMailTo = getSecurityService().getUsersToInformAboutReplicaSet(replicaSet.getServerName(), alsoSendToAllUsersWithThisPermissionOnReplicaSet);
+        final ResourceBundleStringMessages stringMessages = ResourceBundleStringMessages.create(STRING_MESSAGES_BASE_NAME, getClass().getClassLoader(), StandardCharsets.UTF_8.name());
         for (final User user : usersToSendMailTo) {
             final String subject = stringMessages.get(user.getLocaleOrDefault(), subjectMessageKey, replicaSet.getServerName());
             final String body = stringMessages.get(user.getLocaleOrDefault(), bodyMessageKey, replicaSet.getServerName());
@@ -1637,10 +1902,14 @@ public class LandscapeServiceImpl implements LandscapeService {
             }
         }
     }
-
-    private QualifiedObjectIdentifier getReplicaSetQualifiedObjectIdentifier(
-            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) {
-        return SecuredSecurityTypes.SERVER.getQualifiedObjectIdentifier(new TypeRelativeObjectIdentifier(replicaSet.getServerName()));
+    
+    /**
+     * This is to be called after the rotation of candidate/production/failover ARCHIVE has happend, to inform
+     */
+    private void sendMailAboutNewArchiveServerLive(
+            AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet) throws MailException {
+        sendMailToReplicaSetOwner(replicaSet, "NewArchiveServerLiveSubject", "NewArchiveServerLiveBody",
+                Optional.of(ServerActions.CONFIGURE_LOCAL_SERVER));
     }
 
     /**
@@ -1657,7 +1926,7 @@ public class LandscapeServiceImpl implements LandscapeService {
     @Override
     public AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> changeAutoScalingReplicasInstanceType(
             final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> replicaSet,
-            InstanceType instanceType) throws Exception {
+            InstanceType instanceType, Optional<Duration> optionalTimeout, Optional<String> optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
         final AwsApplicationReplicaSet<String, SailingAnalyticsMetrics, SailingAnalyticsProcess<String>> result;
         final Iterable<AwsAutoScalingGroup> autoScalingGroups = replicaSet.getAllAutoScalingGroups();
         if (!Util.isEmpty(autoScalingGroups)) {
@@ -1684,10 +1953,20 @@ public class LandscapeServiceImpl implements LandscapeService {
                 }
                 getLandscape().updateAutoScalingGroupMinSize(autoScalingGroup, oldMinSize);
             }
+            // determine new replicas, without the terminated ones...
+            final Iterable<SailingAnalyticsProcess<String>> newReplicasWithoutTerminated =  
+                    Util.filter(newSetOfAllReplicas, r->!Util.contains(terminatedReplicas, r));
+            // ...and add them to any other target groups the instances of the replica set have to be added to
+            newReplicasWithoutTerminated.forEach(replica->{
+                try {
+                    replicaSet.getOtherTargetGroups().forEach(tg->tg.addTarget(replica.getHost()));
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             result = getLandscape().getApplicationReplicaSet(replicaSet.getMaster().getHost().getRegion(),
-                    replicaSet.getServerName(), replicaSet.getMaster(),
-                    // remove terminated replicas:
-                    Util.filter(newSetOfAllReplicas, r->!Util.contains(terminatedReplicas, r)));
+                    replicaSet.getServerName(), replicaSet.getMaster(), newReplicasWithoutTerminated,
+                    optionalTimeout, optionalKeyName, privateKeyEncryptionPassphrase);
         } else {
             logger.info("Replica set "+replicaSet.getName()+
                     " does not have an auto-scaling group configured, so no changes can be made to its launch template.");
@@ -1736,12 +2015,13 @@ public class LandscapeServiceImpl implements LandscapeService {
     }
 
     /**
-     * Checks whether the {@code host} is eligbile for deploying a process of an application replica set named
-     * as defined by {@code serverName}, listening on the application port specified by {@code port}.
+     * Checks whether the {@code host} is eligible for deploying a process of an application replica set named as
+     * defined by {@code serverName}, listening on the {@link SailingAnalyticsProcess#getPort() application port}
+     * specified by {@code port}.
      */
     @Override
-    public <ShardingKey> boolean isEligibleForDeployment(SailingAnalyticsHost<ShardingKey> host, String serverName, int port, Optional<Duration> optionalTimeout,
-            String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
+    public <ShardingKey> boolean isEligibleForDeployment(SailingAnalyticsHost<ShardingKey> host, String serverName, int port, Integer optionalIgtimiRiotPort,
+            Optional<Duration> optionalTimeout, String optionalKeyName, byte[] privateKeyEncryptionPassphrase) throws Exception {
         boolean result;
         if (host.isManagedByAutoScalingGroup()) {
             result = false;
@@ -1750,7 +2030,9 @@ public class LandscapeServiceImpl implements LandscapeService {
             final Iterable<SailingAnalyticsProcess<ShardingKey>> applicationProcesses = host.getApplicationProcesses(optionalTimeout,
                     Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
             for (final SailingAnalyticsProcess<ShardingKey> applicationProcess : applicationProcesses) {
-                if (applicationProcess.getPort() == port || applicationProcess.getServerName(optionalTimeout, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase).equals(serverName)) {
+                if (applicationProcess.getPort() == port || applicationProcess.getServerName(optionalTimeout, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase).equals(serverName)
+                        // also, if an Igtimi Riot port is specified, it must not be used as some other process's Riot port:
+                        || (optionalIgtimiRiotPort != null && Util.equalsWithNull(optionalIgtimiRiotPort, applicationProcess.getIgtimiRiotPort(optionalTimeout, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase)))) {
                     result = false;
                     break;
                 }
@@ -1939,15 +2221,17 @@ public class LandscapeServiceImpl implements LandscapeService {
                             privateKeyEncryptionPassphrase);
                     replicaProcessesMoved.put(replicaSet.getName(), replica);
                     final Integer totalMemorySizeFactor = getTotalMemorySizeFactor(optionalKeyName, privateKeyEncryptionPassphrase, replica);
+                    final Integer optionalIgtimiRiotPort = replicaSet.getMaster().getIgtimiRiotPort(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
                     final SailingAnalyticsProcess<String> newReplica = deployReplicaToExistingHost(replicaSet, targetHost, optionalKeyName, privateKeyEncryptionPassphrase,
                             replicaReplicationBearerToken,
                             totalMemorySizeFactor == null ? getMemoryInMegabytes(optionalKeyName, privateKeyEncryptionPassphrase, replica) : null,
-                            totalMemorySizeFactor);
+                            totalMemorySizeFactor, optionalIgtimiRiotPort);
                     if (newReplica != null && newReplica.isReady(Landscape.WAIT_FOR_PROCESS_TIMEOUT)) {
                         logger.info("New replica " + newReplica + " deployed successfully to " + targetHost
                                 + "; removing old replica " + replica
                                 + " from public target group of application replica set " + replicaSet.getName());
                         replicaSet.getPublicTargetGroup().removeTarget(replica.getHost());
+                        replicaSet.getOtherTargetGroups().forEach(tg->tg.removeTarget(replica.getHost()));
                         logger.info("Stopping old replica "+replica);
                         replica.stopAndTerminateIfLast(Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
                     }
@@ -1970,5 +2254,10 @@ public class LandscapeServiceImpl implements LandscapeService {
         final String memoryInMegabytesAsString = process.getEnvShValueFor(DefaultProcessConfigurationVariables.MEMORY, Landscape.WAIT_FOR_PROCESS_TIMEOUT, Optional.ofNullable(optionalKeyName), privateKeyEncryptionPassphrase);
         final Integer memoryInMegabytes = JvmUtils.getMegabytesFromJvmSize(memoryInMegabytesAsString).orElse(null);
         return memoryInMegabytes;
+    }
+
+    @Override
+    public SailingServerFactory getSailingServerFactory() {
+        return sailingServerFactoryTracker.getService();
     }
 }

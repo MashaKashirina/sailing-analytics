@@ -33,8 +33,6 @@ import com.google.gwt.maps.client.overlays.Polyline;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbsolutePanel;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.impl.DegreePosition;
 import com.sap.sailing.gwt.ui.client.RequiresDataInitialization;
 import com.sap.sailing.gwt.ui.client.SimulatorServiceAsync;
 import com.sap.sailing.gwt.ui.client.StringMessages;
@@ -54,8 +52,10 @@ import com.sap.sailing.gwt.ui.simulator.util.ColorPaletteGenerator;
 import com.sap.sailing.gwt.ui.simulator.util.SimulatorResources;
 import com.sap.sailing.gwt.ui.simulator.windpattern.WindPatternDisplay;
 import com.sap.sailing.simulator.util.SailingSimulatorConstants;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
+import com.sap.sse.common.impl.DegreePosition;
 import com.sap.sse.common.impl.RGBColor;
 import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.Notification;
@@ -989,9 +989,7 @@ public class SimulatorMap extends AbsolutePanel implements RequiresDataInitializ
         circleOptions.setCenter(courseArea.getCenterPos());
         Circle circle = Circle.newInstance(circleOptions);
         circle.setRadius(courseArea.getRadiusInMeters());
-        
         final int regIdxFinal = regIdx;
-
         circle.addClickHandler(new ClickMapHandler() {
             public void onEvent(ClickMapEvent e) {
                 //System.out.println("Click: "+currentCourseArea.getName());
@@ -1005,16 +1003,13 @@ public class SimulatorMap extends AbsolutePanel implements RequiresDataInitializ
                     regattaAreaCanvasOverlay.updateRaceCourse(0, 0);
                     raceCourseCanvasOverlay.draw();
                 }
-
                 map.panTo(regattaAreaCanvasOverlay.getCurrentCourseArea().getCenterPos());
                 mapPan = true;
-				if (map.getZoom() < streamletPars.detailZoom) {
-					map.setZoom(streamletPars.detailZoom);
-				}
-				
+                if (map.getZoom() < streamletPars.detailZoom) {
+                    map.setZoom(streamletPars.detailZoom);
+                }
             }
         });
-        
         circle.setMap(getMap());           
     }
 }

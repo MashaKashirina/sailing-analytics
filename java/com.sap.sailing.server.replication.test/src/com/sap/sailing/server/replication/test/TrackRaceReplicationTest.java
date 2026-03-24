@@ -1,12 +1,12 @@
 package com.sap.sailing.server.replication.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.net.URL;
@@ -17,9 +17,9 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.abstractlog.impl.LogEventAuthorImpl;
 import com.sap.sailing.domain.abstractlog.race.RaceLog;
@@ -69,7 +69,7 @@ public class TrackRaceReplicationTest extends AbstractServerReplicationTest {
         // no-op
     }
     
-    @Before
+    @BeforeEach
     @Override
     public void setUp() throws Exception {
         super.setUp();
@@ -79,8 +79,7 @@ public class TrackRaceReplicationTest extends AbstractServerReplicationTest {
         URI liveURI = AbstractTracTracLiveTest.getLiveURI();
         URI storedURI = AbstractTracTracLiveTest.getStoredURI();
         URI courseDesignUpdateURI = AbstractTracTracLiveTest.getCourseDesignUpdateURI();
-        String tracTracUsername = AbstractTracTracLiveTest.getTracTracUsername();
-        String tracTracPassword = AbstractTracTracLiveTest.getTracTracPassword();
+        String tracTracApiToken = AbstractTracTracLiveTest.getTracTracApiToken();
         GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         cal.set(2011, 05, 23, 13, 14, 31);
         MillisecondsTimePoint startOfTracking = new MillisecondsTimePoint(cal.getTimeInMillis());
@@ -101,7 +100,7 @@ public class TrackRaceReplicationTest extends AbstractServerReplicationTest {
                 .createTrackingConnectivityParameters(paramURL, liveURI, storedURI, courseDesignUpdateURI,
                         startOfTracking, endOfTracking, /* delayToLiveInMillis */
                         0l, /* offsetToStartTimeOfSimulatedRace */null, /*ignoreTracTracMarkPassings*/ false, EmptyRaceLogStore.INSTANCE,
-                        EmptyRegattaLogStore.INSTANCE, tracTracUsername, tracTracPassword, "", "", /* trackWind */ false, /* correctWindDirectionByMagneticDeclination */ false,
+                        EmptyRegattaLogStore.INSTANCE, tracTracApiToken, "", "", /* trackWind */ false, /* correctWindDirectionByMagneticDeclination */ false,
                         /* preferReplayIfAvailable */ false, /* timeoutInMillis */ (int) RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS,
                         /* useOfficialEventsToUpdateRaceLog */ false, /* liveURIFromConfiguration */ null, /* storedURIFromConfiguration */ null);
     }
@@ -236,7 +235,7 @@ public class TrackRaceReplicationTest extends AbstractServerReplicationTest {
         }
     }
 
-    @After
+    @AfterEach
     @Override
     public void tearDown() throws Exception {
         if (racesHandle != null) {

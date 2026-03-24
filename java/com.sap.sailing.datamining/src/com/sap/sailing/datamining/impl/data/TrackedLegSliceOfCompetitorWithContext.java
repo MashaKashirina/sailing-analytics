@@ -11,7 +11,7 @@ import com.sap.sailing.domain.tracking.TrackedLegOfCompetitor;
  * harder to implement because we would need to find out iteratively, between which fixes the competitor sailed, say, one tenth of the
  * windward distance in the leg.
  */
-public class TrackedLegSliceOfCompetitorWithContext extends AbstractTrackedLegSliceOfCompetitorWithContext implements HasTrackedLegSliceOfCompetitorContext {
+public class TrackedLegSliceOfCompetitorWithContext extends TerminalAbstractTrackedLegSliceOfCompetitorWithContext implements HasTrackedLegSliceOfCompetitorContext {
     private static final long serialVersionUID = -8116119441445200029L;
 
     public TrackedLegSliceOfCompetitorWithContext(HasTrackedLegContext trackedLegContext, TrackedLegOfCompetitor trackedLegOfCompetitor, TackTypeSegmentsDataMiningSettings settings, int sliceNumber) {

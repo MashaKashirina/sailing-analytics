@@ -146,14 +146,12 @@ import com.sap.sailing.domain.common.DeviceIdentifier;
 import com.sap.sailing.domain.common.LeaderboardType;
 import com.sap.sailing.domain.common.MaxPointsReason;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RaceIdentifier;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
 import com.sap.sailing.domain.common.RegattaIdentifier;
 import com.sap.sailing.domain.common.RegattaName;
 import com.sap.sailing.domain.common.ScoreCorrectionProvider;
 import com.sap.sailing.domain.common.ScoringSchemeType;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.TackType;
 import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
 import com.sap.sailing.domain.common.Wind;
@@ -167,6 +165,7 @@ import com.sap.sailing.domain.common.dto.SeriesCreationParametersDTO;
 import com.sap.sailing.domain.common.impl.DataImportProgressImpl;
 import com.sap.sailing.domain.common.impl.MasterDataImportObjectCreationCountImpl;
 import com.sap.sailing.domain.common.media.MediaTrack;
+import com.sap.sailing.domain.common.polars.NotEnoughDataHasBeenAddedException;
 import com.sap.sailing.domain.common.racelog.RaceLogRaceStatus;
 import com.sap.sailing.domain.common.racelog.RacingProcedureType;
 import com.sap.sailing.domain.common.racelog.tracking.DoesNotHaveRegattaLogException;
@@ -195,6 +194,8 @@ import com.sap.sailing.domain.leaderboard.impl.RegattaLeaderboardImpl;
 import com.sap.sailing.domain.leaderboard.impl.RegattaLeaderboardWithOtherTieBreakingLeaderboardImpl;
 import com.sap.sailing.domain.leaderboard.impl.ThresholdBasedResultDiscardingRuleImpl;
 import com.sap.sailing.domain.leaderboard.meta.LeaderboardGroupMetaLeaderboard;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprint;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprint;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.orc.ORCPerformanceCurveRankingMetric;
@@ -221,14 +222,16 @@ import com.sap.sailing.domain.regattalike.IsRegattaLike;
 import com.sap.sailing.domain.regattalike.LeaderboardThatHasRegattaLike;
 import com.sap.sailing.domain.regattalog.RegattaLogStore;
 import com.sap.sailing.domain.resultimport.ResultUrlProvider;
+import com.sap.sailing.domain.shared.tracking.AddResult;
+import com.sap.sailing.domain.shared.tracking.TrackingConnectorInfo;
 import com.sap.sailing.domain.statistics.Statistics;
-import com.sap.sailing.domain.tracking.AddResult;
 import com.sap.sailing.domain.tracking.BravoFixTrack;
 import com.sap.sailing.domain.tracking.DynamicRaceDefinitionSet;
 import com.sap.sailing.domain.tracking.DynamicSensorFixTrack;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
 import com.sap.sailing.domain.tracking.DynamicTrackedRegatta;
 import com.sap.sailing.domain.tracking.GPSFixTrack;
+import com.sap.sailing.domain.tracking.Maneuver;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tracking.RaceChangeListener;
 import com.sap.sailing.domain.tracking.RaceHandle;
@@ -243,7 +246,6 @@ import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.domain.tracking.TrackedRaceStatus;
 import com.sap.sailing.domain.tracking.TrackedRegatta;
 import com.sap.sailing.domain.tracking.TrackedRegattaListener;
-import com.sap.sailing.domain.tracking.TrackingConnectorInfo;
 import com.sap.sailing.domain.tracking.WindLegTypeAndLegBearingAndORCPerformanceCurveCache;
 import com.sap.sailing.domain.tracking.WindPositionMode;
 import com.sap.sailing.domain.tracking.WindStore;
@@ -330,11 +332,14 @@ import com.sap.sailing.server.tagging.TaggingServiceFactory;
 import com.sap.sailing.server.util.EventUtil;
 import com.sap.sailing.shared.server.SharedSailingData;
 import com.sap.sse.ServerInfo;
+import com.sap.sse.branding.BrandingConfigurationService;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.PairingListCreationException;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TypeBasedServiceFinder;
 import com.sap.sse.common.TypeBasedServiceFinderFactory;
@@ -470,6 +475,8 @@ Replicator {
     private final ConcurrentHashMap<UUID, LeaderboardGroup> leaderboardGroupsByID;
 
     private final ConcurrentHashMap<RaceIdentifier, MarkPassingRaceFingerprint> markPassingRaceFingerprints;
+
+    private final ConcurrentHashMap<RaceIdentifier, ManeuverRaceFingerprint> maneuverRaceFingerprints;
 
     /**
      * See {@link #leaderboardsByNameLock}
@@ -613,7 +620,7 @@ Replicator {
     private final FullyInitializedReplicableTracker<SecurityService> securityServiceTracker;
 
     private final CourseAndMarkConfigurationFactory courseAndMarkConfigurationFactory;
-
+    
     /**
      * Providing the constructor parameters for a new {@link RacingEventServiceImpl} instance is a bit tricky
      * in some cases because containment and initialization order of some types is fairly tightly coupled.
@@ -658,7 +665,8 @@ Replicator {
                 /* sailingNotificationService */ null, /* trackedRaceStatisticsCache */ null,
                 restoreTrackedRaces, /* securityServiceTracker */ null, /* sharedSailingDataTracker */ null,
                 /* replicationServiceTracker */ null, /* scoreCorrectionProviderServiceTracker */ null,
-                /* competitorProviderServiceTracker */ null, /* resultUrlRegistryServiceTracker */ null);
+                /* competitorProviderServiceTracker */ null, /* resultUrlRegistryServiceTracker */ null,
+                /* brandingConfigurationServiceTracker */ null);
     }
 
     /**
@@ -687,7 +695,10 @@ Replicator {
             boolean restoreTrackedRaces,
             FullyInitializedReplicableTracker<SecurityService> securityServiceTracker, FullyInitializedReplicableTracker<SharedSailingData> sharedSailingDataTracker,
             ServiceTracker<ReplicationService, ReplicationService> replicationServiceTracker,
-            ServiceTracker<ScoreCorrectionProvider, ScoreCorrectionProvider> scoreCorrectionProviderServiceTracker, ServiceTracker<CompetitorProvider, CompetitorProvider> competitorProviderServiceTracker, ServiceTracker<ResultUrlRegistry, ResultUrlRegistry> resultUrlRegistryServiceTracker) {
+            ServiceTracker<ScoreCorrectionProvider, ScoreCorrectionProvider> scoreCorrectionProviderServiceTracker,
+            ServiceTracker<CompetitorProvider, CompetitorProvider> competitorProviderServiceTracker,
+            ServiceTracker<ResultUrlRegistry, ResultUrlRegistry> resultUrlRegistryServiceTracker,
+            ServiceTracker<BrandingConfigurationService, BrandingConfigurationService> brandingConfigurationServiceTracker) {
         this((final RaceLogAndTrackedRaceResolver raceLogResolver) -> {
             return new ConstructorParameters() {
                 private final MongoObjectFactory mongoObjectFactory = PersistenceFactory.INSTANCE
@@ -759,7 +770,7 @@ Replicator {
                 /* scoreCorrectionProviderServiceTracker */ null, /* competitorProviderServiceTracker */ null,
                 /* resultUrlRegistryServiceTracker */ null);
     }
-
+ 
     public RacingEventServiceImpl(final DomainObjectFactory domainObjectFactory, MongoObjectFactory mongoObjectFactory,
             MediaDB mediaDB, WindStore windStore, SensorFixStore sensorFixStore, boolean restoreTrackedRaces) {
         this((final RaceLogAndTrackedRaceResolver raceLogResolver) -> {
@@ -905,6 +916,7 @@ Replicator {
         leaderboardsByName = new ConcurrentHashMap<>();
         leaderboardsByNameLock = new NamedReentrantReadWriteLock("leaderboardsByName for " + this, /* fair */false);
         markPassingRaceFingerprints = new ConcurrentHashMap<>();
+        maneuverRaceFingerprints = new ConcurrentHashMap<>();
         courseListeners = new ConcurrentHashMap<>();
         persistentRegattasForRaceIDs = new ConcurrentHashMap<>();
         simulationService = SimulationServiceFactory.INSTANCE.getService(simulatorExecutor, this);
@@ -936,6 +948,7 @@ Replicator {
         loadStoredDeviceConfigurations();
         loadAllRemoteSailingServersAndSchedulePeriodicEventCacheRefresh();
         loadMarkPassingRaceFingerprints();
+        loadManeuverRaceFingerprints();
         // Stores all events which run through a data migration
         // Remark: must be called after loadLinksFromEventsToLeaderboardGroups(), otherwise would loose the Event -> LeaderboardGroup relation
         for (Pair<Event, Boolean> eventAndRequireStoreFlag : loadedEventsWithRequireStoreFlag) {
@@ -984,6 +997,41 @@ Replicator {
         final Map<Competitor, Map<Waypoint, MarkPassing>> result;
         if (markPassingRaceFingerprints.containsKey(raceIdentifier)) {
             result = domainObjectFactory.loadMarkPassings(raceIdentifier, course);
+        } else {
+            result = null;
+        }
+        return result;
+    }
+    
+    private void loadManeuverRaceFingerprints() {
+        maneuverRaceFingerprints.putAll(domainObjectFactory.loadFingerprintsForManeuverHashes());
+    }
+    
+    @Override
+    public void storeManeuvers(RaceIdentifier raceIdentifier, ManeuverRaceFingerprint fingerprint,
+             Map<Competitor, List<Maneuver>> maneuvers, Course course) {
+        maneuverRaceFingerprints.put(raceIdentifier, fingerprint);
+        mongoObjectFactory.storeManeuvers(raceIdentifier, fingerprint, course,  maneuvers );
+    }
+    
+    @Override
+    public ManeuverRaceFingerprint getManeuverRaceFingerprint(RaceIdentifier raceIdentifier) {
+        logger.fine(()->"Getting Maneuver fingerprint for race "+raceIdentifier);
+        return maneuverRaceFingerprints.get(raceIdentifier);
+    }
+    
+    @Override
+    public void removeStoredManeuvers(RaceIdentifier raceIdentifier) {
+        maneuverRaceFingerprints.remove(raceIdentifier);
+        mongoObjectFactory.removeManeuvers(raceIdentifier);
+    }
+    
+    @Override
+    public Map<Competitor, List<Maneuver>> loadManeuvers(TrackedRace trackedRace, Course course) {
+        final Map<Competitor, List<Maneuver>> result;
+        RaceIdentifier raceIdentifier = trackedRace.getRaceIdentifier();
+        if (maneuverRaceFingerprints.containsKey(raceIdentifier)) {
+            result = domainObjectFactory.loadManeuvers(trackedRace, course);
         } else {
             result = null;
         }
@@ -1056,11 +1104,11 @@ Replicator {
                                 DynamicRaceDefinitionSet raceDefinitionSetToUpdate,
                                 boolean useMarkPassingCalculator, RaceLogAndTrackedRaceResolver raceLogResolver,
                                 Optional<ThreadLocalTransporter> threadLocalTransporter,
-                                TrackingConnectorInfo trackingConnectorInfo, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) {
+                                TrackingConnectorInfo trackingConnectorInfo, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry, ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) {
                             final DynamicTrackedRace trackedRace = super.createTrackedRace(trackedRegatta, raceDefinition, sidelines, windStore,
                                             delayToLiveInMillis, millisecondsOverWhichToAverageWind,
                                             millisecondsOverWhichToAverageSpeed, raceDefinitionSetToUpdate,
-                                            useMarkPassingCalculator, raceLogResolver, threadLocalTransporter, trackingConnectorInfo, markPassingRaceFingerprintRegistry);
+                                            useMarkPassingCalculator, raceLogResolver, threadLocalTransporter, trackingConnectorInfo, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
                             getSecurityService().migrateOwnership(trackedRace);
                             trackedRace.runWhenDoneLoading(
                                     ()->numberOfTrackedRacesRestoredDoneLoading.incrementAndGet());
@@ -2039,11 +2087,11 @@ Replicator {
                 if (regatta == null) {
                     // create tracker and use an existing or create a default regatta
                     tracker = params.createRaceTracker(this, windStore, /* raceLogResolver */ this, /* leaderboardGroupResolver */ this, timeoutInMilliseconds,
-                            raceTrackingHandler, /* markPassingRaceFingerprintRegistry */ this);
+                            raceTrackingHandler, /* markPassingRaceFingerprintRegistry */ this, /*maneuverRaceFingerprintRegistry*/ this);
                 } else {
                     // use the regatta selected by the RaceIdentifier regattaToAddTo
                     tracker = params.createRaceTracker(regatta, this, windStore, /* raceLogResolver */ this, /* leaderboardGroupResolver */ this, timeoutInMilliseconds,
-                            raceTrackingHandler, /* markPassingRaceFingerprintRegistry */ this);
+                            raceTrackingHandler, /* markPassingRaceFingerprintRegistry */ this, /*maneuverRaceFingerprintRegistry*/ this);
                     assert tracker.getRegatta() == regatta;
                 }
                 LockUtil.lockForWrite(raceTrackersByRegattaLock);
@@ -2215,7 +2263,7 @@ Replicator {
                 /* raceDefinitionSetToUpdate */null, useMarkPassingCalculator, /* raceLogResolver */ this,
                 Optional.of(this
                         .getThreadLocalTransporterForCurrentlyFillingFromInitialLoadOrApplyingOperationReceivedFromMaster()),
-                trackingConnectorInfo, /* markPassingRaceFingerprintRegistry */ this);
+                trackingConnectorInfo, /* markPassingRaceFingerprintRegistry */ this, /* maneuverRaceFingerprintRegistry */ this);
     }
 
     private void ensureRegattaHasRaceAdditionListener(DynamicTrackedRegatta trackedRegatta) {
@@ -2674,20 +2722,34 @@ Replicator {
      * {@link RaceColumn#getTrackedRace(Fleet) tracked race assigned} and whose
      * {@link RaceColumn#getRaceIdentifier(Fleet) race identifier} equals that of <code>trackedRace</code>.
      */
-    private void linkRaceToConfiguredLeaderboardColumns(TrackedRace trackedRace) {
-        RegattaAndRaceIdentifier trackedRaceIdentifier = trackedRace.getRaceIdentifier();
+    private List<Triple<Leaderboard, RaceColumn, Fleet>> linkRaceToConfiguredLeaderboardColumns(TrackedRace trackedRace) {
+        final RegattaAndRaceIdentifier trackedRaceIdentifier = trackedRace.getRaceIdentifier();
+        final List<Triple<Leaderboard, RaceColumn, Fleet>> trackedRaceLink = getColumnsWithRaceLogForTrackedRace(trackedRaceIdentifier);
+        for (final Triple<Leaderboard, RaceColumn, Fleet> leaderboardRaceColumnAndFleet : trackedRaceLink) {
+            if (leaderboardRaceColumnAndFleet.getB().getTrackedRace(leaderboardRaceColumnAndFleet.getC()) == null) {
+                // attach the tracked race only if not yet attached
+                leaderboardRaceColumnAndFleet.getB().setTrackedRace(leaderboardRaceColumnAndFleet.getC(), trackedRace);
+                replicate(new ConnectTrackedRaceToLeaderboardColumn(leaderboardRaceColumnAndFleet.getA().getName(), leaderboardRaceColumnAndFleet.getB().getName(),
+                        leaderboardRaceColumnAndFleet.getC().getName(), trackedRaceIdentifier));
+            }
+        }
+        return trackedRaceLink;
+    }
+
+    @Override
+    public List<Triple<Leaderboard, RaceColumn, Fleet>> getColumnsWithRaceLogForTrackedRace(
+            final RegattaAndRaceIdentifier trackedRaceIdentifier) {
+        final List<Triple<Leaderboard, RaceColumn, Fleet>> trackedRaceLink = new ArrayList<>();
         for (Leaderboard leaderboard : getLeaderboards().values()) {
             for (RaceColumn column : leaderboard.getRaceColumns()) {
                 for (Fleet fleet : column.getFleets()) {
-                    if (trackedRaceIdentifier.equals(column.getRaceIdentifier(fleet))
-                            && column.getTrackedRace(fleet) == null) {
-                        column.setTrackedRace(fleet, trackedRace);
-                        replicate(new ConnectTrackedRaceToLeaderboardColumn(leaderboard.getName(), column.getName(),
-                                fleet.getName(), trackedRaceIdentifier));
+                    if (trackedRaceIdentifier.equals(column.getRaceIdentifier(fleet))) {
+                        trackedRaceLink.add(new Triple<>(leaderboard, column, fleet));
                     }
                 }
             }
         }
+        return trackedRaceLink;
     }
 
     @Override
@@ -3054,6 +3116,7 @@ Replicator {
         TrackedRace trackedRace = getExistingTrackedRace(regatta, race);
         if (trackedRace != null) {
             removeStoredMarkPassings(trackedRace.getRaceIdentifier());
+            removeStoredManeuvers(trackedRace.getRaceIdentifier());
             TrackedRegatta trackedRegatta = getTrackedRegatta(regatta);
             final boolean isTrackedRacesBecameEmpty;
             if (trackedRegatta != null) {
@@ -3703,6 +3766,7 @@ Replicator {
             try {
                 for (TrackedRace trackedRace : trackedRegatta.getTrackedRaces()) {
                     ((TrackedRaceImpl) trackedRace).setRaceLogResolver(this);
+                    ((TrackedRaceImpl) trackedRace).setManeuverRaceFingerprintRegistry(this);
                     ((TrackedRaceImpl) trackedRace).registerRegattaListener();
                     trackedRace.initializeAfterDeserialization();
                 }
@@ -5464,7 +5528,7 @@ Replicator {
     @Override
     public Double getCompetitorRaceDataEntry(DetailType dataType, TrackedRace trackedRace, Competitor competitor,
             TimePoint timePoint, LeaderboardGroup leaderboardGroup, String leaderboardName,
-            WindLegTypeAndLegBearingAndORCPerformanceCurveCache cache) throws NoWindException {
+            WindLegTypeAndLegBearingAndORCPerformanceCurveCache cache) throws NoWindException, NotEnoughDataHasBeenAddedException, MaxIterationsExceededException, FunctionEvaluationException {
         Double result = null;
         final Course course = trackedRace.getRace().getCourse();
         course.lockForRead(); // make sure the tracked leg survives this call even if a course update is pending
@@ -5539,11 +5603,55 @@ Replicator {
                     result = gapToLeaderInOwnTime == null ? null : gapToLeaderInOwnTime.asSeconds();
                 }
                 break;
+            case LEG_GAP_TO_LEADER_IN_SECONDS_CHANGE:
+                // compute the average over the last five sampling intervals
+                result = null;
+                if (trackedLeg != null) {
+                    int count=0;
+                    Duration gapDifferenceSum = Duration.NULL;
+                    Duration gapToLeaderInOwnTime = null;
+                    TimePoint tp = timePoint;
+                    final Duration samplingRate = trackedRace.getTrack(competitor).getAverageIntervalBetweenRawFixes();
+                    for (int i=0; i<5; i++) {
+                        final RankingInfo rankingInfo = trackedRace.getRankingMetric().getRankingInfo(tp, cache);
+                        final Duration nextGapToLeaderInOwnTime = trackedLeg.getTrackedLeg().getTrackedRace().getRankingMetric().getGapToLeaderInOwnTime(rankingInfo, competitor, cache);
+                        if (gapToLeaderInOwnTime != null && nextGapToLeaderInOwnTime != null) {
+                            gapDifferenceSum = gapDifferenceSum.plus(gapToLeaderInOwnTime.minus(nextGapToLeaderInOwnTime));
+                            count++;
+                        }
+                        gapToLeaderInOwnTime = nextGapToLeaderInOwnTime;
+                        tp = tp.minus(samplingRate);
+                    }
+                    result = count==0 ? null : gapDifferenceSum.times(1.0 / (double) count).asSeconds() / samplingRate.times(5).asSeconds();
+                }
+                break;
             case CHART_WINDWARD_DISTANCE_TO_COMPETITOR_FARTHEST_AHEAD:
                 if (trackedLeg != null) {
                     final RankingInfo rankingInfo = trackedRace.getRankingMetric().getRankingInfo(timePoint, cache);
                     Distance distanceToLeader = trackedLeg.getWindwardDistanceToCompetitorFarthestAhead(timePoint, WindPositionMode.LEG_MIDDLE, rankingInfo, cache);
                     result = (distanceToLeader == null) ? null : distanceToLeader.getMeters();
+                }
+                break;
+            case CHART_WINDWARD_DISTANCE_TO_COMPETITOR_FARTHEST_AHEAD_CHANGE:
+                // compute the average over the last five sampling intervals
+                result = null;
+                if (trackedLeg != null) {
+                    int count=0;
+                    Distance distanceDifferenceSum = Distance.NULL;
+                    Distance distanceToLeader = null;
+                    TimePoint tp = timePoint;
+                    final Duration samplingRate = trackedRace.getTrack(competitor).getAverageIntervalBetweenRawFixes();
+                    for (int i=0; i<5; i++) {
+                        final RankingInfo rankingInfo = trackedRace.getRankingMetric().getRankingInfo(tp, cache);
+                        final Distance nextDistanceToLeader = trackedLeg.getWindwardDistanceToCompetitorFarthestAhead(tp, WindPositionMode.LEG_MIDDLE, rankingInfo, cache);
+                        if (distanceToLeader != null && nextDistanceToLeader != null) {
+                            distanceDifferenceSum = distanceDifferenceSum.add(distanceToLeader.add(nextDistanceToLeader.scale(-1)));
+                            count++;
+                        }
+                        distanceToLeader = nextDistanceToLeader;
+                        tp = tp.minus(samplingRate);
+                    }
+                    result = count==0 ? null : distanceDifferenceSum.scale(1.0 / (double) count).getMeters() / samplingRate.times(5).asSeconds();
                 }
                 break;
             case RACE_IMPLIED_WIND:
@@ -5837,6 +5945,14 @@ Replicator {
             }
             case EXPEDITION_RACE_VMG_TARG_VMG_DELTA: {
                 result = getBravoDoubleValue(BravoFixTrack::getExpeditionVMGTargVMGDeltaIfAvailable, trackedRace, competitor, timePoint);
+                break;
+            }
+            case EXPEDITION_RACE_KICKER_TENSION: {
+                result = getBravoDoubleValue(BravoFixTrack::getExpeditionKickerTensionIfAvailable, trackedRace, competitor, timePoint);
+                break;
+            }
+            case PERCENT_TARGET_BOAT_SPEED: {
+                result = trackedRace.getPercentTargetBoatSpeed(competitor, timePoint, cache);
                 break;
             }
             default:

@@ -1,11 +1,11 @@
 package com.sap.sailing.server.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -19,8 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.BoatClass;
@@ -68,7 +68,7 @@ public class RaceTrackerStartStopTest {
     private RaceTrackerMock raceTracker2;
     private RaceTrackerMock raceTracker3;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         racingEventService = new RacingEventServiceImplMock(){};
         boatClass = new BoatClassImpl(BOATCLASSNAME, /* typicallyStartsUpwind */ true);
@@ -90,19 +90,19 @@ public class RaceTrackerStartStopTest {
                 /* windStore */ EmptyWindStore.INSTANCE, /* delayToLiveInMillis */ 0l,
                 /* millisecondsOverWhichToAverageWind */ 0l,
                 /* millisecondsOverWhichToAverageSpeed */ 0l, /* raceDefinitionSetToUpdate */ null, /*useMarkPassingCalculator*/ false, mock(RaceLogAndTrackedRaceResolver.class),
-                Optional.empty(), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                Optional.empty(), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         regatta.addRace(raceDef2);
         trackedRegatta1.createTrackedRace(raceDef2, Collections.<Sideline> emptyList(),
                 /* windStore */ EmptyWindStore.INSTANCE, /* delayToLiveInMillis */ 0l,
                 /* millisecondsOverWhichToAverageWind */ 0l,
                 /* millisecondsOverWhichToAverageSpeed */ 0l, /* raceDefinitionSetToUpdate */ null, /*useMarkPassingCalculator*/ false, mock(RaceLogAndTrackedRaceResolver.class),
-                Optional.empty(), null, /* markPassingRaceFingerprintRegistry */ null);
+                Optional.empty(), null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         regatta.addRace(raceDef3);
         trackedRegatta1.createTrackedRace(raceDef3, Collections.<Sideline> emptyList(),
                 /* windStore */ EmptyWindStore.INSTANCE, /* delayToLiveInMillis */ 0l,
                 /* millisecondsOverWhichToAverageWind */ 0l,
                 /* millisecondsOverWhichToAverageSpeed */ 0l, /* raceDefinitionSetToUpdate */ null, /*useMarkPassingCalculator*/ false, mock(RaceLogAndTrackedRaceResolver.class),
-                Optional.empty(), null, /* markPassingRaceFingerprintRegistry */ null);
+                Optional.empty(), null, /* markPassingRaceFingerprintRegistry */ null,  /* maneuverRaceFingerprintRegistry */ null);
         Long trackerID1 = Long.valueOf(1);
         Long trackerID2 = Long.valueOf(2);
         Long trackerID3 = Long.valueOf(3);

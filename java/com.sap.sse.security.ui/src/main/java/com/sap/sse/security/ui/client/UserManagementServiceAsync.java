@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
 import com.sap.sse.gwt.client.ServerInfoDTO;
 import com.sap.sse.landscape.aws.common.shared.SecuredAwsLandscapeType;
@@ -21,6 +22,7 @@ import com.sap.sse.security.shared.dto.StrippedUserGroupDTO;
 import com.sap.sse.security.shared.dto.UserDTO;
 import com.sap.sse.security.shared.dto.UserGroupDTO;
 import com.sap.sse.security.ui.oauth.client.CredentialDTO;
+import com.sap.sse.security.ui.shared.IpToTimedLockDTO;
 import com.sap.sse.security.ui.shared.SecurityServiceSharingDTO;
 import com.sap.sse.security.ui.shared.SuccessInfo;
 
@@ -102,4 +104,12 @@ public interface UserManagementServiceAsync {
      * in the {@code callback} passed.
      */
     void addSecurityInformation(SecuredDTO securedDTO, AsyncCallback<SecuredDTO> callback);
+    
+    void getCORSFilterConfiguration(AsyncCallback<Pair<Boolean, ArrayList<String>>> callback);
+    
+    void getBrandingConfigurationId(AsyncCallback<String> callback);
+
+    void getClientIPBasedTimedLocksForUserCreation(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback);
+    
+    void getClientIPBasedTimedLocksForBearerTokenAbuse(AsyncCallback<ArrayList<IpToTimedLockDTO>> callback);
 }

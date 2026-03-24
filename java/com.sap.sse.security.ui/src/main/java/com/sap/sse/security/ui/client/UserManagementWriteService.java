@@ -1,10 +1,12 @@
 package com.sap.sse.security.ui.client;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import com.sap.sse.common.mail.MailException;
+import com.sap.sse.common.media.TakedownNoticeRequestContext;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.UnauthorizedException;
 import com.sap.sse.security.shared.UserGroupManagementException;
@@ -76,6 +78,11 @@ public interface UserManagementWriteService extends UserManagementService {
             throws UserManagementException, org.apache.shiro.authz.UnauthorizedException;
 
     SuccessInfo deleteUser(String username) throws UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
+    
+    SuccessInfo unlockUser(String username) throws UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
+
+    Set<SuccessInfo> unlockUsers(Set<String> usernames)
+            throws UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
 
     Set<SuccessInfo> deleteUsers(Set<String> usernames)
             throws UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
@@ -106,7 +113,13 @@ public interface UserManagementWriteService extends UserManagementService {
      */
     void unsetPreference(String username, String key)
             throws UserManagementException, UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
+    
+    void setCORSFilterConfigurationToWildcard();
 
+    void setCORSFilterConfigurationAllowedOrigins(ArrayList<String> allowedOrigins);
+
+    void fileTakedownNotice(TakedownNoticeRequestContext takedownNoticeRequestContext) throws MailException;
+    
     // ------------------------------------------------ OAuth Interface
     // --------------------------------------------------------------
     public String getAuthorizationUrl(CredentialDTO credential)
@@ -128,4 +141,9 @@ public interface UserManagementWriteService extends UserManagementService {
 
     AccessControlListDTO overrideAccessControlList(QualifiedObjectIdentifier idOfAccessControlledObject,
             AccessControlListDTO acl) throws UnauthorizedException, org.apache.shiro.authz.UnauthorizedException;
+    
+    void releaseUserCreationLockOnIp(String ip) throws UnauthorizedException;
+
+    void releaseBearerTokenLockOnIp(String ip) throws UnauthorizedException;
+
 }

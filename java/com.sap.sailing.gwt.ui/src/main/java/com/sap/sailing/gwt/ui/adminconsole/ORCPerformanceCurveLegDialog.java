@@ -9,19 +9,19 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.view.client.ListDataProvider;
-import com.sap.sailing.domain.common.impl.NauticalMileDistance;
 import com.sap.sailing.domain.common.orc.ORCPerformanceCurveLegTypes;
 import com.sap.sailing.domain.common.orc.impl.ORCPerformanceCurveLegImpl;
 import com.sap.sailing.gwt.ui.adminconsole.CourseManagementWidget.LegGeometrySupplier;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sailing.gwt.ui.shared.WaypointDTO;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.NauticalMileDistance;
 import com.sap.sse.gwt.client.Notification;
 import com.sap.sse.gwt.client.Notification.NotificationType;
 import com.sap.sse.gwt.client.dialog.DoubleBox;
 
 /**
- * An editor allowing users to specify the ORC Performance Curve leg type and distance, and in case of a
+ * An editor allowing users to specify the ORC Polar Curve leg type and distance, and in case of a
  * {@link ORCPerformanceCurveLegTypes#TWA}-type leg the angle between the leg's rhumb line and the true wind
  * direction ("leg TWA"). The result is a {@link ORCPerformanceCurveLegImpl} object.<p>
  * 

@@ -13,6 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.MaxIterationsExceededException;
+
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import com.google.gwt.user.client.rpc.core.com.sap.sailing.gwt.ui.shared.GPSFixDTOWithSpeedWindTackAndLegTypeIterable_CustomFieldSerializer;
@@ -21,10 +24,9 @@ import com.sap.sailing.domain.base.Leg;
 import com.sap.sailing.domain.common.DetailType;
 import com.sap.sailing.domain.common.LegType;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.Wind;
+import com.sap.sailing.domain.common.polars.NotEnoughDataHasBeenAddedException;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
 import com.sap.sailing.domain.leaderboard.caching.LeaderboardDTOCalculationReuseCache;
@@ -33,6 +35,8 @@ import com.sap.sailing.domain.tracking.TrackedLegOfCompetitor;
 import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.domain.tracking.WindLegTypeAndLegBearingAndORCPerformanceCurveCache;
 import com.sap.sailing.gwt.ui.server.SailingServiceImpl;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
@@ -278,7 +282,7 @@ public class GPSFixDTOWithSpeedWindTackAndLegTypeIterable implements IsSerializa
                     try {
                         detailValue = sailingService.getCompetitorRaceDataEntry(detailType, trackedRace, competitor,
                                 fix.getTimePoint(), leaderboardGroupName, leaderboardGroupId, leaderboardName, cache);
-                    } catch (NoWindException nwe) {
+                    } catch (NoWindException | NotEnoughDataHasBeenAddedException | MaxIterationsExceededException | FunctionEvaluationException nwe) {
                         detailValue = null;
                     }
                 }

@@ -50,7 +50,6 @@ import com.sap.sailing.domain.base.impl.EventBaseImpl;
 import com.sap.sailing.domain.common.CompetitorRegistrationType;
 import com.sap.sailing.domain.common.LeaderboardNameConstants;
 import com.sap.sailing.domain.common.Placemark;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.RankingMetrics;
 import com.sap.sailing.domain.common.RegattaIdentifier;
 import com.sap.sailing.domain.common.RegattaName;
@@ -96,10 +95,12 @@ import com.sap.sailing.server.operationaltransformation.CreateLeaderboardGroup;
 import com.sap.sailing.server.operationaltransformation.CreateRegattaLeaderboard;
 import com.sap.sailing.server.operationaltransformation.UpdateEvent;
 import com.sap.sailing.server.security.PermissionAwareRaceTrackingHandler;
+import com.sap.sailing.server.trackfiles.impl.ExpeditionImportFileHandler;
 import com.sap.sailing.server.util.WaitForTrackedRaceUtil;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
 import com.sap.sse.common.NoCorrespondingServiceRegisteredException;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.TransformationException;
 import com.sap.sse.common.TypeBasedServiceFinderFactory;
@@ -291,7 +292,11 @@ public class ExpeditionAllInOneImporter {
         securityService.checkCurrentUserServerPermission(ServerActions.CREATE_OBJECT);
         final List<ErrorImportDTO> errors = new ArrayList<>();
         final String importTimeString = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
-        final String filename = ExpeditionImportFilenameUtils.truncateFilenameExtentions(filenameWithSuffix);
+        final String filename = ExpeditionImportFilenameUtils.truncateFilenameExtentions(filenameWithSuffix, new ExpeditionImportFileHandler() {
+            @Override // used only to resolve the standard file name extensions defined by the Expedition import file handler
+            protected void handleExpeditionFile(String fileName, InputStream inputStream, Charset charset)
+                    throws IOException, FormatNotSupportedException {
+            }});
         final String filenameWithDateTimeSuffix = filename + "_" + importTimeString;
         final String trackedRaceName = filenameWithDateTimeSuffix;
         final String windSourceId = filenameWithDateTimeSuffix;

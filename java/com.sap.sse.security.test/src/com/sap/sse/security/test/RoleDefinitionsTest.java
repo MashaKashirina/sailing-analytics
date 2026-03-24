@@ -1,13 +1,14 @@
 package com.sap.sse.security.test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.UUID;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.security.interfaces.UserStore;
 import com.sap.sse.security.shared.RoleDefinition;
 import com.sap.sse.security.shared.UserManagementException;
@@ -33,10 +34,10 @@ public class RoleDefinitionsTest {
         userStore = new UserStoreImpl("TestDefaultTenant");
     }
 
-    @Before
+    @BeforeEach
     public void doBefore() throws UserStoreManagementException {
         userStore.clear();
-        user = userStore.createUser(username, email);
+        user = userStore.createUser(username, email, new TimedLockImpl());
         roleDefinition = userStore.createRoleDefinition(testRoleUUID, TEST_ROLE, Collections.emptySet());
         userGroup = userStore.createUserGroup(testGroupUUID, groupName);
     }

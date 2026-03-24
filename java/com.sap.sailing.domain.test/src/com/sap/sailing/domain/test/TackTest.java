@@ -1,14 +1,14 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.BoatClass;
@@ -22,14 +22,14 @@ import com.sap.sailing.domain.base.impl.TeamImpl;
 import com.sap.sailing.domain.common.NoWindException;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
 import com.sap.sailing.domain.tracking.DynamicGPSFixTrack;
 import com.sap.sse.common.Color;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
 
@@ -37,7 +37,7 @@ public class TackTest extends StoredTrackBasedTestWithTrackedRace {
     private Competitor competitor;
     
     @Override
-    @Before
+    @BeforeEach
     public void setUp() {
         BoatClass boatClass = new BoatClassImpl("505", /* typicallyStartsUpwind */ true);
         competitor = new CompetitorImpl(123, "Wolfgang Hunger", "KYC", Color.RED, null, null, new TeamImpl("STG", Collections.singleton(

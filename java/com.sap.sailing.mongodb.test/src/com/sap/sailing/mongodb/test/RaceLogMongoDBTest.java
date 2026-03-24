@@ -1,14 +1,14 @@
 package com.sap.sailing.mongodb.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.UUID;
 
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.mongodb.MongoException;
 import com.sap.sailing.domain.abstractlog.race.CompetitorResult;
@@ -23,11 +23,7 @@ import com.sap.sailing.domain.base.impl.MarkImpl;
 import com.sap.sailing.domain.base.impl.WaypointImpl;
 import com.sap.sailing.domain.common.MarkType;
 import com.sap.sailing.domain.common.PassingInstruction;
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
 import com.sap.sailing.domain.common.Wind;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.domain.common.impl.WindImpl;
 import com.sap.sailing.domain.persistence.DomainObjectFactory;
 import com.sap.sailing.domain.persistence.MongoObjectFactory;
@@ -37,10 +33,14 @@ import com.sap.sailing.domain.persistence.PersistenceFactory;
 import com.sap.sailing.domain.racelog.RaceLogStore;
 import com.sap.sailing.domain.regattalog.RegattaLogStore;
 import com.sap.sse.common.Bearing;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.impl.AbstractColor;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 
 public abstract class RaceLogMongoDBTest extends AbstractMongoDBTest {
 
@@ -54,7 +54,7 @@ public abstract class RaceLogMongoDBTest extends AbstractMongoDBTest {
         super();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         mongoObjectFactory = PersistenceFactory.INSTANCE.getMongoObjectFactory(getMongoService());
         domainObjectFactory = PersistenceFactory.INSTANCE.getDomainObjectFactory(getMongoService(),
@@ -64,8 +64,8 @@ public abstract class RaceLogMongoDBTest extends AbstractMongoDBTest {
     protected void compareCourseData(CourseBase storedCourse, CourseBase loadedCourse) {
         assertEquals(storedCourse.getFirstWaypoint().getPassingInstructions(), PassingInstruction.None);
         assertEquals(loadedCourse.getFirstWaypoint().getPassingInstructions(), PassingInstruction.None);
-        Assert.assertTrue(storedCourse.getFirstWaypoint().getControlPoint() instanceof ControlPointWithTwoMarks);
-        Assert.assertTrue(loadedCourse.getFirstWaypoint().getControlPoint() instanceof ControlPointWithTwoMarks);
+        Assertions.assertTrue(storedCourse.getFirstWaypoint().getControlPoint() instanceof ControlPointWithTwoMarks);
+        Assertions.assertTrue(loadedCourse.getFirstWaypoint().getControlPoint() instanceof ControlPointWithTwoMarks);
 
         ControlPointWithTwoMarks storedGate = (ControlPointWithTwoMarks) storedCourse.getFirstWaypoint()
                 .getControlPoint();
@@ -80,8 +80,8 @@ public abstract class RaceLogMongoDBTest extends AbstractMongoDBTest {
 
         assertEquals(storedCourse.getLastWaypoint().getPassingInstructions(), PassingInstruction.Port);
         assertEquals(loadedCourse.getLastWaypoint().getPassingInstructions(), PassingInstruction.Port);
-        Assert.assertTrue(storedCourse.getLastWaypoint().getControlPoint() instanceof Mark);
-        Assert.assertTrue(loadedCourse.getLastWaypoint().getControlPoint() instanceof Mark);
+        Assertions.assertTrue(storedCourse.getLastWaypoint().getControlPoint() instanceof Mark);
+        Assertions.assertTrue(loadedCourse.getLastWaypoint().getControlPoint() instanceof Mark);
 
         Mark storedMark = (Mark) storedCourse.getLastWaypoint().getControlPoint();
         Mark loadedMark = (Mark) loadedCourse.getLastWaypoint().getControlPoint();

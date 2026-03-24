@@ -87,6 +87,9 @@ public interface HasRaceOfCompetitorContext extends HasSomethingOfCompetitorCont
     @Connector(messageKey="SpeedWhenStarting", ordinal=3)
     Speed getSpeedWhenStarting();
     
+    @Statistic(messageKey="StartDelay", resultDecimals=1)
+    Duration getStartDelay();
+    
     @Connector(messageKey="SpeedTenSecondsBeforeStart", ordinal=4)
     Speed getSpeedTenSecondsBeforeStart();
     

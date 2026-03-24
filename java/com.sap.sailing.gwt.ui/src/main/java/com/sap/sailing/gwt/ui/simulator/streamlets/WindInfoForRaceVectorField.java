@@ -6,20 +6,20 @@ import java.util.Map.Entry;
 
 import com.google.gwt.maps.client.base.LatLng;
 import com.google.gwt.maps.client.base.LatLngBounds;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.WindSource;
-import com.sap.sailing.domain.common.confidence.BearingWithConfidence;
-import com.sap.sailing.domain.common.confidence.BearingWithConfidenceCluster;
-import com.sap.sailing.domain.common.confidence.Weigher;
-import com.sap.sailing.domain.common.confidence.impl.BearingWithConfidenceImpl;
-import com.sap.sailing.domain.common.impl.MeterDistance;
 import com.sap.sailing.gwt.ui.client.shared.racemap.CoordinateSystem;
 import com.sap.sailing.gwt.ui.shared.WindDTO;
 import com.sap.sailing.gwt.ui.shared.WindInfoForRaceDTO;
 import com.sap.sailing.gwt.ui.shared.WindTrackInfoDTO;
 import com.sap.sailing.gwt.ui.simulator.streamlets.PositionDTOWeigher.AverageLatitudeProvider;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Util;
+import com.sap.sse.common.confidence.BearingWithConfidence;
+import com.sap.sse.common.confidence.BearingWithConfidenceCluster;
+import com.sap.sse.common.confidence.Weigher;
+import com.sap.sse.common.confidence.impl.BearingWithConfidenceImpl;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.MeterDistance;
 
 /**
  * Implements the {@link VectorField} interface by providing real wind data from a <code>TrackedRace</code> which has
@@ -164,7 +164,7 @@ public class WindInfoForRaceVectorField implements VectorField, AverageLatitudeP
     }
 
     @Override
-    public double getMotionScale(int zoomLevel) {
+    public double getMotionScale(double zoomLevel) {
         // This implementation is copied from SimulatorField, hoping it does something useful in combination with
         // the Swarm implementation.
         return 2.0 * knotsInDegreePerFrame * Math.pow(1.8, Math.min(15.0, 20.0 - zoomLevel)); 

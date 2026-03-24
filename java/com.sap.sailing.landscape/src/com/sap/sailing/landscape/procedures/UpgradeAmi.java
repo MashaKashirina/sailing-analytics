@@ -270,8 +270,10 @@ implements Procedure<ShardingKey>, StartFromSailingAnalyticsImage {
                         launchTimePoint, landscape, (host, port, serverDirectory, telnetPort, serverName, additionalProperties)->{
                             try {
                                 final Number expeditionUdpPort = (Number) additionalProperties.get(SailingProcessConfigurationVariables.EXPEDITION_PORT.name());
+                                final Number igtimiRiotPort = (Number) additionalProperties.get(SailingProcessConfigurationVariables.IGTIMI_RIOT_PORT.name());
                                 return new SailingAnalyticsProcessImpl<ShardingKey>(port, host, serverDirectory, telnetPort, serverName,
-                                        expeditionUdpPort == null ? null : expeditionUdpPort.intValue(), landscape);
+                                        expeditionUdpPort == null ? null : expeditionUdpPort.intValue(),
+                                        igtimiRiotPort == null ? null : igtimiRiotPort.intValue(), landscape);
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }

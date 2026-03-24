@@ -1,6 +1,6 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,28 +12,28 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.CourseArea;
 import com.sap.sailing.domain.base.impl.CourseAreaImpl;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
-import com.sap.sailing.domain.common.impl.NauticalMileDistance;
 import com.sap.sailing.domain.common.sensordata.BravoExtendedSensorDataMetadata;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.impl.BravoExtendedFixImpl;
 import com.sap.sailing.domain.common.tracking.impl.DoubleVectorFixImpl;
 import com.sap.sailing.domain.common.tracking.impl.GPSFixMovingImpl;
+import com.sap.sailing.domain.shared.tracking.impl.TimeRangeCache;
 import com.sap.sailing.domain.tracking.BravoFixTrack;
 import com.sap.sailing.domain.tracking.DynamicBravoFixTrack;
 import com.sap.sailing.domain.tracking.impl.BravoFixTrackImpl;
 import com.sap.sailing.domain.tracking.impl.DynamicGPSFixMovingTrackImpl;
-import com.sap.sailing.domain.tracking.impl.TimeRangeCache;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
+import com.sap.sse.common.impl.NauticalMileDistance;
 
 /**
  * See bug4629. This test reproduces an order of fix insertion into a {@link BravoFixTrack}, cache invalidation,
@@ -141,7 +141,7 @@ public class BravoFixTrackFoiledDistanceCacheTest {
         }
     }
     
-    @Before
+    @BeforeEach
     public void setUp() {
         final CourseAreaImpl courseArea = new CourseAreaImpl("Test", UUID.randomUUID(), /* centerPosition */ null, /* radius */ null);
         gpsTrack = new DynamicGPSFixMovingTrackImpl<>(courseArea, /* millisecondsOverWhichToAverage */ 15000);

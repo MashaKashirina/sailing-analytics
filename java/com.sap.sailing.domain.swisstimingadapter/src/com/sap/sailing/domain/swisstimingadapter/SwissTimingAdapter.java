@@ -5,6 +5,9 @@ import java.net.UnknownHostException;
 import java.text.ParseException;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import com.sap.sailing.domain.base.BoatClass;
 import com.sap.sailing.domain.common.RegattaIdentifier;
@@ -31,13 +34,13 @@ public interface SwissTimingAdapter {
             String raceName, String raceDescription, BoatClass boatClass, String hostname, int port,
             StartList startList, RaceLogStore logStore, RegattaLogStore regattaLogStore, long timeoutInMilliseconds,
             boolean useInternalMarkPassingAlgorithm, boolean trackWind,
-            boolean correctWindDirectionByMagneticDeclination, String updateURL, String updateUsername,
-            String updatePassword, String eventName, String manage2SailEventUrl)
+            boolean correctWindDirectionByMagneticDeclination, String updateURL, String apiToken,
+            String eventName, String manage2SailEventUrl)
             throws InterruptedException, UnknownHostException, IOException, ParseException, Exception;
 
     StartList readStartListForRace(String raceId, RegattaResults regattaResults);
     
-    RegattaResults readRegattaEntryListFromXrrUrl(String xrrEntryListUrl) throws IOException, JAXBException;
+    RegattaResults readRegattaEntryListFromXrrUrl(String xrrEntryListUrl) throws IOException, JAXBException, SAXException, ParserConfigurationException;
     
     SwissTimingFactory getSwissTimingFactory();
 

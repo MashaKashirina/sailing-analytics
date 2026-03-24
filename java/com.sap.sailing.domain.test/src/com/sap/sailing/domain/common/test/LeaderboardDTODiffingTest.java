@@ -1,12 +1,12 @@
 package com.sap.sailing.domain.common.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.common.BoatClassMasterdata;
 import com.sap.sailing.domain.common.dto.BoatClassDTO;
@@ -50,7 +50,7 @@ import com.sap.sse.util.ClonerImpl;
  * <p>
  * 
  * The data of a meaningful and non-trivial {@link LeaderboardDTO} is obtained by using an instrumented version of
- * <code>SailingServiceImpl.getLeaderboardByName(...)</code> which serializes the leaderboard at the end of the method
+ * <code>SailingServiceImpl.getLeaderBoardByNameInternal(...)</code> which serializes the leaderboard at the end of the method
  * to a file used by this test. The leaderboard that this test wants to use is that of the 505 Worlds 2013, obtained for
  * an expanded Race R9 at time 2013-05-03T19:17:09Z after the last competitor tracked has finished the last leg. The
  * total distance traveled in meters has to be expanded for this test to work.
@@ -63,7 +63,7 @@ public class LeaderboardDTODiffingTest {
     private IncrementalLeaderboardDTO newVersion;
     private final Cloner cloner = new ClonerImpl();
     
-    @Before
+    @BeforeEach
     public void setUp() throws FileNotFoundException, IOException, ClassNotFoundException {
         ObjectInputStream ois = StoredTrackBasedTest.getObjectInputStream("IncrementalLeaderboardDTO.ser");
         previousVersion = (LeaderboardDTO) ois.readObject();

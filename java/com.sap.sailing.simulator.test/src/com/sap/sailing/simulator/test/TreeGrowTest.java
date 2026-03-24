@@ -4,14 +4,9 @@ import java.sql.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-
-import com.sap.sailing.domain.common.Position;
-import com.sap.sailing.domain.common.SpeedWithBearing;
-import com.sap.sailing.domain.common.impl.DegreePosition;
-import com.sap.sailing.domain.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sailing.simulator.Path;
 import com.sap.sailing.simulator.PolarDiagram;
 import com.sap.sailing.simulator.SimulationParameters;
@@ -24,8 +19,12 @@ import com.sap.sailing.simulator.windfield.WindControlParameters;
 import com.sap.sailing.simulator.windfield.WindFieldGenerator;
 import com.sap.sailing.simulator.windfield.impl.WindFieldGeneratorOscillationImpl;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
+import com.sap.sse.common.SpeedWithBearing;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.impl.DegreeBearingImpl;
+import com.sap.sse.common.impl.DegreePosition;
+import com.sap.sse.common.impl.KnotSpeedWithBearingImpl;
 import com.sap.sse.common.impl.MillisecondsDurationImpl;
 import com.sap.sse.common.impl.MillisecondsTimePoint;
 
@@ -71,7 +70,7 @@ public class TreeGrowTest {
         Path path = treeGrow.getPath();
 
         // System.out.println("tree-grow path points: "+path.getPathPoints().size());
-        Assert.assertNotNull(path.getPathPoints());
+        Assertions.assertNotNull(path.getPathPoints());
 
         // for(TimedPositionWithSpeed pos : path.getPathPoints()) {
         // System.out.println(""+pos.getPosition().getLatDeg()+", "+pos.getPosition().getLngDeg());

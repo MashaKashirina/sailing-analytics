@@ -25,3 +25,4 @@ Require-Bundle: com.sap.sailing.domain;bundle-version="1.0.0",
 Export-Package: com.sap.sailing.server.interfaces,
  com.sap.sailing.server.operationaltransformation,
  com.sap.sailing.server.preferences
+Import-Package: org.apache.commons.math;version="[2.1.0,3.0.0)"

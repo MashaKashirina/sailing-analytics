@@ -1,8 +1,8 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.io.ByteArrayInputStream;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.Competitor;
@@ -88,7 +88,7 @@ public class CourseUpdateDuringNonAtomicSerializationTest implements Serializabl
                 EmptyWindStore.INSTANCE, 
                 /* delayToLiveInMillis */10000, /* millisecondsOverWhichToAverageWind */30000, /* millisecondsOverWhichToAverageSpeed */
                 7000, /* useMarkPassingCalculator */ false, OneDesignRankingMetric::new,
-                mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null) {
+                mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null) {
             private static final long serialVersionUID = 9114777576548711763L;
 
             @Override

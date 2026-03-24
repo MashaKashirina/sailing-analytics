@@ -1,10 +1,12 @@
 package com.sap.sse.security.ui.client;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.sap.sse.common.media.TakedownNoticeRequestContext;
 import com.sap.sse.security.shared.QualifiedObjectIdentifier;
 import com.sap.sse.security.shared.WildcardPermission;
 import com.sap.sse.security.shared.dto.AccessControlListDTO;
@@ -59,6 +61,10 @@ public interface UserManagementWriteServiceAsync extends UserManagementServiceAs
     void updateRoleDefinition(RoleDefinitionDTO roleWithNewProperties, AsyncCallback<Void> callback);
 
     void deleteUser(String username, AsyncCallback<SuccessInfo> callback);
+
+    void unlockUser(String username, AsyncCallback<SuccessInfo> callback);
+
+    void unlockUsers(Set<String> username, AsyncCallback<Set<SuccessInfo>> callback);
     
     void deleteUsers(Set<String> usernames, AsyncCallback<Set<SuccessInfo>> callback);
 
@@ -104,4 +110,23 @@ public interface UserManagementWriteServiceAsync extends UserManagementServiceAs
     void removePermissionFromUser(String username, WildcardPermissionWithSecurityDTO permission,
             AsyncCallback<SuccessInfo> callback);
 
+    
+    /**
+     * For the application replica set to which this request is sent, configure its CORS filter such that
+     * REST requests are allowed from <em>any</em> origin (*).
+     */
+    void setCORSFilterConfigurationToWildcard(AsyncCallback<Void> callback);
+    
+    /**
+     * For the application replica set to which this request is sent, configure its CORS filter such that
+     * REST requests are allowed from the origins listed in {@code allowedOrigins}. The list may be empty
+     * but must not be {@code null}.
+     */
+    void setCORSFilterConfigurationAllowedOrigins(ArrayList<String> allowedOrigins, AsyncCallback<Void> callback);
+
+    void fileTakedownNotice(TakedownNoticeRequestContext takedownNoticeRequestContext, AsyncCallback<Void> callback);
+    
+    void releaseUserCreationLockOnIp(String ip, AsyncCallback<Void> asyncCallback);
+    
+    void releaseBearerTokenLockOnIp(String ip, AsyncCallback<Void> asyncCallback);
 }

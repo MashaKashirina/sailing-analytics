@@ -16,6 +16,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.ReplaceOptions;
+import com.sap.sse.common.impl.TimedLockImpl;
 import com.sap.sse.security.interfaces.Social;
 import com.sap.sse.security.shared.AccessControlListAnnotation;
 import com.sap.sse.security.shared.Account;
@@ -176,7 +177,9 @@ public class MongoObjectFactoryImpl implements MongoObjectFactory {
         dbUserGroup.put(FieldNames.UserGroup.NAME.name(), group.getName());
         BasicDBList dbUsernames = new BasicDBList();
         for (User user : group.getUsers()) {
-            dbUsernames.add(user.getName());
+            if (user != null) {
+                dbUsernames.add(user.getName());
+            }
         }
         dbUserGroup.put(FieldNames.UserGroup.USERNAMES.name(), dbUsernames);
         BasicDBList dbRoleDefinitionMap = new BasicDBList();
@@ -213,6 +216,14 @@ public class MongoObjectFactoryImpl implements MongoObjectFactory {
         dbUser.put(FieldNames.User.PASSWORD_RESET_SECRET.name(), user.getPasswordResetSecret());
         dbUser.put(FieldNames.User.VALIDATION_SECRET.name(), user.getValidationSecret());
         dbUser.put(FieldNames.User.ACCOUNTS.name(), createAccountMapObject(user.getAllAccounts()));
+        if (user.getTimedLock() instanceof TimedLockImpl) {
+            final TimedLockImpl timedLock = ((TimedLockImpl) user.getTimedLock());
+            dbUser.put(FieldNames.User.LOCKED_UNTIL_MILLIS.name(), timedLock.getLockedUntil().asMillis());
+            dbUser.put(FieldNames.User.NEXT_LOCKING_DURATION_MILLIS.name(), timedLock.getNextLockingDelay().asMillis());
+        } else {
+            logger.warning("Expected user locking/banning to be of type "+TimedLockImpl.class.getSimpleName()
+                    +" but was of type "+user.getTimedLock().getClass().getSimpleName()+"; not storing to DB");
+        }
         BasicDBList dbRoles = new BasicDBList();
         for (Role role : user.getRoles()) {
             dbRoles.add(storeRole(role));

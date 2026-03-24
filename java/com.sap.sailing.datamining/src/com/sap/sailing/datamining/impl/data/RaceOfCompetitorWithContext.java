@@ -3,6 +3,7 @@ package com.sap.sailing.datamining.impl.data;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
@@ -23,23 +24,23 @@ import com.sap.sailing.domain.base.Waypoint;
 import com.sap.sailing.domain.common.ManeuverType;
 import com.sap.sailing.domain.common.MaxPointsReason;
 import com.sap.sailing.domain.common.NoWindException;
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.Tack;
 import com.sap.sailing.domain.common.tracking.GPSFix;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.leaderboard.Leaderboard;
+import com.sap.sailing.domain.shared.tracking.LineDetails;
+import com.sap.sailing.domain.shared.tracking.impl.TimedComparator;
 import com.sap.sailing.domain.tracking.GPSFixTrack;
-import com.sap.sailing.domain.tracking.LineDetails;
 import com.sap.sailing.domain.tracking.Maneuver;
 import com.sap.sailing.domain.tracking.MarkPassing;
 import com.sap.sailing.domain.tracking.TrackedLeg;
 import com.sap.sailing.domain.tracking.TrackedLegOfCompetitor;
 import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.domain.tracking.WindPositionMode;
-import com.sap.sailing.domain.tracking.impl.TimedComparator;
 import com.sap.sse.common.Bearing;
 import com.sap.sse.common.Distance;
 import com.sap.sse.common.Duration;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.Speed;
 import com.sap.sse.common.TimePoint;
 import com.sap.sse.common.Util;
@@ -230,6 +231,26 @@ public class RaceOfCompetitorWithContext implements HasRaceOfCompetitorContext {
     @Override
     public Speed getSpeedWhenStarting() {
         return getTrackedRace().getSpeedWhenCrossingStartLine(getCompetitor());
+    }
+    
+    @Override
+    public Duration getStartDelay() {
+        final NavigableSet<MarkPassing> competitorMarkPassings = getTrackedRace().getMarkPassings(competitor);
+        getTrackedRace().lockForRead(competitorMarkPassings);
+        try {
+            final Duration result;
+            final TimePoint startOfRace;
+            if (!competitorMarkPassings.isEmpty() && (startOfRace = getTrackedRace().getStartOfRace()) != null) {
+                final MarkPassing firstMarkPassing = competitorMarkPassings.iterator().next();
+                TimePoint competitorStartTime = firstMarkPassing.getTimePoint();
+                result = startOfRace.until(competitorStartTime);
+            } else {
+                result = null;
+            }
+            return result;
+        } finally {
+            getTrackedRace().unlockAfterRead(competitorMarkPassings);
+        }
     }
     
     @Override

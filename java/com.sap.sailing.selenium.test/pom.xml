@@ -17,7 +17,7 @@
     <!-- Note: The actual value for "parameters.integration-tests" and "parameters.proxy" should be defined in the local 
       settings.xml, because of the differences between the CI-Build and the local setup. -->
     <tycho.tests.argLine>
-      ${parameters.integration-tests} ${parameters.proxy} ${parameters.jetty} -Xmx4096m
+      ${parameters.integration-tests} ${parameters.proxy} ${parameters.jetty} -Xmx4096m -Digtimi.base.url=http://127.0.0.1:8885
     </tycho.tests.argLine>
   </properties>
 
@@ -101,6 +101,11 @@
                   <autoStart>true</autoStart>
                 </bundle>
                 <bundle>
+                  <id>com.sap.sailing.domain.vakarosadapter</id>
+                  <level>4</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
                   <id>com.sap.sailing.domain.windfinderadapter</id>
                   <level>4</level>
                   <autoStart>true</autoStart>
@@ -172,6 +177,11 @@
                 </bundle>
                 <bundle>
                   <id>com.sap.sailing.sailwave.resultimport</id>
+                  <level>4</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
+                  <id>com.sap.sailing.sailwave.html.resultimport</id>
                   <level>4</level>
                   <autoStart>true</autoStart>
                 </bundle>
@@ -311,6 +321,21 @@
                   <autoStart>true</autoStart>
                 </bundle>
                 <bundle>
+                  <id>com.sap.sailing.aiagent</id>
+                  <level>4</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
+                  <id>com.sap.sailing.aiagent.persistence</id>
+                  <level>5</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
+                  <id>com.sap.sailing.aiagent.gateway</id>
+                  <level>6</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
                   <id>com.sap.sse.security.ui</id>
                   <level>6</level>
                   <autoStart>true</autoStart>
@@ -343,6 +368,11 @@
                 <bundle>
                   <id>com.sap.sse.landscape.aws</id>
                   <level>4</level>
+                  <autoStart>true</autoStart>
+                </bundle>
+                <bundle>
+                  <id>com.sap.sse.branding.sap</id>
+                  <level>5</level>
                   <autoStart>true</autoStart>
                 </bundle>
                 <bundle>

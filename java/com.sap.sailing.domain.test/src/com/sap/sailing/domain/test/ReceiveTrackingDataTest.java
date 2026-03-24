@@ -1,14 +1,14 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.Competitor;
 import com.sap.sailing.domain.base.RaceDefinition;
@@ -20,7 +20,7 @@ import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.impl.EmptyRaceLogStore;
 import com.sap.sailing.domain.regattalog.impl.EmptyRegattaLogStore;
-import com.sap.sailing.domain.tracking.AddResult;
+import com.sap.sailing.domain.shared.tracking.AddResult;
 import com.sap.sailing.domain.tracking.DynamicRaceDefinitionSet;
 import com.sap.sailing.domain.tracking.DynamicTrackedRace;
 import com.sap.sailing.domain.tracking.DynamicTrackedRegatta;
@@ -51,7 +51,7 @@ public class ReceiveTrackingDataTest extends AbstractTracTracLiveTest {
      * into {@link #firstTracked} and {@link #firstData}. All events are converted into {@link GPSFixMovingImpl}
      * objects and appended to the {@link DynamicTrackedRace}s.
      */
-    @Before
+    @BeforeEach
     public void setupListener() {
         final DomainFactory domainFactory = DomainFactory.INSTANCE;
         final RaceChangeListener positionListener = new AbstractRaceChangeListener() {
@@ -89,8 +89,8 @@ public class ReceiveTrackingDataTest extends AbstractTracTracLiveTest {
                             public void addRaceDefinition(RaceDefinition race, DynamicTrackedRace trackedRace) {
                             }
                         },
-                        /* trackedRegattaRegistry */null, mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */
-                        getTracTracRace(), null, /* tracTracUsername */null, /* tracTracPassword */null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
+                        /* trackedRegattaRegistry */null, mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null, /*maneuverRaceFingerprintRegistry*/ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */
+                        getTracTracRace(), null, /* tracTracApiToken */null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
                         RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS, new DefaultRaceTrackingHandler(), /* raceAndCompetitorStatusWithRaceLogReconciler */ null)) {
             receiver.subscribe();
             getRaceSubscriber().start();
@@ -103,8 +103,8 @@ public class ReceiveTrackingDataTest extends AbstractTracTracLiveTest {
                             @Override
                             public void addRaceDefinition(RaceDefinition race, DynamicTrackedRace trackedRace) {
                             }
-                        }, /* trackedRegattaRegistry */null, mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */
-                        getTracTracRace(), null, /* tracTracUsername */null, /* tracTracPassword */null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
+                        }, /* trackedRegattaRegistry */null, mock(RaceLogAndTrackedRaceResolver.class), /* markPassingRaceFingerprintRegistry */ null, /*maneuverRaceFingerprintRegistry*/ null, mock(LeaderboardGroupResolver.class), /* courseDesignUpdateURI */
+                        getTracTracRace(), null, /* tracTracApiToken */null, getEventSubscriber(), getRaceSubscriber(), /*ignoreTracTracMarkPassings*/ false,
                         RaceTracker.TIMEOUT_FOR_RECEIVING_RACE_DEFINITION_IN_MILLISECONDS, new DefaultRaceTrackingHandler(), /* raceAndCompetitorStatusWithRaceLogReconciler */ null));
     }
 

@@ -1,8 +1,8 @@
 package com.sap.sailing.datamining.impl.data;
 
+import com.sap.sailing.datamining.data.HasTrackedLegOfCompetitorContext;
 import com.sap.sailing.datamining.data.HasTackTypeSegmentContext;
 import com.sap.sailing.datamining.data.HasTrackedLegContext;
-import com.sap.sailing.datamining.data.HasTrackedLegOfCompetitorContext;
 import com.sap.sailing.datamining.shared.TackTypeSegmentsDataMiningSettings;
 import com.sap.sailing.domain.tracking.TrackedLegOfCompetitor;
 import com.sap.sse.common.Distance;
@@ -14,7 +14,7 @@ import com.sap.sse.common.TimePoint;
  * special case of the entire leg. Start and finish times of this "slice" equal the start/finish times of the competitor in the leg.
  */
 public class TrackedLegOfCompetitorWithContext extends AbstractTrackedLegSliceOfCompetitorWithContext implements HasTrackedLegOfCompetitorContext {
-    private static final long serialVersionUID = 5944904146286262768L;
+    private static final long serialVersionUID = 3966524650275310718L;
 
     public TrackedLegOfCompetitorWithContext(HasTrackedLegContext trackedLegContext, TrackedLegOfCompetitor trackedLegOfCompetitor, TackTypeSegmentsDataMiningSettings settings) {
         super(trackedLegContext, trackedLegOfCompetitor, settings, 1);

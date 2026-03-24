@@ -183,7 +183,7 @@ public class RegattaService {
     
     private void updateEvent(StrippedLeaderboardDTO newRegattaLeaderboard, EventDTO event, final RegattaDTO newRegatta, AsyncCallback<RegattaDTO> callback) {
         sailingService.updateEvent(event.id, event.getName(), event.getDescription(),
-                event.startDate, event.endDate, event.venue, event.isPublic,
+                event.startDate, event.endDate, event.getVenue(), event.isPublic,
                 event.getLeaderboardGroupIds(), event.getOfficialWebsiteURL(), event.getBaseURL(),
                 event.getSailorsInfoWebsiteURLs(), event.getImages(), event.getVideos(),
                 event.getWindFinderReviewedSpotsCollectionIds(), new AsyncCallback<EventDTO>() {

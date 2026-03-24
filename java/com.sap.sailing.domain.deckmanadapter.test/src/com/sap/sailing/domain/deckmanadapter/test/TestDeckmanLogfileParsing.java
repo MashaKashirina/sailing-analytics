@@ -1,7 +1,7 @@
 package com.sap.sailing.domain.deckmanadapter.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,15 +11,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import com.sap.sailing.domain.common.Position;
 import com.sap.sailing.domain.common.Wind;
 import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.deckmanadapter.DeckmanAdapter;
 import com.sap.sailing.domain.deckmanadapter.DeckmanAdapterFactory;
 import com.sap.sailing.domain.deckmanadapter.Record;
 import com.sap.sailing.domain.deckmanadapter.impl.FieldType;
+import com.sap.sse.common.Position;
 import com.sap.sse.common.TimePoint;
 
 public class TestDeckmanLogfileParsing {

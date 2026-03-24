@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import com.sap.sailing.domain.base.Regatta;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupResolver;
+import com.sap.sailing.domain.maneuverhash.ManeuverRaceFingerprintRegistry;
 import com.sap.sailing.domain.markpassinghash.MarkPassingRaceFingerprintRegistry;
 import com.sap.sailing.domain.racelog.RaceLogAndTrackedRaceResolver;
 import com.sap.sailing.domain.racelog.RaceLogStore;
@@ -46,8 +47,7 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
     private final transient DomainFactory domainFactory;
     private final long delayToLiveInMillis;
     private final Duration offsetToStartTimeOfSimulatedRace;
-    private final String tracTracUsername;
-    private final String tracTracPassword;
+    private final String tracTracApiToken;
     private final String raceStatus;
     private final String raceVisibility;
     private final boolean useInternalMarkPassingAlgorithm;
@@ -73,7 +73,7 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
             TimePoint startOfTracking, TimePoint endOfTracking, long delayToLiveInMillis,
             Duration offsetToStartTimeOfSimulatedRace, boolean useInternalMarkPassingAlgorithm,
             RaceLogStore raceLogStore, RegattaLogStore regattaLogStore, DomainFactory domainFactory,
-            String tracTracUsername, String tracTracPassword, String raceStatus, String raceVisibility,
+            String tracTracApiToken, String raceStatus, String raceVisibility,
             boolean trackWind, boolean correctWindDirectionByMagneticDeclination, boolean preferReplayIfAvailable,
             int timeoutInMillis, boolean useOfficialEventsToUpdateRaceLog,
             URI liveURIFromConfiguration, URI storedURIFromConfiguration) throws Exception {
@@ -81,6 +81,7 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
         this.useOfficialEventsToUpdateRaceLog = useOfficialEventsToUpdateRaceLog;
         this.paramURL = paramURL;
         this.timeoutInMillis = timeoutInMillis;
+        this.tracTracApiToken = tracTracApiToken; // required before trying getTractracRace()
         final IRace tractracRace = getTractracRace();
         if (preferReplayIfAvailable && isReplayRace(tractracRace) &&
                 (!Util.equalsWithNull(liveURI, tractracRace.getLiveURI()) || !Util.equalsWithNull(storedURI, tractracRace.getStoredURI()))) {
@@ -101,8 +102,6 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
         this.offsetToStartTimeOfSimulatedRace = offsetToStartTimeOfSimulatedRace;
         this.raceLogStore = raceLogStore;
         this.regattaLogStore = regattaLogStore;
-        this.tracTracUsername = tracTracUsername;
-        this.tracTracPassword = tracTracPassword;
         this.raceStatus = raceStatus;
         this.raceVisibility = raceVisibility;
         this.useInternalMarkPassingAlgorithm = useInternalMarkPassingAlgorithm;
@@ -118,9 +117,9 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
     public IRace getTractracRace() throws CreateModelException, URISyntaxException, TimeOutException {
         final IRace result;
         if (getTimeoutInMillis() == -1) {
-            result = ModelLocator.getEventFactory().createRace(new URI(paramURL.toString()));
+            result = ModelLocator.getEventFactory().createRace(tracTracApiToken, new URI(paramURL.toString()));
         } else {
-            result = ModelLocator.getEventFactory().createRace(new URI(paramURL.toString()), getTimeoutInMillis());
+            result = ModelLocator.getEventFactory().createRace(tracTracApiToken, new URI(paramURL.toString()), getTimeoutInMillis());
         }
         return result;
     }
@@ -133,21 +132,26 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
     @Override
     public RaceTracker createRaceTracker(TrackedRegattaRegistry trackedRegattaRegistry, WindStore windStore,
             RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
-            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) throws URISyntaxException,
-            CreateModelException, SubscriberInitializationException, IOException, InterruptedException, TimeOutException {
+            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry)
+            throws URISyntaxException, CreateModelException, SubscriberInitializationException, IOException, InterruptedException, TimeOutException {
         RaceTracker tracker = domainFactory.createRaceTracker(raceLogStore, regattaLogStore, windStore,
                 trackedRegattaRegistry, raceLogResolver, leaderboardGroupResolver, this, timeoutInMilliseconds,
-                raceTrackingHandler, markPassingRaceFingerprintRegistry);
+                raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
         return tracker;
     }
 
     @Override
     public RaceTracker createRaceTracker(Regatta regatta, TrackedRegattaRegistry trackedRegattaRegistry,
-            WindStore windStore, RaceLogAndTrackedRaceResolver raceLogResolver, LeaderboardGroupResolver leaderboardGroupResolver,
-            long timeoutInMilliseconds, RaceTrackingHandler raceTrackingHandler, MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry) throws Exception {
+            WindStore windStore, RaceLogAndTrackedRaceResolver raceLogResolver,
+            LeaderboardGroupResolver leaderboardGroupResolver, long timeoutInMilliseconds,
+            RaceTrackingHandler raceTrackingHandler,
+            MarkPassingRaceFingerprintRegistry markPassingRaceFingerprintRegistry,
+            ManeuverRaceFingerprintRegistry maneuverRaceFingerprintRegistry) throws Exception {
         RaceTracker tracker = domainFactory.createRaceTracker(regatta, raceLogStore, regattaLogStore, windStore,
                 trackedRegattaRegistry, raceLogResolver, leaderboardGroupResolver, this, timeoutInMilliseconds,
-                raceTrackingHandler, markPassingRaceFingerprintRegistry);
+                raceTrackingHandler, markPassingRaceFingerprintRegistry, maneuverRaceFingerprintRegistry);
         return tracker;
     }
 
@@ -197,12 +201,8 @@ public class RaceTrackingConnectivityParametersImpl extends AbstractRaceTracking
         return offsetToStartTimeOfSimulatedRace;
     }
 
-    public String getTracTracUsername() {
-        return tracTracUsername;
-    }
-
-    public String getTracTracPassword() {
-        return tracTracPassword;
+    public String getTracTracApiToken() {
+        return tracTracApiToken;
     }
 
     public String getRaceStatus() {

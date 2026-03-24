@@ -1,6 +1,6 @@
 package com.sap.sailing.domain.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sap.sailing.domain.base.CompetitorWithBoat;
 import com.sap.sailing.domain.base.Course;
@@ -53,7 +53,7 @@ public class UpdateMarkPassingTest {
                 race, Collections.<Sideline> emptyList(), EmptyWindStore.INSTANCE, /* delayToLiveInMillis */1000,
                 /* millisecondsOverWhichToAverageWind */30000, /* millisecondsOverWhichToAverageSpeed */30000,
                 /* useMarkPassingCalculator */ false, OneDesignRankingMetric::new,
-                mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null);
+                mock(RaceLogAndTrackedRaceResolver.class), /* trackingConnectorInfo */ null, /* markPassingRaceFingerprintRegistry */ null, /* maneuverRaceFingerprintRegistry */ null);
         TimePoint now = MillisecondsTimePoint.now();
         TimePoint later = now.plus(1000);
         trackedRace.updateMarkPassings(competitor, Arrays.asList(new MarkPassing[] { new MarkPassingImpl(now, waypoint, competitor) }));

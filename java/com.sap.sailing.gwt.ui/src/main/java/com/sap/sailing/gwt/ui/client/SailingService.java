@@ -39,8 +39,6 @@ import com.sap.sailing.domain.common.dto.PairingListTemplateDTO;
 import com.sap.sailing.domain.common.dto.PersonDTO;
 import com.sap.sailing.domain.common.dto.RaceColumnDTO;
 import com.sap.sailing.domain.common.dto.TagDTO;
-import com.sap.sailing.domain.common.impl.KilometersPerHourSpeedImpl;
-import com.sap.sailing.domain.common.impl.KnotSpeedImpl;
 import com.sap.sailing.domain.common.orc.ImpliedWindSource;
 import com.sap.sailing.domain.common.orc.ORCCertificate;
 import com.sap.sailing.domain.common.orc.ORCPerformanceCurveLegTypes;
@@ -109,6 +107,8 @@ import com.sap.sse.common.TimeRange;
 import com.sap.sse.common.Util;
 import com.sap.sse.common.Util.Pair;
 import com.sap.sse.common.Util.Triple;
+import com.sap.sse.common.impl.KilometersPerHourSpeedImpl;
+import com.sap.sse.common.impl.KnotSpeedImpl;
 import com.sap.sse.common.impl.SecondsDurationImpl;
 import com.sap.sse.gwt.client.replication.RemoteReplicationService;
 import com.sap.sse.security.shared.HasPermissions;
@@ -131,7 +131,7 @@ public interface SailingService extends RemoteService, RemoteReplicationService 
     List<EventDTO> getEvents() throws Exception;
 
     Util.Pair<String, List<TracTracRaceRecordDTO>> listTracTracRacesInEvent(String eventJsonURL,
-            boolean listHiddenRaces) throws UnauthorizedException, Exception;
+            boolean listHiddenRaces, String tracTracApiToken) throws UnauthorizedException, Exception;
 
     void replaySwissTimingRace(RegattaIdentifier regattaIdentifier, Iterable<SwissTimingReplayRaceDTO> replayRaces,
             boolean trackWind, boolean correctWindByDeclination, boolean useInternalMarkPassingAlgorithm)
@@ -213,7 +213,7 @@ public interface SailingService extends RemoteService, RemoteReplicationService 
     SwissTimingEventRecordDTO getRacesOfSwissTimingEvent(String eventJsonURL) throws UnauthorizedException, Exception;
 
     Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>> getDouglasPoints(
-            RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges, double meters)
+            RegattaAndRaceIdentifier raceIdentifier, Map<CompetitorDTO, TimeRange> competitorTimeRanges)
             throws NoWindException, UnauthorizedException;
 
     Map<CompetitorDTO, List<ManeuverDTO>> getManeuvers(RegattaAndRaceIdentifier raceIdentifier,
@@ -607,4 +607,7 @@ public interface SailingService extends RemoteService, RemoteReplicationService 
     List<CourseAreaDTO> getCourseAreaForEventOfLeaderboard(String leaderboardName);
 
     String getGoogleMapsLoaderAuthenticationParams();
+    
+    String getBrandAffiliationWithSailing(String locale);
+    
 }
