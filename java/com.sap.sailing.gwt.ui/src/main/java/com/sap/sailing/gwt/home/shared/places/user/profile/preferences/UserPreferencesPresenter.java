@@ -131,7 +131,7 @@ public class UserPreferencesPresenter<C extends ClientFactoryWithDispatch & Erro
     }
 
     @Override
-    public void setIsSubscribedToFeatureAndCommunityUpdates(final boolean b, final AsyncCallback<VoidResult> callback) {
+    public void setIsSubscribedToFeatureAndCommunityUpdates(final Boolean b, final AsyncCallback<VoidResult> callback) {
         clientFactory.getDispatch().execute(new SaveMiscEmailPreferences(b), callback);
     }
 

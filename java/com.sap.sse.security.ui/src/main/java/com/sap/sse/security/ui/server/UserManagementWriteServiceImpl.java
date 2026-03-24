@@ -324,7 +324,9 @@ public class UserManagementWriteServiceImpl extends UserManagementServiceImpl im
         getSecurityService().checkCurrentUserUpdatePermission(getSecurityService().getCurrentUser());
         getSecurityService().updateUserProperties(username, fullName, company, getLocaleFromLocaleName(localeName),
                 didOptOutOfFeatureAndCommunityEmails);
-        getSecurityService().setDefaultTenantForCurrentServerForUser(username, UUID.fromString(defaultTenant));
+        if (defaultTenant != null) {
+            getSecurityService().setDefaultTenantForCurrentServerForUser(username, UUID.fromString(defaultTenant));
+        }
         return securityDTOFactory.createUserDTOFromUser(getSecurityService().getUserByName(username),
                 getSecurityService());
     }

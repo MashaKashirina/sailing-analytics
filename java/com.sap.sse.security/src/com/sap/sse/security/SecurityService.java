@@ -232,7 +232,7 @@ public interface SecurityService extends ReplicableWithObjectInputStream<Replica
     void updateSimpleUserEmail(String username, String newEmail, String validationBaseURL) throws UserManagementException;
     
     /**
-     * @param username when null, no update will be processed to the respective parameter
+     * @param username must not be null
      * @param fullName when null, no update will be processed to the respective parameter
      * @param company when null, no update will be processed to the respective parameter
      * @param locale when null, no update will be processed to the respective parameter

@@ -367,7 +367,7 @@ public class SecurityResource extends AbstractSecurityResource {
     @Path(USER_METHOD)
     @Produces("text/plain;charset=UTF-8")
     public Response updateUser(@Context UriInfo uriInfo, @QueryParam(USERNAME) String username,
-            @QueryParam(EMAIL) String email, @QueryParam(OPT_OUT_OF_FEATURE_AND_COMMUNITY_EMAILS) boolean optOutOfFeatureAndCommunityEmails,
+            @QueryParam(EMAIL) String email, @QueryParam(OPT_OUT_OF_FEATURE_AND_COMMUNITY_EMAILS) Boolean optOutOfFeatureAndCommunityEmails,
             @QueryParam(FULL_NAME) String fullName, @QueryParam(COMPANY) String company) {
         if (!getSecurityService().hasCurrentUserUpdatePermission(getSecurityService().getUserByName(username))) {
             return Response.status(Status.UNAUTHORIZED).build();

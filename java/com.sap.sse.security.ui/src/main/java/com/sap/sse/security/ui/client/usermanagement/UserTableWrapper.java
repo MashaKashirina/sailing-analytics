@@ -16,6 +16,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.cell.client.FieldUpdater;
 import com.google.gwt.cell.client.SafeHtmlCell;
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.safehtml.shared.SafeHtml;
@@ -97,6 +99,48 @@ extends TableWrapper<UserDTO, S, StringMessages, TR> {
         TextColumn<UserDTO> fullNameColumn = new AbstractSortableTextColumn<UserDTO>(user->user.getFullName(), userColumnListHandler);
         TextColumn<UserDTO> emailColumn = new AbstractSortableTextColumn<UserDTO>(user->user.getEmail(), userColumnListHandler);
         TextColumn<UserDTO> emailValidatedColumn = new AbstractSortableTextColumn<UserDTO>(user->user.isEmailValidated() ? stringMessages.yes() : stringMessages.no(), userColumnListHandler);
+        Column<UserDTO, Boolean> optOutColumn = new Column<UserDTO, Boolean>(new CheckboxCell(true, true)) {
+            @Override
+            public Boolean getValue(UserDTO user) {
+                return user.getDidOptOutOfFeatureAndCommunityEmails();
+            }
+        };
+        optOutColumn.setFieldUpdater(new FieldUpdater<UserDTO, Boolean>() {
+            @Override
+            public void update(int index, UserDTO user, Boolean value) {
+                final AsyncCallback<UserDTO> callback = new AsyncCallback<UserDTO>() {
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        errorReporter.reportError(getStringMessages().errorTryingToUpdateUser(user.getName(),
+                                caught.getMessage()));
+                    }
+
+                    @Override
+                    public void onSuccess(UserDTO updatedUser) {
+                        final String msg = stringMessages.successfullyUpdatedUserProperties(user.getName());
+                        Notification.notify(msg, NotificationType.SUCCESS);
+                        int editedUserIndex = getFilterField().indexOf(user);
+                        getFilterField().remove(user);
+                        if (editedUserIndex >= 0) {
+                            getFilterField().add(editedUserIndex, updatedUser);
+                        } else {
+                            getFilterField().add(updatedUser);
+                        }
+                        if (userService.getCurrentUser().getName().equals(updatedUser.getName())) {
+                            userService.updateUser(/* notify other instances */ true);
+                        }
+                    }
+                };
+                getUserManagementWriteService().updateUserProperties(user.getName(), null, null, null, value, null, callback);
+            }
+        });
+        optOutColumn.setSortable(true);
+        userColumnListHandler.setComparator(optOutColumn, new Comparator<UserDTO>() {
+            @Override
+            public int compare(UserDTO r1, UserDTO r2) {
+                return Boolean.compare(r1.getDidOptOutOfFeatureAndCommunityEmails(), r2.getDidOptOutOfFeatureAndCommunityEmails());
+            }
+        });
         TextColumn<UserDTO> companyColumn = new AbstractSortableTextColumn<UserDTO>(user->user.getCompany(), userColumnListHandler);
         Column<UserDTO, SafeHtml> groupsColumn = new Column<UserDTO, SafeHtml>(new SafeHtmlCell()) {
             @Override
@@ -177,6 +221,9 @@ extends TableWrapper<UserDTO, S, StringMessages, TR> {
                 strings.add(t.getFullName());
                 strings.add(t.getEmail());
                 strings.add(t.getCompany());
+                if (t.getDidOptOutOfFeatureAndCommunityEmails()) {
+                    strings.add(stringMessages.optOutOfFeatureAndCommunityEmails());
+                }
                 Util.addAll(Util.map(t.getRoles(), RoleWithSecurityDTO::getName), strings);
                 Util.addAll(Util.map(t.getUserGroups(), StrippedUserGroupDTO::getName), strings);
                 return strings;
@@ -195,6 +242,7 @@ extends TableWrapper<UserDTO, S, StringMessages, TR> {
         table.addColumn(fullNameColumn, stringMessages.name());
         table.addColumn(emailColumn, stringMessages.email());
         table.addColumn(emailValidatedColumn, stringMessages.validated());
+        table.addColumn(optOutColumn, stringMessages.optOutOfFeatureAndCommunityEmails());
         table.addColumn(companyColumn, stringMessages.company());
         table.addColumn(groupsColumn, stringMessages.groups());
         table.addColumn(rolesColumn, stringMessages.roles());

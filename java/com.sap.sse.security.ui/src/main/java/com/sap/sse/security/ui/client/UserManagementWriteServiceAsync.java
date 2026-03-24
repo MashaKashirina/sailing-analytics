@@ -51,6 +51,13 @@ public interface UserManagementWriteServiceAsync extends UserManagementServiceAs
 
     void updateSimpleUserEmail(String username, String newEmail, String validationBaseURL, AsyncCallback<Void> callback);
 
+    /**
+     * @param username must not be null
+     * @param fullName when null, no update will be processed to the respective parameter
+     * @param company when null, no update will be processed to the respective parameter
+     * @param locale when null, no update will be processed to the respective parameter
+     * @param didOptOutOfFeatureAndCommunityEmails when null, no update will be processed to the respective parameter
+     */
     void updateUserProperties(String username, String fullName, String company, String localeName,
             Boolean didOptOutOfFeatureAndCommunityEmails, String defaultTenantIdAsString, AsyncCallback<UserDTO> callback);
 

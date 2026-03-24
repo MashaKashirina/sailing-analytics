@@ -31,7 +31,7 @@ public interface UserPreferencesView extends IsWidget {
 
         BoatClassSelectionPresenter getFavoriteBoatClassesDataProvider();
 
-        void setIsSubscribedToFeatureAndCommunityUpdates(final boolean b, final AsyncCallback<VoidResult> callback);
+        void setIsSubscribedToFeatureAndCommunityUpdates(final Boolean b, final AsyncCallback<VoidResult> callback);
 
         void initIsSubscribedToFeatureAndCommunityUpdates(final CheckBoxTile featureAndCommunityUpdates);
 

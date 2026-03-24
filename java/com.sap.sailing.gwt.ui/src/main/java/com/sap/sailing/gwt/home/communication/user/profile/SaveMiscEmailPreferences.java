@@ -9,12 +9,12 @@ import com.sap.sse.gwt.dispatch.shared.exceptions.DispatchException;
 import com.sap.sse.security.shared.UserManagementException;
 
 public class SaveMiscEmailPreferences implements SailingAction<VoidResult>, HasWriteAction {
-    private boolean subscribeToFeatureAndCommunityUpdates;
+    private Boolean subscribeToFeatureAndCommunityUpdates;
 
     protected SaveMiscEmailPreferences() {
     }
 
-    public SaveMiscEmailPreferences(final boolean subscribeToFeatureAndCommunityUpdates) {
+    public SaveMiscEmailPreferences(final Boolean subscribeToFeatureAndCommunityUpdates) {
         this.subscribeToFeatureAndCommunityUpdates = subscribeToFeatureAndCommunityUpdates;
     }
 
