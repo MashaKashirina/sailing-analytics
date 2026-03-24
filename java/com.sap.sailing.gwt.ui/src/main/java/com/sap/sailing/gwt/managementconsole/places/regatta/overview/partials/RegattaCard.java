@@ -15,8 +15,8 @@ import com.google.gwt.user.client.ui.Widget;
 import com.sap.sailing.gwt.common.client.BoatClassImageResolver;
 import com.sap.sailing.gwt.managementconsole.places.regatta.overview.RegattaOverviewResources;
 import com.sap.sailing.gwt.managementconsole.places.regatta.overview.RegattaOverviewView.Presenter;
-import com.sap.sailing.gwt.ui.common.client.DateAndTimeFormatterUtil;
 import com.sap.sailing.gwt.ui.shared.RegattaDTO;
+import com.sap.sse.gwt.client.DateAndTimeFormatterUtil;
 
 public class RegattaCard extends Composite {
 

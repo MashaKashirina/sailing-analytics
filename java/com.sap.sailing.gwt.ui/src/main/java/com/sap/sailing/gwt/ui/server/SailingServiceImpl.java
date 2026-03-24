@@ -6134,7 +6134,7 @@ public class SailingServiceImpl extends ResultCachingProxiedRemoteServiceServlet
     public List<EventMetadataDTO> getEventList() {
         return getSecurityService().mapAndFilterByReadPermissionForCurrentUser(
                 stream(getService().getAllEvents()).filter(event -> !isFakeSeries(event)).collect(toList()),
-                event -> convertToMetadataDTO(event, getService()));
+                event -> convertToMetadataDTO(event));
     }
 
     public List<EventSeriesMetadataDTO> getEventSeriesList() {

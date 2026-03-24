@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import com.google.gwt.core.shared.GwtIncompatible;
 import com.sap.sailing.domain.base.Event;
-import com.sap.sailing.gwt.common.communication.event.EventReferenceDTO;
 import com.sap.sailing.gwt.home.communication.SailingAction;
 import com.sap.sailing.gwt.home.communication.SailingDispatchContext;
 import com.sap.sailing.gwt.server.HomeServiceUtil;

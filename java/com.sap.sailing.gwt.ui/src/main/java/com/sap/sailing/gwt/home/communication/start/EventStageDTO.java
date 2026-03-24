@@ -4,7 +4,7 @@ import java.util.Set;
 
 import com.sap.sailing.gwt.home.communication.event.EventLinkAndMetadataDTO;
 import com.sap.sailing.gwt.ui.shared.TrackingConnectorInfoDTO;
-import com.sap.sse.gwt.dispatch.shared.commands.DTO;
+import com.sap.sse.gwt.shared.DTO;
 
 public class EventStageDTO extends EventLinkAndMetadataDTO implements DTO {
 

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.sap.sse.gwt.shared.DTO;
 
-public class EventSeriesReferenceDTO implements IsSerializable {
+public class EventSeriesReferenceDTO implements DTO {
 
     private String seriesDisplayName;
     private UUID seriesLeaderboardGroupId;

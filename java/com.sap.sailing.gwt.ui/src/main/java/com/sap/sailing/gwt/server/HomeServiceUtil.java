@@ -31,7 +31,6 @@ import com.sap.sailing.domain.leaderboard.LeaderboardGroup;
 import com.sap.sailing.domain.leaderboard.RegattaLeaderboard;
 import com.sap.sailing.domain.tracking.TrackedRace;
 import com.sap.sailing.gwt.common.communication.event.EventMetadataDTO;
-import com.sap.sailing.gwt.common.communication.event.EventReferenceDTO;
 import com.sap.sailing.gwt.common.communication.event.EventState;
 import com.sap.sailing.gwt.home.communication.event.EventAndLeaderboardReferenceWithStateDTO;
 import com.sap.sailing.gwt.home.communication.eventlist.EventListEventDTO;

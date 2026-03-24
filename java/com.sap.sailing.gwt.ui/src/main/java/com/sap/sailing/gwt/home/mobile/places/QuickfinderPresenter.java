@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.sap.sailing.gwt.common.communication.event.EventMetadataDTO;
-import com.sap.sailing.gwt.common.communication.event.EventReferenceDTO;
 import com.sap.sailing.gwt.home.communication.event.EventAndLeaderboardReferenceWithStateDTO;
 import com.sap.sailing.gwt.home.communication.eventview.RegattaMetadataDTO;
 import com.sap.sailing.gwt.home.mobile.partials.quickfinder.Quickfinder;
