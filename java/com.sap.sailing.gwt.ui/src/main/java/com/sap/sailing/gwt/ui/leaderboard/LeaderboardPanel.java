@@ -528,19 +528,17 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
         selectionChangeHandler = new Handler() {
             @Override
             public void onSelectionChange(SelectionChangeEvent event) {
-                if (updatingSelectionFromProvider) {
-                    // Guard: don't sync back to provider if we're currently syncing FROM provider
-                    return;
-                }
-                List<CompetitorDTO> selection = new ArrayList<>();
-                for (LeaderboardRowDTO row : getSelectedRows()) {
-                    selection.add(row.competitor);
-                }
-                LeaderboardPanel.this.competitorSelectionProvider.setSelection(selection,
-                        /* listenersNotToNotify */LeaderboardPanel.this);
-                if (blurInOnSelectionChanged > 0) {
-                    blurInOnSelectionChanged--;
-                    blurFocusedElementAfterSelectionChange();
+                if (!updatingSelectionFromProvider) {
+                    final List<CompetitorDTO> selection = new ArrayList<>();
+                    for (final LeaderboardRowDTO row : getSelectedRows()) {
+                        selection.add(row.competitor);
+                    }
+                    LeaderboardPanel.this.competitorSelectionProvider.setSelection(selection,
+                            /* listenersNotToNotify */LeaderboardPanel.this);
+                    if (blurInOnSelectionChanged > 0) {
+                        blurInOnSelectionChanged--;
+                        blurFocusedElementAfterSelectionChange();
+                    }
                 }
             }
         };
@@ -2671,15 +2669,15 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
      * Adjusts the row's selection in the {@link #leaderboardSelectionModel} so it matches its selection state in the
      * {@link #competitorSelectionProvider}.
      */
-    private void updateSelection(LeaderboardRowDTO row) {
+    private void updateSelection(final LeaderboardRowDTO row) {
         final boolean shallBeSelected = competitorSelectionProvider.isSelected(row.competitor);
-        updatingSelectionFromProvider = true;
-        try {
-            if (leaderboardSelectionModel.isSelected(row) != shallBeSelected) {
+        if (leaderboardSelectionModel.isSelected(row) != shallBeSelected) {
+            updatingSelectionFromProvider = true;
+            try {
                 leaderboardSelectionModel.setSelected(row, shallBeSelected);
+            } finally {
+                updatingSelectionFromProvider = false;
             }
-        } finally {
-            updatingSelectionFromProvider = false;
         }
     }
 
@@ -3353,8 +3351,8 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
     }
 
     @Override
-    public void addedToSelection(CompetitorDTO competitor) {
-        LeaderboardRowDTO row = getRow(competitor.getIdAsString());
+    public void addedToSelection(final CompetitorDTO competitor) {
+        final LeaderboardRowDTO row = getRow(competitor.getIdAsString());
         if (row != null) {
             updatingSelectionFromProvider = true;
             try {
@@ -3364,10 +3362,9 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
             }
         }
     }
-
     @Override
-    public void removedFromSelection(CompetitorDTO competitor) {
-        LeaderboardRowDTO row = getRow(competitor.getIdAsString());
+    public void removedFromSelection(final CompetitorDTO competitor) {
+        final LeaderboardRowDTO row = getRow(competitor.getIdAsString());
         if (row != null) {
             updatingSelectionFromProvider = true;
             try {
