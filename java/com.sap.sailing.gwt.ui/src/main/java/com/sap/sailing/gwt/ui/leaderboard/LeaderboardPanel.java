@@ -496,7 +496,6 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
         }
         timer.addPlayStateListener(this);
         timer.addTimeListener(this);
-
         totalRankColumn = new TotalRankColumn();
         totalRankColumn.setCellStyleNames("totalRankColumn");
         leaderboardTable = new FlushableSortedCellTableWithStylableHeaders<LeaderboardRowDTO>(/* pageSize */10000,
@@ -580,6 +579,10 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
         mainPanel.setWidget(contentPanel);
         this.setTitle(stringMessages.leaderboard());
         this.availableDetailTypes = availableDetailTypes;
+    }
+    
+    public EntityIdentityComparator<LeaderboardRowDTO> getEntityIdentityComparator() {
+        return leaderboardSelectionModel.getEntityIdentityComparator();
     }
 
     protected abstract void openSettingsDialog();
@@ -2476,7 +2479,6 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
             if (showProgress) {
                 addBusyTask();
             }
-
             AsyncAction<LeaderboardDTO> getLeaderboardByNameAction = getRetrieverAction();
             this.asyncActionsExecutor.execute(getLeaderboardByNameAction, LOAD_LEADERBOARD_DATA_CATEGORY,
                     new AsyncCallback<LeaderboardDTO>() {
@@ -2602,10 +2604,8 @@ public abstract class LeaderboardPanel<LS extends LeaderboardSettings> extends A
                     }
                 }
                 for (Entry<Integer, LeaderboardRowDTO> updateEntry : rowsToUpdate.entrySet()) {
-                    LeaderboardRowDTO oldElement = getData().getList().set(updateEntry.getKey(),
-                            updateEntry.getValue());
-                    leaderboardSelectionModel.setSelected(oldElement, false); // make sure the old element is no longer
-                                                                              // part of the selection
+                    getData().getList().set(updateEntry.getKey(), updateEntry.getValue());
+                    // no need to update selection which is based on an EntityIdentityComparator
                     updateSelection(updateEntry.getValue());
                 }
                 for (LeaderboardRowDTO rowToAdd : rowsToAdd) {

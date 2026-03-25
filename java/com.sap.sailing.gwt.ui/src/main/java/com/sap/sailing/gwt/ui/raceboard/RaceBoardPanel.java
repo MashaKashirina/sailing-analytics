@@ -525,7 +525,7 @@ public class RaceBoardPanel
         }
         maneuverTablePanel = new ManeuverTablePanel(this, getComponentContext(), sailingService, asyncActionsExecutor,
                 selectedRaceIdentifier, stringMessages, competitorSelectionProvider, errorReporter, timer,
-                maneuverTableSettings, timeRangeWithZoomModel, new ClassicLeaderboardStyle(), userService, raceDTO);
+                maneuverTableSettings, timeRangeWithZoomModel, new ClassicLeaderboardStyle(), userService, raceDTO, leaderboardPanel.getEntityIdentityComparator());
         maneuverTablePanel.getEntryWidget().setTitle(stringMessages.maneuverTable());
         if (showChartMarkEditMediaButtonsAndVideo) {
             componentsForSideBySideViewer.add(new Pair<Component<?>, Action>(maneuverTablePanel, TrackedRaceActions.VIEWANALYSISCHARTS));

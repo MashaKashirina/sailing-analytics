@@ -8,16 +8,7 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>com.sap.sailing.landscape.test</artifactId>
-<!-- Once we have an idea how to test AWS landscape operations by passing in a secret key in a secure way
-     we can make this an eclipse-test-plugin packaging; until then, only Eclipse-local tests that pass in
-     the secrets as test VM parameters are possible, and this fragment is simply built as a Java OSGi fragments,
-     not running any tests
   <packaging>eclipse-test-plugin</packaging>
--->
-  <packaging>eclipse-plugin</packaging>
-  <properties>
-    <tycho.plugin-test.skip>true</tycho.plugin-test.skip>
-  </properties>
   <build>
     <plugins>
       <plugin>

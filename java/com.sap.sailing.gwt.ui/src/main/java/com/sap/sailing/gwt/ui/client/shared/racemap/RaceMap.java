@@ -2867,14 +2867,14 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
         if (raceIdentifier != null) {
             final RegattaAndRaceIdentifier race = raceIdentifier;
             if (race != null) {
-                final Map<CompetitorDTO, TimeRange> timeRange = new HashMap<>();
+                final Map<String, TimeRange> competitorIdsAsStringsAndTimeRanges = new HashMap<>();
                 final Integer firstShownFix = fixesAndTails.getFirstShownFix(competitorDTO);
                 if (firstShownFix != null) {
                     final TimePoint from = new MillisecondsTimePoint(fixesAndTails.getFixes(competitorDTO).get(firstShownFix).timepoint);
                     final TimePoint to = new MillisecondsTimePoint(getBoatFix(competitorDTO, timer.getTime()).timepoint);
-                    timeRange.put(competitorDTO, new TimeRangeImpl(from, to, true));
+                    competitorIdsAsStringsAndTimeRanges.put(competitorDTO.getIdAsString(), new TimeRangeImpl(from, to, true));
                     if (settings.isShowDouglasPeuckerPoints()) {
-                        sailingService.getDouglasPoints(race, timeRange, new AsyncCallback<Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>>>() {
+                        sailingService.getDouglasPoints(race, competitorIdsAsStringsAndTimeRanges, new AsyncCallback<Map<CompetitorDTO, List<GPSFixDTOWithSpeedWindTackAndLegType>>>() {
                             @Override
                             public void onFailure(Throwable caught) {
                                 errorReporter.reportError("Error obtaining douglas positions: " + caught.getMessage(), true /*silentMode */);
@@ -2894,7 +2894,7 @@ public class RaceMap extends AbstractCompositeComponent<RaceMapSettings> impleme
                             }
                         });
                     }
-                    maneuverMarkersAndLossIndicators.getAndShowManeuvers(race, timeRange);
+                    maneuverMarkersAndLossIndicators.getAndShowManeuvers(race, competitorIdsAsStringsAndTimeRanges);
                 }
             }
         }
