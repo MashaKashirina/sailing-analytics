@@ -110,18 +110,17 @@ public class RefreshableSingleSelectionModel<T> extends SingleSelectionModel<T> 
                 dontcheckSelectionState = true;
                 final T selected = getSelectedObject();
                 if (selected != null) {
-                    boolean found = false;
                     for (final T it : newObjects) {
-                        found = getEntityIdentityComparator() == null ? selected.equals(it) : getEntityIdentityComparator().representSameEntity(selected, it);
-                        if (found) {
+                        if (getEntityIdentityComparator() == null ? selected.equals(it) : getEntityIdentityComparator().representSameEntity(selected, it)) {
                             setSelected(it, true);
                             break;
                         }
                     }
-                    if (!found) {
-                        setSelected(selected, false); // no element matching previously selected element in newObjects; de-select old element
-                    }
                 }
+                // elements that were selected before and that don't have a corresponding element in newObjects
+                // will just be left alone; they will probably remain in selectedSet, and they were probably not in
+                // newObjects because a filter removed them. But when they re-appear, e.g., because the filter is
+                // removed, the elements will naturally be selected again.
                 SelectionChangeEvent.fire(this);
             } finally {
                 dontcheckSelectionState = false;
