@@ -31,6 +31,7 @@ import com.sap.sailing.domain.abstractlog.regatta.events.RegattaLogDeviceMapping
 import com.sap.sailing.domain.abstractlog.regatta.events.RegattaLogDeviceMarkMappingEvent;
 import com.sap.sailing.domain.base.Boat;
 import com.sap.sailing.domain.base.Competitor;
+import com.sap.sailing.domain.base.CourseArea;
 import com.sap.sailing.domain.base.Event;
 import com.sap.sailing.domain.base.EventListener;
 import com.sap.sailing.domain.base.Fleet;
@@ -39,6 +40,7 @@ import com.sap.sailing.domain.base.RaceColumn;
 import com.sap.sailing.domain.base.RaceColumnListener;
 import com.sap.sailing.domain.base.Regatta;
 import com.sap.sailing.domain.base.Venue;
+import com.sap.sailing.domain.base.VenueListener;
 import com.sap.sailing.domain.common.DeviceIdentifier;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
 import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
@@ -48,6 +50,8 @@ import com.sap.sailing.domain.common.tracking.GPSFixMoving;
 import com.sap.sailing.domain.common.tracking.SensorFix;
 import com.sap.sailing.domain.leaderboard.EventResolver;
 import com.sap.sailing.domain.leaderboard.FlexibleLeaderboard;
+import com.sap.sailing.domain.leaderboard.HasCourseAreas;
+import com.sap.sailing.domain.leaderboard.HasCourseAreasListener;
 import com.sap.sailing.domain.leaderboard.Leaderboard;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroup;
 import com.sap.sailing.domain.leaderboard.LeaderboardGroupListener;
@@ -421,7 +425,8 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
         }
     };
 
-    private class EventResolverListener implements EventResolver.Listener, EventListener, LeaderboardGroupListener, RaceColumnListener {
+    private class EventResolverListener implements EventResolver.Listener, EventListener, LeaderboardGroupListener,
+    RaceColumnListener, VenueListener, HasCourseAreasListener {
         private static final long serialVersionUID = 5441115548861230410L;
 
         private void invalidateCache() {
@@ -433,20 +438,24 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
         
         private void removeAsListenerFrom(Event oneOfOldAllEvents) {
             oneOfOldAllEvents.removeEventListener(this);
+            oneOfOldAllEvents.getVenue().removeListener(this);
             for (final LeaderboardGroup leaderboardGroup : oneOfOldAllEvents.getLeaderboardGroups()) {
                 leaderboardGroup.removeLeaderboardGroupListener(this);
                 for (final Leaderboard leaderboard : leaderboardGroup.getLeaderboards()) {
                     leaderboard.removeRaceColumnListener(this);
+                    leaderboard.removeCourseAreaChangeListener(this);
                 }
             }
         }
 
         public void addAsListenerTo(Event event) {
             event.addEventListener(this);
+            event.getVenue().addListener(this);
             for (final LeaderboardGroup leaderboardGroup : event.getLeaderboardGroups()) {
                 leaderboardGroup.addLeaderboardGroupListener(this);
                 for (final Leaderboard leaderboard : leaderboardGroup.getLeaderboards()) {
                     leaderboard.addRaceColumnListener(this);
+                    leaderboard.addCourseAreaChangeListener(this);
                 }
             }
         }
@@ -548,12 +557,14 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
         public void leaderboardAdded(LeaderboardGroup group, Leaderboard leaderboard) {
             invalidateCache();
             leaderboard.addRaceColumnListener(this);
+            leaderboard.addCourseAreaChangeListener(this);
         }
 
         @Override
         public void leaderboardRemoved(LeaderboardGroup group, Leaderboard leaderboard) {
             invalidateCache();
             leaderboard.removeRaceColumnListener(this);
+            leaderboard.removeCourseAreaChangeListener(this);
         }
 
         @Override
@@ -578,6 +589,22 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
         public void leaderboardGroupRemoved(Event event, LeaderboardGroup leaderboardGroup) {
             invalidateCache();
             leaderboardGroup.removeLeaderboardGroupListener(this);
+        }
+
+        @Override
+        public void courseAreaAdded(Venue venue, CourseArea courseArea) {
+            invalidateCache();
+        }
+
+        @Override
+        public void courseAreaRemoved(Venue venue, CourseArea courseArea) {
+            invalidateCache();
+        }
+
+        @Override
+        public void courseAreasChanged(HasCourseAreas hasCourseAreas, Iterable<CourseArea> oldCourseAreas,
+                Iterable<CourseArea> newCourseAreas) {
+            invalidateCache();
         }
     }
     
@@ -669,6 +696,7 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
              result = eventsCache.getB();
         } else {
             final Regatta regatta = getRegatta();
+            regatta.addCourseAreaChangeListener(eventResolverListener);
             final Iterable<Event> allEvents = eventResolver.getAllEvents();
             for (final Event event : allEvents) {
                 eventResolverListener.addAsListenerTo(event); // removal happens upon invalidation by the listener itself
@@ -1027,6 +1055,7 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
         }
         sensorFixStore.removeListener(listener);
         eventResolver.removeEventResolverListener(eventResolverListener);
+        getRegatta().removeCourseAreaChangeListener(eventResolverListener);
     }
 
     private void startTracking() {
