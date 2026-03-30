@@ -238,7 +238,7 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
                                     SensorFixMapper<SensorFix, DynamicSensorFixTrack<Competitor, SensorFix>, Competitor> mapper = sensorFixMapperFactory
                                             .createCompetitorMapper((Class<? extends RegattaLogDeviceMappingEvent<?>>) event.getClass());
                                     DynamicSensorFixTrack<Competitor, SensorFix> track = mapper.getTrack(trackedRace, competitor);
-                                    if (track != null && trackedRace.isWithinStartAndEndOfTracking(fix.getTimePoint())) {
+                                    if (track != null && trackedRace.isWithinStartAndEndOfTracking(fix.getTimePoint())) { // TODO bug6229: during an MDI also look at event/regatta end date if set
                                         mapper.addFix(track, (DoubleVectorFix) fix);
                                         if (returnLiveDelay) {
                                             delayToLive.put(trackedRace.getRaceIdentifier(), new MillisecondsDurationImpl(trackedRace.getDelayToLiveInMillis()));
@@ -272,7 +272,7 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
                                         // check for maneuvers; otherwise, the fix may not have been accepted
                                         // by the race or the track, e.g., because the race's end-of-tracking
                                         // comes before the fix's time point
-                                        if (trackedRace.recordFix(comp, (GPSFixMoving) fix)) {
+                                        if (trackedRace.recordFix(comp, (GPSFixMoving) fix)) { // TOOD bug6229: this checks the TrackedRace's tracking interval, but for an MDI we'd also want to intersect with Event/Regatta end date if set
                                             if (returnManeuverChanges) {
                                                 RegattaAndRaceIdentifier maneuverChangedAnswer = detectIfManeuverChanged(comp);
                                                 if (maneuverChangedAnswer != null) {
@@ -313,7 +313,7 @@ public class FixLoaderAndTracker implements TrackingDataLoader {
                                             } else {
                                                 // checking if the given fix is "better" than an existing one
                                                 TimePoint startOfTracking = trackedRace.getStartOfTracking();
-                                                TimePoint endOfTracking = trackedRace.getStartOfTracking();
+                                                TimePoint endOfTracking = trackedRace.getEndOfTracking();
                                                 if (startOfTracking != null) {
                                                     GPSFix fixAfterStartOfTracking = markTrack
                                                             .getFirstFixAtOrAfter(startOfTracking);
