@@ -77,6 +77,9 @@ public class UserEditDialog extends DataEntryDialog<UserDTO> {
         this.company = createTextBox(userToEdit.getCompany(), 70);
         this.optOutOfFeatureAndCommunityEmailsCheckbox = new CheckBox(stringMessages.optOutOfFeatureAndCommunityEmails(),
                 userToEdit.getDidOptOutOfFeatureAndCommunityEmails());
+        if(userToEdit.getDidOptOutOfFeatureAndCommunityEmails()) {
+            optOutOfFeatureAndCommunityEmailsCheckbox.setValue(true);
+        }
         this.accountPanels = new VerticalPanel();
         for (AccountDTO a : userToEdit.getAccounts()) {
             DecoratorPanel accountPanelDecorator = new DecoratorPanel();
