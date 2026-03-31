@@ -108,7 +108,7 @@ public class ManeuverMarkersAndLossIndicators {
         this.maneuverLossInfoOverlayMap = new HashMap<>();
     }
 
-    public void getAndShowManeuvers(RegattaAndRaceIdentifier race, Map<CompetitorDTO, TimeRange> timeRange) {
+    public void getAndShowManeuvers(RegattaAndRaceIdentifier race, Map<String, TimeRange> timeRange) {
         asyncActionsExecutor.execute(new GetManeuversForCompetitorsAction(sailingService, race, timeRange),
                 new AsyncCallback<Map<String, List<ManeuverDTO>>>() {
             @Override

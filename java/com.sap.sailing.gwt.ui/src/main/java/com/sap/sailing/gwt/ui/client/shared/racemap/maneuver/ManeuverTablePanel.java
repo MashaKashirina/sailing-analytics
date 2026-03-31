@@ -459,7 +459,7 @@ public class ManeuverTablePanel extends AbstractCompositeComponent<ManeuverTable
         protected void loadData(final Map<String, TimeRange> competitorIdsAsStringsAndTimeRanges,
                 final boolean incremental,
                 final AsyncCallback<Map<String, List<ManeuverDTO>>> callback) {
-            final GetManeuversForCompetitorsAction action = new GetManeuversForCompetitorsAction(sailingService, raceIdentifier, competitorTimeRanges);
+            final GetManeuversForCompetitorsAction action = new GetManeuversForCompetitorsAction(sailingService, raceIdentifier, competitorIdsAsStringsAndTimeRanges);
             if (incremental) {
                 asyncActionsExecutor.execute(action, callback);
             } else {
