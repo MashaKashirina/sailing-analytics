@@ -71,32 +71,25 @@ public class SwissTimingReplayConnectorPanel extends AbstractEventManagementPane
         super(presenter, true, stringMessages);
         this.errorReporter = presenter.getErrorReporter();
         availableSwissTimingRaces = new ArrayList<SwissTimingReplayRaceDTO>();
-
         // setup UI
         final VerticalPanel mainPanel = new VerticalPanel();
         this.setWidget(mainPanel);
         mainPanel.setWidth("100%");
-        
         final CaptionPanel captionPanelConnections = new CaptionPanel(stringMessages.connections());
         mainPanel.add(captionPanelConnections);
-
         final VerticalPanel verticalPanel = new VerticalPanel();
-        
         captionPanelConnections.setContentWidget(verticalPanel);
         captionPanelConnections.setStyleName("bold");
-
         // add connections table
         connectionsTable = new SwissTimingArchivedConnectionTableWrapper(presenter.getUserService(), sailingServiceWrite, stringMessages,
                 errorReporter, true, tableResources, () -> {
                 });
         connectionsTable.refreshConnectionList();
-
         // create button UI
         final AccessControlledButtonPanel buttonPanel = createButtonPanel(sailingServiceWrite, presenter.getUserService(), errorReporter,
                 stringMessages);
         verticalPanel.add(buttonPanel);
         verticalPanel.add(connectionsTable);
-
         // Table
         TextColumn<SwissTimingReplayRaceDTO> regattaNameColumn = new TextColumn<SwissTimingReplayRaceDTO>() {
             @Override
@@ -121,29 +114,22 @@ public class SwissTimingReplayConnectorPanel extends AbstractEventManagementPane
             public String getValue(SwissTimingReplayRaceDTO object) {
                 return object.boat_class;
             }
-
         };
-        
         HorizontalPanel racesSplitPanel = new HorizontalPanel();
         mainPanel.add(racesSplitPanel);
-        
         CaptionPanel racesCaptionPanel = new CaptionPanel(stringMessages.trackableRaces());
         racesSplitPanel.add(racesCaptionPanel);
         racesCaptionPanel.setWidth("50%");
-
         CaptionPanel trackedRacesCaptionPanel = new CaptionPanel(stringMessages.trackedRaces());
         racesSplitPanel.add(trackedRacesCaptionPanel);
         trackedRacesCaptionPanel.setWidth("50%");
-
         VerticalPanel racesPanel = new VerticalPanel();
         racesCaptionPanel.setContentWidget(racesPanel);
         racesCaptionPanel.setStyleName("bold");
-
         VerticalPanel trackedRacesPanel = new VerticalPanel();
         trackedRacesPanel.setWidth("100%");
         trackedRacesCaptionPanel.setContentWidget(trackedRacesPanel);
         trackedRacesCaptionPanel.setStyleName("bold");
-
         // text box for filtering the cell table
         // the regatta selection for a tracked race
         HorizontalPanel regattaPanel = new HorizontalPanel();
@@ -155,16 +141,12 @@ public class SwissTimingReplayConnectorPanel extends AbstractEventManagementPane
         regattaPanel.add(lblRegattas);
         regattaPanel.add(getAvailableRegattasListBox());
         regattaPanel.setCellVerticalAlignment(getAvailableRegattasListBox(), HasVerticalAlignment.ALIGN_MIDDLE);
-        
         HorizontalPanel filterPanel = new HorizontalPanel();
         filterPanel.setSpacing(5);
         racesPanel.add(filterPanel);
-        
         Label lblFilterEvents = new Label(stringMessages.filterRaces()+ ":");
         filterPanel.add(lblFilterEvents);
         filterPanel.setCellVerticalAlignment(lblFilterEvents, HasVerticalAlignment.ALIGN_MIDDLE);
-        
-
         HorizontalPanel racesHorizontalPanel = new HorizontalPanel();
         racesPanel.add(racesHorizontalPanel);
         VerticalPanel trackPanel = new VerticalPanel();
@@ -206,7 +188,7 @@ public class SwissTimingReplayConnectorPanel extends AbstractEventManagementPane
                 }, filterablePanelEvents.getAllListDataProvider());
         checkColumn.setSortable(false);
         final Header<Boolean> selectAllHeader = checkColumn.createHeader();
-        raceTable.setSelectionModel(checkColumn.getSelectionModel());
+        raceTable.setSelectionModel(checkColumn.getSelectionModel(), checkColumn.getSelectionManager());
         raceTable.addColumn(checkColumn, selectAllHeader);
         raceTable.addColumn(raceNameColumn, stringMessages.race());
         raceTable.addColumn(regattaNameColumn, "RSC");
