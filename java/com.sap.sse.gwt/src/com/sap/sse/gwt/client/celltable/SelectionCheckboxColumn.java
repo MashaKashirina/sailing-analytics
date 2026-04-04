@@ -24,11 +24,10 @@ import com.sap.sse.gwt.client.controls.BetterCheckboxCell;
  * A column to be used in a {@link CellTable} that controls and reflects a table's selection model using stylable
  * "check boxes". To make things work, clients have to also call
  * {@link CellTable#setSelectionModel(com.google.gwt.view.client.SelectionModel, com.google.gwt.view.client.CellPreviewEvent.Handler)}
- * with the result of this columns {@link #getSelectionModel} as the first and the result of the
+ * with the result of this column's {@link #getSelectionModel()} as the first and the result of the
  * {@link #getSelectionManager()} method as second argument. This will ensure that the event handling and selection
  * updates work properly.
  * <p>
- * 
  * Clients should use the column's own {@link #getSelectionModel() RefreshableMultiSelectionModel}. This will ensure that
  * the {@link SelectionCheckboxColumn} will be refreshed correctly when the selection changes or the
  * {@link ListDataProvider} has new elements. Clients should also ensure that the {@link Flushable} and the
@@ -40,10 +39,22 @@ import com.sap.sse.gwt.client.controls.BetterCheckboxCell;
  * The column uses the {@link BetterCheckboxCell} cell to implement the display properties. Three CSS styles can be used
  * to parameterize this column: one for the <code>&lt;td&gt;</code> element rendering the cell, and two for the
  * <code>&lt;div&gt;</code> element representing a selected or deselected element.
- * 
+ * <p>
+ * Column header: There are two ways to provide a header for this column:
+ * <ul>
+ * 1.{@link #createHeader()} returns a live select-all/deselect-all {@link Header} backed by a {@link CheckboxCell}.
+ * It ticks when all rows are selected and unticks as soon as all rows are deselected. Clicking it selects or deselects
+ * all rows in the {@link ListDataProvider}. This header must be passed explicitly to the table's
+ * {@code addColumn(Column, Header)} or {@code insertColumn(int, Column, Header, ...)} call — it is not
+ * returned by {@link #getHeader()}.
+ * 2.{@link #getHeader()} returns a static checkmark (&#x2713;) header. It serves as a fallback default if no
+ * select-all behavior is needed, but is not currently used by any caller — {@link #createHeader()} is the
+ * preferred choice for all existing usages.
+ * </ul>
+ *
  * @author Axel Uhl (D043530)
  * @author Lukas Furmanek
- * 
+ *
  * @param <T>
  */
 public class SelectionCheckboxColumn<T> extends AbstractSortableColumnWithMinMax<T, Boolean> {
@@ -84,6 +95,23 @@ public class SelectionCheckboxColumn<T> extends AbstractSortableColumnWithMinMax
         this.setSortable(false);
     }
     
+    /**
+     * Creates and returns a live select-all/deselect-all {@link Header} for use as this column's header. The returned
+     * header displays a {@link CheckboxCell} that is ticked when all rows in the {@link ListDataProvider} are selected,
+     * and unticked whenever there is no selection. Clicking the header checkbox selects or
+     * deselects all rows accordingly.
+     * <p>
+     * The returned header must be passed explicitly to the table when adding this column, e.g.:
+     * <pre>
+     *   final Header&lt;Boolean&gt; selectAllHeader = checkboxColumn.createHeader();
+     *   table.addColumn(checkboxColumn, selectAllHeader);
+     * </pre>
+     * This method should be called exactly once per column instance, as each call registers a new selection change
+     * handler on the underlying selection model.
+     *
+     * @return a {@link Header} with select-all/deselect-all behavior; distinct from the static checkmark returned by
+     *         {@link #getHeader()}
+     */
     public Header<Boolean> createHeader() {
         final CheckboxCell selectAllCell = new CheckboxCell();
         final Header<Boolean> selectAllHeader = new Header<Boolean>(selectAllCell) {
