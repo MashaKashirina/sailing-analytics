@@ -762,4 +762,6 @@ public interface SailingServiceWrite extends FileStorageManagementGwtService, Sa
 
     void copyPairingListFromOtherLeaderboard(String sourceLeaderboardName, String targetLeaderboardName, String fromRaceColumnName,
             String toRaceColumnInclusiveName) throws UnauthorizedException, NotFoundException;
+    
+    void revokeExplicitTrackingTimes(String leaderboardName) throws NotFoundException;
 }

@@ -208,6 +208,8 @@ public class SmartphoneTrackingEventManagementPanel extends AbstractLeaderboardC
                 DefaultActions.UPDATE, t -> openChooseEventDialogAndSendMails(t.getName()));
         leaderboardActionColumn.addAction(RaceLogTrackingEventManagementImagesBarCell.ACTION_SHOW_REGATTA_LOG,
                 DefaultActions.UPDATE, t -> showRegattaLog());
+        leaderboardActionColumn.addAction(RaceLogTrackingEventManagementImagesBarCell.ACTION_REVOKE_EXPLICIT_TRACKING_TIMES,
+                DefaultActions.UPDATE, t -> revokeExplicitTrackingTimes());
         leaderboardActionColumn.addAction(DefaultActionsImagesBarCell.ACTION_CHANGE_OWNERSHIP, DefaultActions.UPDATE,
                 configOwnership::openOwnershipDialog);
         leaderboardActionColumn.addAction(DefaultActionsImagesBarCell.ACTION_CHANGE_ACL, DefaultActions.UPDATE,
@@ -223,6 +225,23 @@ public class SmartphoneTrackingEventManagementPanel extends AbstractLeaderboardC
                 selectionCheckboxColumn.getSelectionManager());
     }
     
+    private void revokeExplicitTrackingTimes() {
+        if (Window.confirm(stringMessages.confirmRevokeExplicitTrackingTimes(getSelectedLeaderboard().getName()))) {
+            sailingServiceWrite.revokeExplicitTrackingTimes(getSelectedLeaderboard().getName(), new AsyncCallback<Void>() {
+                @Override
+                public void onFailure(Throwable caught) {
+                    errorReporter.reportError(stringMessages.errorRevokingExplicitTrackingTimes(getSelectedLeaderboard().getName(), caught.getMessage()));
+                }
+
+                @Override
+                public void onSuccess(Void result) {
+                    Notification.notify(stringMessages.successfullyREvokedExplicitTrackingTimes(getSelectedLeaderboard().getName()), NotificationType.SUCCESS);
+                    loadAndRefreshLeaderboard(getSelectedLeaderboard().getName());
+                }
+            });
+        }
+    }
+
     private RaceLogTrackingState getTrackingState(
             RaceColumnDTOAndFleetDTOWithNameBasedEquality race) {
         return race.getA().getRaceLogTrackingInfo(race.getB()).raceLogTrackingState;

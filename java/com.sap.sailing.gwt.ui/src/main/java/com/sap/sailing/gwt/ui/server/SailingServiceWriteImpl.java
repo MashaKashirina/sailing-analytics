@@ -4195,4 +4195,24 @@ public class SailingServiceWriteImpl extends SailingServiceImpl implements Saili
         getRaceLogTrackingAdapter().copyPairingListFromOtherLeaderboard((RegattaLeaderboard) sourceLeaderboard,
                 (RegattaLeaderboard) targetLeaderboard, fromRaceColumnName, toRaceColumnInclusiveName);
     }
+
+    @Override
+    public void revokeExplicitTrackingTimes(String leaderboardName) throws NotFoundException {
+        final Leaderboard leaderboard = getLeaderboardByName(leaderboardName);
+        getService().getSecurityService().checkCurrentUserUpdatePermission(leaderboard);
+        if (leaderboard instanceof RegattaLeaderboard) {
+            final Regatta regatta = ((RegattaLeaderboard) leaderboard).getRegatta();
+            if (regatta.isControlTrackingFromStartAndFinishTimes()) {
+                getRaceLogTrackingAdapter().revokeExplicitTrackingTimes((RegattaLeaderboard) leaderboard, /* raceLogResolver */ getService());
+            } else {
+                throw new IllegalStateException("Leaderboard " + leaderboardName
+                        + " is not configured to control tracking from start and finish times, so explicit tracking times should not exist and thus cannot be revoked.");
+            }
+        } else {
+            throw new IllegalArgumentException("Leaderboard " + leaderboardName
+                    + " must be a regatta leaderboard, but was: " + leaderboard.getLeaderboardType());
+        }
+        // TODO Auto-generated method stub
+        
+    }
 }

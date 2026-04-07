@@ -2555,4 +2555,8 @@ public interface StringMessages extends com.sap.sse.gwt.client.StringMessages,
     String ipsLockedForUserCreationAbuse();
     String unableToLoadIpsBlockedForUserCreationAbuse();
     String sourceCode();
+    String revokeExplicitTrackingTimes();
+    String confirmRevokeExplicitTrackingTimes(String leaderboardName);
+    String errorRevokingExplicitTrackingTimes(String leaderboardName, String message);
+    String successfullyREvokedExplicitTrackingTimes(String leaderboardName);
 }
