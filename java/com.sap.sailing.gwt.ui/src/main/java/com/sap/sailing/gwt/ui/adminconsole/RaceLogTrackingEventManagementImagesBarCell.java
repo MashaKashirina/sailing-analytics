@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.text.shared.SafeHtmlRenderer;
+import com.sap.sailing.domain.common.LeaderboardType;
 import com.sap.sailing.gwt.ui.client.StringMessages;
 import com.sap.sailing.gwt.ui.shared.StrippedLeaderboardDTO;
 import com.sap.sse.gwt.client.IconResources;
@@ -49,8 +50,10 @@ public class RaceLogTrackingEventManagementImagesBarCell extends ImagesBarCell {
                 makeImagePrototype(resources.inviteBuoyTenders())));
         result.add(new ImageSpec(ACTION_SHOW_REGATTA_LOG, stringMessages.regattaLog(),
                 makeImagePrototype(resources.flagIcon())));
-        result.add(new ImageSpec(ACTION_REVOKE_EXPLICIT_TRACKING_TIMES, stringMessages.revokeExplicitTrackingTimes(),
-                makeImagePrototype(resources.eraser())));
+        if (selectedLeaderboard.type == LeaderboardType.RegattaLeaderboard) {
+            result.add(new ImageSpec(ACTION_REVOKE_EXPLICIT_TRACKING_TIMES, stringMessages.revokeExplicitTrackingTimes(),
+                    makeImagePrototype(resources.eraser())));
+        }
         result.add(new ImageSpec(DefaultActions.CHANGE_OWNERSHIP.name(), stringMessages.actionChangeOwnership(),
                 IconResources.INSTANCE.changeOwnershipIcon()));
         result.add(new ImageSpec(DefaultActions.CHANGE_ACL.name(), stringMessages.actionChangeACL(),
