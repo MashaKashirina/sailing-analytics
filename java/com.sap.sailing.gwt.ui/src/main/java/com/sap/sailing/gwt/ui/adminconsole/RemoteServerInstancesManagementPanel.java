@@ -5,6 +5,7 @@ import static com.sap.sse.security.ui.client.component.DefaultActionsImagesBarCe
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +18,7 @@ import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.Column;
+import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -74,7 +76,9 @@ public class RemoteServerInstancesManagementPanel extends SimplePanel implements
         remoteServersPanel.setContentWidget(remoteServersContentPanel);
         serverDataProvider = new ListDataProvider<>();
         filteredServerTablePanel = createFilteredServerTablePanel();
-        remoteServersTable = createRemoteServersTable(tableResources);
+        final ListHandler<RemoteSailingServerReferenceDTO> sortHandler = new ListHandler<>(serverDataProvider.getList());
+        remoteServersTable = createRemoteServersTable(tableResources, sortHandler);
+        remoteServersTable.addColumnSortHandler(sortHandler);
         serverDataProvider.addDataDisplay(remoteServersTable);
         remoteServersContentPanel.add(filteredServerTablePanel);
         remoteServersContentPanel.add(remoteServersTable);
@@ -122,11 +126,17 @@ public class RemoteServerInstancesManagementPanel extends SimplePanel implements
     }
 
     private FlushableCellTable<RemoteSailingServerReferenceDTO> createRemoteServersTable(
-            CellTableWithCheckboxResources tableResources) {
+            CellTableWithCheckboxResources tableResources, ListHandler<RemoteSailingServerReferenceDTO> sortHandler) {
         RemoteServerInstancesManagementTableWrapper wrapper = new RemoteServerInstancesManagementTableWrapper(
                 stringMessages, errorReporter, filteredServerTablePanel.getAllListDataProvider(), tableResources);
-        wrapper.addColumn(createTextColumn(RemoteSailingServerReferenceDTO::getName), stringMessages.name());
-        wrapper.addColumn(createTextColumn(RemoteSailingServerReferenceDTO::getUrl), stringMessages.url());
+        final TextColumn<RemoteSailingServerReferenceDTO> nameColumn = createTextColumn(RemoteSailingServerReferenceDTO::getName);
+        nameColumn.setSortable(true);
+        sortHandler.setComparator(nameColumn, Comparator.comparing(s -> s.getName() != null ? s.getName() : ""));
+        wrapper.addColumn(nameColumn, stringMessages.name());
+        final TextColumn<RemoteSailingServerReferenceDTO> urlColumn = createTextColumn(RemoteSailingServerReferenceDTO::getUrl);
+        urlColumn.setSortable(true);
+        sortHandler.setComparator(urlColumn, Comparator.comparing(s -> s.getUrl() != null ? s.getUrl() : ""));
+        wrapper.addColumn(urlColumn, stringMessages.url());
         wrapper.addColumn(createEventsColumn(), stringMessages.events());
         wrapper.addColumn(createActionsColumn(), stringMessages.actions());
         wrapper.setEmptyTableWidget(new Label(stringMessages.noSailingServerInstancesYet()));
