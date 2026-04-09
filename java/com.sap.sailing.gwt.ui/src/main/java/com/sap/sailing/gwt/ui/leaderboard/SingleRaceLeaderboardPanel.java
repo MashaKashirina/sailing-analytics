@@ -92,7 +92,7 @@ public class SingleRaceLeaderboardPanel extends LeaderboardPanel<SingleRaceLeade
     @Override
     protected int ensureRaceRankColumn(int rankColumnIndex) {
         boolean required = isShowRaceRankColumn() && preSelectedRace != null;
-        final int indexOfNextColumn = required ? 1 : 0;
+        final int indexOfNextColumn = rankColumnIndex + (required ? 1 : 0);
         if (getLeaderboardTable().getColumnCount() > rankColumnIndex) {
             if (required) {
                 if (getLeaderboardTable().getColumn(rankColumnIndex) != getRaceRankColumn()) {
@@ -329,8 +329,8 @@ public class SingleRaceLeaderboardPanel extends LeaderboardPanel<SingleRaceLeade
     
     @Override
     public void updateSettings(SingleRaceLeaderboardSettings newSettings) {
-        super.updateSettings(newSettings);
         showRaceRankColumn = newSettings.isShowRaceRankColumn();
+        super.updateSettings(newSettings);
     }
 
     @Override
