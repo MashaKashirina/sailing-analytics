@@ -48,7 +48,6 @@ public class MiscellaneousDisplayImpl {
                         .youWillNotReceiveFeatureAndCommunityUpdatesAnymore();
                 final String message = isNowTrue ? passAndTrue : passAndFalse;
                 Notification.notify(message, NotificationType.SUCCESS);
-                callback.onSuccess(result);
                 if (callback != null) {
                     callback.onSuccess(result);
                 }

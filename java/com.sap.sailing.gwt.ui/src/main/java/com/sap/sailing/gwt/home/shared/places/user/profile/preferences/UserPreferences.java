@@ -54,9 +54,7 @@ public class UserPreferences extends Composite implements UserPreferencesView {
     }
 
     public void setEdgeToEdge(boolean edgeToEdge) {
-//        favoriteBoatClassesSelctionUi.setStyleName(style.edgeToEdge(), edgeToEdge);
         favoriteCompetitorsSelctionUi.setStyleName(style.edgeToEdge(), edgeToEdge);
-//        favoriteBoatClassesSelctionUi.getElement().getParentElement().removeClassName(res.mediaCss().column());
         favoriteCompetitorsSelctionUi.getElement().getParentElement().removeClassName(res.mediaCss().column());
     }
 }

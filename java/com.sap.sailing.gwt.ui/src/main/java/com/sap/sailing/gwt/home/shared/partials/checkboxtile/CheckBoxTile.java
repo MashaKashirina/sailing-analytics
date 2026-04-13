@@ -38,6 +38,7 @@ public final class CheckBoxTile extends Composite implements HasValue<Boolean> {
     public CheckBoxTile(final String label, final boolean initialState,
             final BiConsumer<Boolean, AsyncCallback<VoidResult>> onToggle) {
         super();
+        CheckBoxTileResources.INSTANCE.css().ensureInjected();
         initWidget(uiBinder.createAndBindUi(this));
         labelUi.setText(label);
         initToggleButtonUi(initialState, onToggle);

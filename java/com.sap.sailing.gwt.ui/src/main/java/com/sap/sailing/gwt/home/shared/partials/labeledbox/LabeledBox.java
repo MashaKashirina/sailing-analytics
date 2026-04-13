@@ -6,21 +6,19 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
-import com.sap.sailing.gwt.home.shared.partials.checkboxtile.CheckBoxTileResources;
 
 public class LabeledBox extends Composite {
     @UiField
     SpanElement headerTitleUi;
     @UiField(provided = true)
     Widget childUi;
-    
+
     private static LabeledBoxUiBinder uiBinder = GWT.create(LabeledBoxUiBinder.class);
 
     interface LabeledBoxUiBinder extends UiBinder<Widget, LabeledBox> {
     }
 
     public LabeledBox(final String title, final Widget childUi) {
-        CheckBoxTileResources.INSTANCE.css().ensureInjected();
         this.childUi = childUi;
         initWidget(uiBinder.createAndBindUi(this));
         headerTitleUi.setInnerText(title);
