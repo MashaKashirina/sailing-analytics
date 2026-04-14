@@ -2,10 +2,15 @@ require 'gollum/app'
 require 'digest/sha1'
 require 'logger'
 require 'rest-client'
+require 'rack/session/redis'
 require 'base64'
 
 class App < Precious::App
-  use Rack::Session::Pool, :cookie_only => false
+#   use Rack::Session::Pool, :cookie_only => false
+  use Rack::Session::Redis,
+  :redis_server => "redis://127.0.0.1:6379/0",
+  :expires_in => 3600
+  
   User = Struct.new(:name, :email, :password_hash, :can_write)
   LOGGER = Logger.new("/home/wiki/wiki_log.txt") 
   CLIENT_ID = ENV['CLIENT_ID'] 
