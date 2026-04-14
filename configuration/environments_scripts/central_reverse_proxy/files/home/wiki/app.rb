@@ -121,7 +121,7 @@ class App < Precious::App
     end
     
     def check!
-      path = self.env['PATH_INFO']
+      path = self.env['PATH_INFO'].dup
       return if login_path?(path)
       return if asset_path?(path)
       session[:prev] = path
