@@ -97,10 +97,13 @@ class App < Precious::App
         if path == "/" 
           return true
         end
-        public_starts = [ "/Home", "/wiki", "/favicon.ico"] 
-        return true if public_starts.any? {|link| path.start_with?(link)}
-        public_patterns = [ %r{\A/gollum/(assets|commit|history|last_commit_info).*}, %r{\A/gollum/search}, %r{\A/gollum/latest_changes\z}]
-        public_patterns.any? {|pattern| pattern.match(path)}
+        public_starts = [ "/Home", "/wiki", "/favicon.ico"]
+        public_starts.any? {|link| path.start_with?(link)}
+    end
+
+    def asset_path?(path)
+        non_page_patterns = [ %r{\A/gollum/(assets|commit|history|last_commit_info).*}, %r{\A/gollum/search}, %r{\A/gollum/latest_changes\z}]
+        non_page_patterns.any? {|pattern| pattern.match(path)}
     end
     
     def auth_path?(path)
@@ -115,6 +118,7 @@ class App < Precious::App
     def check!
       path = self.env['PATH_INFO']
       return if login_path?(path)
+      return if asset_path?(path)
       session[:prev] = path
       return if public_path?(path) 
       halt 403, 'Forbidden - You can not access anything outside wiki/ path.' unless auth_path?(path)      
