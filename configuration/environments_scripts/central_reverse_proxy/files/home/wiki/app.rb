@@ -8,8 +8,8 @@ class App < Precious::App
   use Rack::Session::Pool, :cookie_only => false
   User = Struct.new(:name, :email, :password_hash, :can_write)
   LOGGER = Logger.new("/home/wiki/wiki_log.txt") 
-  CLIENT_ID = ""
-  CLIENT_SECRET = ""
+  CLIENT_ID = ENV['CLIENT_ID'] 
+  CLIENT_SECRET = ENV['CLIENT_SECRET']
   REDIRECT_URL = "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
   REPO_OWNER = "SAP"
   REPO_NAME = "sailing-analytics"
