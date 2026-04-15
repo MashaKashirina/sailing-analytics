@@ -8,16 +8,16 @@ require 'base64'
 class App < Precious::App
 #   use Rack::Session::Pool, :cookie_only => false
   use Rack::Session::Redis,
-  :redis_server => "redis://127.0.0.1:6379/0",
+  :redis_server => 'redis://127.0.0.1:6379/0',
   :expires_in => 3600
   
-  User = Struct.new(:name, :email, :password_hash, :can_write)
-  LOGGER = Logger.new("/home/wiki/wiki_log.txt") 
+  LOGGER = Logger.new('/home/wiki/wiki_log.txt') 
   CLIENT_ID = ENV['CLIENT_ID'] 
   CLIENT_SECRET = ENV['CLIENT_SECRET']
-  REDIRECT_URL = "https://git.sapsailing.com/cgi-bin/github_oauth.sh"
-  REPO_OWNER = "SAP"
-  REPO_NAME = "sailing-analytics"
+  REDIRECT_URL = 'https://git.sapsailing.com/cgi-bin/github_oauth.sh'
+  ACCESS_TOKEN=''
+  REPO_OWNER = 'SAP'
+  REPO_NAME = 'sailing-analytics'
   before { check! }
   before '/gollum/(edit|create|rename)/*' do authorize_write end
   before do
@@ -72,16 +72,16 @@ class App < Precious::App
 
   get '/cancel' do
     if session[:access_token] && session[:prev]
-        newPath = session[:prev].sub(/gollum\/(edit|create|rename)\//, "")
+        newPath = session[:prev].sub(/gollum\/(edit|create|rename)\//, '')
         redirect newPath
     end
   end
 
   get '/callback' do
     halt 401, params[:error] if params[:error]
-    halt 400, "Missing code" unless params[:code]
-    halt 403, "Old state" unless session[:oauth_state][:expiry] > Time.now
-    halt 403, "Invalid OAuth state" unless session[:oauth_state][:state] ==  params[:state]
+    halt 400, 'Missing code' unless params[:code]
+    halt 403, 'Old state' unless session[:oauth_state][:expiry] > Time.now
+    halt 403, 'Invalid OAuth state' unless session[:oauth_state][:state] ==  params[:state]
 
     session.delete(:oauth_state)
 
@@ -104,15 +104,15 @@ class App < Precious::App
         redirect session[:prev]
     end
 
-    redirect "/"
+    redirect '/'
   end
 
   helpers do 
     def public_path?(path)
-        if path == "/" 
+        if path == '/'
           return true
         end
-        public_starts = [ "/Home", "/wiki", "/favicon.ico"]
+        public_starts = [ '/Home', '/wiki', '/favicon.ico']
         public_starts.any? {|link| path.start_with?(link)}
     end
 
@@ -144,7 +144,7 @@ class App < Precious::App
         if !session[:access_token]
             redirect '/login'
         end
-        halt 403, "Forbidden" unless user_can_write()
+        halt 403, 'Forbidden' unless user_can_write()
     end
 
     def user_can_write() 
