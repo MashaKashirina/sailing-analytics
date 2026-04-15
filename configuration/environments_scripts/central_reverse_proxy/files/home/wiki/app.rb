@@ -30,22 +30,8 @@ class App < Precious::App
   end
 
   get '/logout' do
-    if session[:access_token]     
-        uri = URI::HTTPS.build(
-            host: 'api.github.com',
-            path: "/applications/#{CLIENT_ID}/token",
-        )
-        basicAuth = Base64.strict_encode64("#{CLIENT_ID}:#{CLIENT_SECRET}")
-        RestClient::Request.execute(
-        method: :delete,
-        url: uri.to_s(), 
-        payload: {  
-            :access_token => session[:access_token]
-        }.to_json(),
-        headers: {
-            :Authorization => "Basic #{basicAuth}",
-            :accept => "application/vnd.github.v3+json"
-        })
+    if session[:access_token]
+        revoke_access_token(token)
     end
     session.clear()
     'logged out'
@@ -71,7 +57,7 @@ class App < Precious::App
   end
 
   get '/cancel' do
-    if session[:access_token] && session[:prev]
+    if session[:logged_in] && session[:prev]
         newPath = session[:prev].sub(/gollum\/(edit|create|rename)\//, '')
         redirect newPath
     end
@@ -95,9 +81,12 @@ class App < Precious::App
         :accept => :json))
     scopes = result['scope'].split(',')
     if scopes.include?('user:email') && scopes.include?('public_repo') && result['access_token']
-        session[:access_token] = result['access_token']
+        access_token = result['access_token']
         fetch_and_set_user_email()
         fetch_and_set_user_name_and_id()
+        session[:logged_in] = true
+        revoke_access_token(access_token)
+        session.delete(:access_token)
     end
     
     if session[:prev] 
@@ -140,19 +129,21 @@ class App < Precious::App
     end
 
     def authorize_write
-        LOGGER.debug("Checking auth before writing")
-        if !session[:access_token]
+        LOGGER.debug('Checking auth before writing')
+        if !session[:logged_in]
             redirect '/login'
         end
         halt 403, 'Forbidden' unless user_can_write()
     end
 
     def user_can_write() 
-        return false unless session[:access_token]
-        response =  github_api_get("/repos/#{REPO_OWNER}/#{REPO_NAME}")
+        return false unless session[:logged_in] && session[:name]
+        response =  github_api_get("/repos/#{REPO_OWNER}/#{REPO_NAME}/collaborators/#{session[:name]}/permission")
         return false unless response
+        LOGGER.debug('response received')
         result = JSON.parse(response)
-        result.dig('permissions', 'push') == true
+        LOGGER.debug('checking permission')
+        result.dig('user', 'permissions', 'push') == true
     end
     
     def fetch_and_set_user_email()
@@ -182,7 +173,7 @@ class App < Precious::App
         path: path)
         RestClient.get(uri.to_s(),
             {
-            :Authorization => "Bearer #{session[:access_token]}"
+            :Authorization => "Bearer #{ACCESS_TOKEN}"
             })
     rescue RestClient::Unauthorized, RestClient::Forbidden
         LOGGER.warn("GitHub auth failed for #{path}")
@@ -193,6 +184,24 @@ class App < Precious::App
     rescue StandardError => e
         LOGGER.error("GitHub request failed: #{e.message}")
         nil
+    end
+
+    def revoke_access_token(token)
+        uri = URI::HTTPS.build(
+            host: 'api.github.com',
+            path: "/applications/#{CLIENT_ID}/token",
+        )
+        basicAuth = Base64.strict_encode64("#{CLIENT_ID}:#{CLIENT_SECRET}")
+        RestClient::Request.execute(
+        method: :delete,
+        url: uri.to_s(), 
+        payload: {  
+            :access_token => token
+        }.to_json(),
+        headers: {
+            :Authorization => "Basic #{basicAuth}",
+            :accept => 'application/vnd.github.v3+json'
+        })
     end
   end
 end
