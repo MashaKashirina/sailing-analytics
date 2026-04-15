@@ -19,7 +19,7 @@ class App < Precious::App
   REPO_OWNER = 'SAP'
   REPO_NAME = 'sailing-analytics'
   before { check! }
-  before '/gollum/(edit|create|rename)/*' do authorize_write end
+  before '/gollum/(edit|create|rename|delete)/*' do authorize_write end
   before do
     if session[:email] && session[:name] 
         session['gollum.author'] = {
@@ -111,7 +111,7 @@ class App < Precious::App
     end
     
     def auth_path?(path)
-        auth_paths = [%r{\A/gollum/(edit|create|rename)/.*\z}, %r{\A/gollum/(overview|preview)}]  
+        auth_paths = [%r{\A/gollum/(edit|create|rename|delete)/.*\z}, %r{\A/gollum/(overview|preview)}]  
         auth_paths.any? {|pattern| pattern.match(path)}
     end
 
