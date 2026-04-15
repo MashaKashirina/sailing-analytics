@@ -41,12 +41,11 @@ class App < Precious::App
         url: uri.to_s(), 
         payload: {  
             :access_token => session[:access_token]
-        },
+        }.to_json(),
         headers: {
             :Authorization => "Basic #{basicAuth}",
             :accept => "application/vnd.github.v3+json"
         })
-
     end
     session.clear()
     'logged out'
@@ -71,10 +70,16 @@ class App < Precious::App
     redirect uri.to_s()
   end
 
+  get '/cancel' do
+    if session[:access_token] && session[:prev]
+        newPath = session[:prev].sub(/gollum\/(edit|create|rename)\//, "")
+        redirect newPath
+    end
+  end
+
   get '/callback' do
     halt 401, params[:error] if params[:error]
     halt 400, "Missing code" unless params[:code]
-    halt 403, "State issue" unless session[:oauth_state]
     halt 403, "Old state" unless session[:oauth_state][:expiry] > Time.now
     halt 403, "Invalid OAuth state" unless session[:oauth_state][:state] ==  params[:state]
 
@@ -122,7 +127,7 @@ class App < Precious::App
     end
 
     def login_path?(path)
-        %r{\A/(login|callback|logout)\z}.match?(path)
+        %r{\A/(login|callback|logout|cancel)\z}.match?(path)
     end
     
     def check!
