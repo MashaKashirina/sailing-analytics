@@ -102,7 +102,6 @@ public class RoleDefinitionsPanel extends VerticalPanel {
         roleDefinitionsTable.ensureDebugId("RolesCellTable");
         filterablePanelRoleDefinitions.getTextBox().ensureDebugId("RolesFilterTextBox");
         refreshableRoleDefinitionMultiSelectionModel = (RefreshableMultiSelectionModel<? super RoleDefinitionDTO>) roleDefinitionsTable.getSelectionModel();
-
         @SuppressWarnings("unchecked")
         final SetSelectionModel<RoleDefinitionDTO> roleSelectionModel = (SetSelectionModel<RoleDefinitionDTO>) roleDefinitionsTable.getSelectionModel();
         final AccessControlledButtonPanel buttonPanel = new AccessControlledButtonPanel(userService, ROLE_DEFINITION);
@@ -116,7 +115,7 @@ public class RoleDefinitionsPanel extends VerticalPanel {
                        final Set<RoleDefinitionDTO> selectedRoles = new HashSet<>(getSelectedRoleDefinitions());                                                                           
                                   filterablePanelRoleDefinitions.removeAll(selectedRoles);                  
                             }                                                                             
-                         });;
+                         });
         removeButton.ensureDebugId("RemoveRoleButton");
         add(buttonPanel);
         add(filterablePanelRoleDefinitions);
