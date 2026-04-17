@@ -29,6 +29,7 @@ public class GetFavoritesAction implements SailingAction<FavoritesResult> {
                 getDidOptOutOfFeatureAndCommunityEmails(ctx));
     }
 
+    @GwtIncompatible
     private boolean getDidOptOutOfFeatureAndCommunityEmails(SailingDispatchContext ctx) {
         return ctx.getSecurityService().getCurrentUser().getDidOptOutOfFeatureAndCommunityEmails();
     }
