@@ -123,18 +123,19 @@ public class AccessControlledButtonPanel extends Composite {
     }
 
     /**
-     * Adds a secured action button, which is only visible if the current user has any
-     * {@link UserService#hasCurrentUserPermissionToDeleteAnyObjectOfType(HasPermissions) delete permission} for the
-     * {@link HasPermissions type} provided in this {@link AccessControlledButtonPanel}'s constructor.
+     * Adds a secured action button, which is only {@link Button#setVisible(boolean) visible} if the current user has
+     * any {@link UserService#hasCurrentUserPermissionToDeleteAnyObjectOfType(HasPermissions) delete permission} for the
+     * {@link HasPermissions type} provided in this {@link AccessControlledButtonPanel}'s constructor, and which is only
+     * {@link Button#setEnabled(boolean) enabled} when the selection is non-empty and the current user has the
+     * {@link DefaultActions#DELETE delete permission} on every individually selected object.
      *
      * @param text
      *            the {@link String text} to show on the button
      * @param selectionModel
-     *            the {@link SetSelectionModel<T> selection model} of the table; used to enable/disable the remove
-     *            button when the selection becomes non-empty/empty, respectively and to display the number of elements
-     *            selected in case the selection contains more than one element
+     *            the {@link SetSelectionModel} of the table; used to track the selected elements, display the count of
+     *            selected elements in the button text, and drive the enabled state of the button
      * @param withConfirmation
-     *            the {@link Boolean} flag indicates whether to show confirmation or not
+     *            when {@code true}, a confirmation dialog is shown before the {@code callback} is executed
      * @param callback
      *            the {@link Command callback} to execute on button click, if permission is granted
      *
@@ -174,20 +175,21 @@ public class AccessControlledButtonPanel extends Composite {
     }
 
     /**
-     * Adds a secured action button, which is only visible if the current user has any
-     * {@link UserService#hasCurrentUserPermissionToDeleteAnyObjectOfType(HasPermissions) update permission} for the
-     * {@link HasPermissions type} provided in this {@link AccessControlledButtonPanel}'s constructor.
+     * Adds a secured action button, which is only {@link Button#setVisible(boolean) visible} if the current user has
+     * any {@link UserService#hasCurrentUserPermissionToUpdateAnyObjectOfType(HasPermissions) update permission} for the
+     * {@link HasPermissions type} provided in this {@link AccessControlledButtonPanel}'s constructor, and which is only
+     * {@link Button#setEnabled(boolean) enabled} when the selection is non-empty and the current user has the
+     * {@link DefaultActions#UPDATE update permission} on every individually selected object.
      *
      * @param text
      *            the {@link String text} to show on the button
      * @param selectionModel
-     *            the {@link SetSelectionModel<T> selection model} of the table; used to enable/disable the remove
-     *            button when the selection becomes non-empty/empty, respectively and to display the number of elements
-     *            selected in case the selection contains more than one element
+     *            the {@link SetSelectionModel} of the table; used to track the selected elements, display the count of
+     *            selected elements in the button text, and drive the enabled state of the button
      * @param callback
      *            the {@link Command callback} to execute on button click, if permission is granted
      *
-     * @return the created {@link SelectedElementsCountingButton} instance with optional confirmation
+     * @return the created {@link SelectedElementsCountingButton} instance
      */
     public <T extends Named & SecuredDTO> Button addUpdateAction(final String text, final SetSelectionModel<T> selectionModel,
             final Command callback) {
