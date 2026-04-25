@@ -141,8 +141,8 @@ public class ReplicationPanel extends FlowPanel {
 
             @Override
             public void onSuccess(String[] result) {
-                for (final String id : result) {
-                    replicableIdsAsStringThatShallLeadToWarningAboutInstanceBeingReplica.add(id);
+                for (final String replicableIdAsStringThatShallLeadToWarningAboutInstanceBeingReplica : result) {
+                    replicableIdsAsStringThatShallLeadToWarningAboutInstanceBeingReplica.add(replicableIdAsStringThatShallLeadToWarningAboutInstanceBeingReplica);
                 }
             }
         }));
@@ -407,9 +407,9 @@ public class ReplicationPanel extends FlowPanel {
                 registeredMasters.setWidget(i, 0, new Label("Client UUID: " + replicas.getServerIdentifier()));
                 i++;
                 final ReplicationMasterDTO replicatingFromMaster = replicas.getReplicatingFromMaster();
-                if (replicatingFromMaster != null) {
-                    for (final String replicableId : replicatingFromMaster.getReplicableIdsAsString()) {
-                        if (Util.contains(replicableIdsAsStringThatShallLeadToWarningAboutInstanceBeingReplica, replicableId)) {
+                if (replicatingFromMaster != null) { // TODO bug 2465: replicating only the user service from a "domain controller master" shouldn't lead to a warning here...
+                    for (final String replicableIdAsStringOfReplicableThatWeAreReplicatingCurrently : replicatingFromMaster.getReplicableIdsAsString()) {
+                        if (Util.contains(replicableIdsAsStringThatShallLeadToWarningAboutInstanceBeingReplica, replicableIdAsStringOfReplicableThatWeAreReplicatingCurrently)) {
                             errorReporter.reportPersistentInformation(stringMessages.warningServerIsReplica());
                             break;
                         }
@@ -438,8 +438,13 @@ public class ReplicationPanel extends FlowPanel {
     }
 
     /**
-     * A text entry dialog for connecting to a replication master. The result contains the RabbitMQ exchange
-     * hostname, the servlet hostname, the RabbitMQ exchange name, the messaging port and the servlet port.
+     * A text entry dialog with ok/cancel button and configurable validation rule. Subclasses may provide a redefinition for
+     * {@link #getAdditionalWidget()} to add a widget below the text field, e.g., for capturing additional data. The result of
+     * this dialog is a triple containing the RabbitMQ exchange hostname, the servlet hostname and the RabbitMQ exchange name,
+     * followed by the RabbitMQ messaging port and the servlet port.
+     * 
+     * @author Axel Uhl (d043530)
+     *
      */
     private class AddReplicationDialog extends DataEntryDialog<ReplicationData> {
         private final TextBox hostnameEntryField;
@@ -449,6 +454,7 @@ public class ReplicationPanel extends FlowPanel {
         private final IntegerBox servletPortField;
         private final TextBox usernameEntryField;
         private final PasswordTextBox passwordEntryField;
+        
         public AddReplicationDialog(final Validator<ReplicationData> validator,
                 final DialogCallback<ReplicationData> callback) {
             super(stringMessages.connect(), stringMessages.enterMaster(),
@@ -461,36 +467,48 @@ public class ReplicationPanel extends FlowPanel {
             usernameEntryField = createTextBox("admin");
             passwordEntryField = createPasswordTextBox("admin");
         }
+        /**
+         * Can contribute an additional widget to be displayed underneath the text entry field. If <code>null</code> is
+         * returned, no additional widget will be displayed. This is the default behavior of this default implementation.
+         */
         @Override
         protected Widget getAdditionalWidget() {
             final Grid grid = new Grid(14, 2);
             grid.setWidget(0, 0, new Label(stringMessages.hostname()));
             grid.setWidget(0, 1, hostnameEntryField);
             grid.setWidget(1, 0, new Label(stringMessages.explainReplicationHostname()));
+            
             grid.setWidget(2, 0, new Label(stringMessages.exchangeHost()));
             grid.setWidget(2, 1, exchangeHostnameEntryField);
             grid.setWidget(3, 0, new Label(stringMessages.explainExchangeHostName()));
+            
             grid.setWidget(4, 0, new Label(stringMessages.exchangeName()));
             grid.setWidget(4, 1, exchangenameEntryField);
             grid.setWidget(5, 0, new Label(stringMessages.explainReplicationExchangeName()));
+            
             grid.setWidget(6, 0, new Label(stringMessages.messagingPortNumber()));
             grid.setWidget(6, 1, messagingPortField);
             grid.setWidget(7, 0, new Label(stringMessages.explainReplicationExchangePort()));
+            
             grid.setWidget(8, 0, new Label(stringMessages.servletPortNumber()));
             grid.setWidget(8, 1, servletPortField);
             grid.setWidget(9, 0, new Label(stringMessages.explainReplicationServletPort()));
+            
             grid.setWidget(10, 0, new Label(stringMessages.username()));
             grid.setWidget(10, 1, usernameEntryField);
             grid.setWidget(11, 0, new Label(stringMessages.explainUserName()));
+            
             grid.setWidget(12, 0, new Label(stringMessages.password()));
             grid.setWidget(12, 1, passwordEntryField);
             grid.setWidget(13, 0, new Label(stringMessages.explainPassword()));
             return grid;
         }
+        
         @Override
         protected Focusable getInitialFocusWidget() {
             return hostnameEntryField;
         }
+        
         @Override
         protected ReplicationData getResult() {
             return new ReplicationData(exchangeHostnameEntryField.getValue(), hostnameEntryField.getValue(),
