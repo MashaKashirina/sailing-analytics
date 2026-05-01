@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gwt.cell.client.TextCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.user.cellview.client.Header;
-import com.google.gwt.user.cellview.client.TextHeader;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CaptionPanel;
@@ -23,19 +20,13 @@ import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.view.client.ListDataProvider;
-import com.sap.sse.common.InvertibleComparator;
-import com.sap.sse.common.SortingOrder;
 import com.sap.sse.common.Util;
-import com.sap.sse.common.impl.InvertibleComparatorAdapter;
 import com.sap.sse.gwt.client.ErrorReporter;
 import com.sap.sse.gwt.client.async.MarkedAsyncCallback;
 import com.sap.sse.gwt.client.celltable.ActionsColumn;
 import com.sap.sse.gwt.client.celltable.EntityIdentityComparator;
-import com.sap.sse.gwt.client.celltable.FlushableSortedCellTableWithStylableHeaders;
 import com.sap.sse.gwt.client.celltable.RefreshableMultiSelectionModel;
-import com.sap.sse.gwt.client.celltable.SelectionCheckboxColumn;
-import com.sap.sse.gwt.client.celltable.SortableColumn;
+import com.sap.sse.gwt.client.celltable.TableWrapper;
 import com.sap.sse.gwt.client.controls.IntegerBox;
 import com.sap.sse.gwt.client.dialog.DataEntryDialog;
 import com.sap.sse.gwt.client.dialog.DataEntryDialog.DialogCallback;
@@ -57,7 +48,7 @@ import com.sap.sse.security.ui.client.component.AccessControlledButtonPanel;
  *
  */
 public class ReplicationPanel extends FlowPanel {
-    private final FlushableSortedCellTableWithStylableHeaders<ReplicaDTO> replicasTable;
+    private final ReplicaTableWrapper replicasTable;
     private final RefreshableMultiSelectionModel<ReplicaDTO> replicaSelectionModel;
     private final Grid registeredMasters;
     private final CaptionPanel replicaDetailPanel;
@@ -160,13 +151,8 @@ public class ReplicationPanel extends FlowPanel {
         final CaptionPanel mastergroup = new CaptionPanel(stringMessages.explainReplicasRegistered());
         final VerticalPanel masterpanel = new VerticalPanel();
         final AdminConsoleTableResources tableResources = GWT.create(AdminConsoleTableResources.class);
-        replicasTable = createReplicasTable(tableResources, userService);
-        // The cast is safe: SelectionCheckboxColumn always creates a RefreshableMultiSelectionModel and
-        // sets it on the table; the generic type is erased at runtime (GWT limitation).
-        @SuppressWarnings("unchecked")
-        final RefreshableMultiSelectionModel<ReplicaDTO> selectionModel =
-                (RefreshableMultiSelectionModel<ReplicaDTO>) replicasTable.getSelectionModel();
-        replicaSelectionModel = selectionModel;
+        replicasTable = new ReplicaTableWrapper(tableResources, userService, stringMessages, errorReporter);
+        replicaSelectionModel = replicasTable.getSelectionModel();
         final AccessControlledButtonPanel masterPanelButtons = new AccessControlledButtonPanel(userService, SecuredSecurityTypes.SERVER);
         dropReplicasButton = masterPanelButtons.addAction(stringMessages.dropReplicas(),
                 () -> userService.hasServerPermission(ServerActions.REPLICATE), this::dropSelectedReplicas);
@@ -176,7 +162,7 @@ public class ReplicationPanel extends FlowPanel {
             dropReplicasButton.setText(count > 0 ? stringMessages.dropReplicas() + " (" + count + ")" : stringMessages.dropReplicas());
             dropReplicasButton.setEnabled(count > 0 && userService.hasServerPermission(ServerActions.REPLICATE));
         });
-        masterpanel.add(replicasTable);
+        masterpanel.add(replicasTable.asWidget());
         masterpanel.add(masterPanelButtons);
         mastergroup.add(masterpanel);
         add(mastergroup);
@@ -215,182 +201,52 @@ public class ReplicationPanel extends FlowPanel {
     }
 
     /**
-     * Creates and configures the replicas {@link FlushableSortedCellTableWithStylableHeaders}, including sortable columns for hostname,
-     * identifier, registration time, throughput statistics, and an actions column for dropping connections.
-     * The table uses a {@link SelectionCheckboxColumn} for multi-row selection.
+     * A {@link TableWrapper} for {@link ReplicaDTO} rows, with sortable text columns and an actions column
+     * for dropping individual replica connections. Multi-selection is enabled via a checkbox column managed
+     * by the base class.
      */
-    private FlushableSortedCellTableWithStylableHeaders<ReplicaDTO> createReplicasTable(final AdminConsoleTableResources tableResources, final UserService userService) {
-        final FlushableSortedCellTableWithStylableHeaders<ReplicaDTO> table = new FlushableSortedCellTableWithStylableHeaders<>(/* pageSize */ 50, tableResources);
-        final ListDataProvider<ReplicaDTO> dataProvider = table.getDataProvider();
-        final EntityIdentityComparator<ReplicaDTO> identityComparator = new EntityIdentityComparator<ReplicaDTO>() {
-            @Override
-            public boolean representSameEntity(final ReplicaDTO r1, final ReplicaDTO r2) {
-                return r1.getIdentifier().equals(r2.getIdentifier());
-            }
-            @Override
-            public int hashCode(final ReplicaDTO t) {
-                return t.getIdentifier().hashCode();
-            }
-        };
-        final SelectionCheckboxColumn<ReplicaDTO> checkboxColumn = new SelectionCheckboxColumn<ReplicaDTO>(
-                tableResources.cellTableStyle().cellTableCheckboxSelected(),
-                tableResources.cellTableStyle().cellTableCheckboxDeselected(),
-                tableResources.cellTableStyle().cellTableCheckboxColumnCell(),
-                identityComparator, dataProvider);
-        final ActionsColumn<ReplicaDTO, ReplicaImagesBarCell> actionsColumn = new ActionsColumn<>(
-                new ReplicaImagesBarCell(stringMessages),
-                (replica, action) -> userService.hasServerPermission(ServerActions.REPLICATE));
-        actionsColumn.addAction(ReplicaImagesBarCell.ACTION_DROP, replica -> dropSingleReplica(replica));
-        table.addColumn(checkboxColumn, checkboxColumn.createHeader());
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return r.getHostname();
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return r1.getHostname().compareTo(r2.getHostname());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnIp());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return r.getIdentifier();
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return r1.getIdentifier().compareTo(r2.getIdentifier());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnId());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return r.getRegistrationTime().toString();
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return r1.getRegistrationTime().compareTo(r2.getRegistrationTime());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnRegistered());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return String.valueOf(Math.round(r.getAverageNumberOfOperationsPerMessage()));
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return Double.compare(r1.getAverageNumberOfOperationsPerMessage(), r2.getAverageNumberOfOperationsPerMessage());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnOpsPerMsg());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return String.valueOf(r.getNumberOfMessagesSent());
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return Long.compare(r1.getNumberOfMessagesSent(), r2.getNumberOfMessagesSent());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnMessages());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return String.valueOf(Math.round(r.getAverageMessageSizeInBytes()));
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return Double.compare(r1.getAverageMessageSizeInBytes(), r2.getAverageMessageSizeInBytes());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnAvgMsgSize());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return r.getNumberOfBytesSent() + "B (" + (r.getNumberOfBytesSent() / 1024 / 1024) + "MB)";
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        return Long.compare(r1.getNumberOfBytesSent(), r2.getNumberOfBytesSent());
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnTotalSize());
-            }
-        });
-        table.addColumn(new SortableColumn<ReplicaDTO, String>(new TextCell(), SortingOrder.ASCENDING) {
-            @Override
-            public String getValue(final ReplicaDTO r) {
-                return String.valueOf(r.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum());
-            }
-            @Override
-            public InvertibleComparator<ReplicaDTO> getComparator() {
-                return new InvertibleComparatorAdapter<ReplicaDTO>() {
-                    public int compare(final ReplicaDTO r1, final ReplicaDTO r2) {
-                        final long sum1 = r1.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum();
-                        final long sum2 = r2.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum();
-                        return Long.compare(sum1, sum2);
-                    }
-                };
-            }
-            @Override
-            public Header<?> getHeader() {
-                return new TextHeader(stringMessages.replicaColumnTotalOps());
-            }
-        });
-        table.addColumn(actionsColumn, stringMessages.additionalInformation());
-        table.setSelectionModel(checkboxColumn.getSelectionModel(), checkboxColumn.getSelectionManager());
-        return table;
+    private class ReplicaTableWrapper
+            extends TableWrapper<ReplicaDTO, RefreshableMultiSelectionModel<ReplicaDTO>, StringMessages, AdminConsoleTableResources> {
+        ReplicaTableWrapper(final AdminConsoleTableResources tableResources, final UserService userService,
+                final StringMessages stringMessages, final ErrorReporter errorReporter) {
+            super(stringMessages, errorReporter, /* multiSelection */ true, /* enablePager */ false,
+                    new EntityIdentityComparator<ReplicaDTO>() {
+                        @Override
+                        public boolean representSameEntity(final ReplicaDTO r1, final ReplicaDTO r2) {
+                            return r1.getIdentifier().equals(r2.getIdentifier());
+                        }
+                        @Override
+                        public int hashCode(final ReplicaDTO t) {
+                            return t.getIdentifier().hashCode();
+                        }
+                    }, tableResources);
+            addColumn(ReplicaDTO::getHostname, stringMessages.replicaColumnIp(),
+                    (r1, r2) -> r1.getHostname().compareTo(r2.getHostname()));
+            addColumn(ReplicaDTO::getIdentifier, stringMessages.replicaColumnId(),
+                    (r1, r2) -> r1.getIdentifier().compareTo(r2.getIdentifier()));
+            addColumn(r -> r.getRegistrationTime().toString(), stringMessages.replicaColumnRegistered(),
+                    (r1, r2) -> r1.getRegistrationTime().compareTo(r2.getRegistrationTime()));
+            addColumn(r -> String.valueOf(Math.round(r.getAverageNumberOfOperationsPerMessage())),
+                    stringMessages.replicaColumnOpsPerMsg(),
+                    (r1, r2) -> Double.compare(r1.getAverageNumberOfOperationsPerMessage(), r2.getAverageNumberOfOperationsPerMessage()));
+            addColumn(r -> String.valueOf(r.getNumberOfMessagesSent()), stringMessages.replicaColumnMessages(),
+                    (r1, r2) -> Long.compare(r1.getNumberOfMessagesSent(), r2.getNumberOfMessagesSent()));
+            addColumn(r -> String.valueOf(Math.round(r.getAverageMessageSizeInBytes())), stringMessages.replicaColumnAvgMsgSize(),
+                    (r1, r2) -> Double.compare(r1.getAverageMessageSizeInBytes(), r2.getAverageMessageSizeInBytes()));
+            addColumn(r -> r.getNumberOfBytesSent() + "B (" + (r.getNumberOfBytesSent() / 1024 / 1024) + "MB)",
+                    stringMessages.replicaColumnTotalSize(),
+                    (r1, r2) -> Long.compare(r1.getNumberOfBytesSent(), r2.getNumberOfBytesSent()));
+            addColumn(r -> String.valueOf(r.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum()),
+                    stringMessages.replicaColumnTotalOps(),
+                    (r1, r2) -> Long.compare(
+                            r1.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum(),
+                            r2.getOperationCountByOperationClassName().values().stream().mapToLong(Integer::longValue).sum()));
+            final ActionsColumn<ReplicaDTO, ReplicaImagesBarCell> actionsColumn = new ActionsColumn<>(
+                    new ReplicaImagesBarCell(stringMessages),
+                    (replica, action) -> userService.hasServerPermission(ServerActions.REPLICATE));
+            actionsColumn.addAction(ReplicaImagesBarCell.ACTION_DROP, replica -> dropSingleReplica(replica));
+            addColumn(actionsColumn, stringMessages.additionalInformation());
+        }
     }
     /**
      * Populates {@link #replicaDetailPanel} with the details of the given replica and makes it visible.
