@@ -63,7 +63,7 @@ public class MiscellaneousDisplayImpl {
             final AsyncCallback<VoidResult> wrappedCallback = wrapCallbackWithToastResponse(didOptOutOfFeatureAndCommunityEmails, callback);
             presenter.updateDidOptOutOfFeatureAndCommunityEmails(didOptOutOfFeatureAndCommunityEmails, wrappedCallback);
         };
-        final String title = StringMessages.INSTANCE.featureAndCommunityUpdates();
+        final String title = StringMessages.INSTANCE.optOutOfFeatureAndCommunityUpdates();
         return new CheckBoxTile(title, false, onToggle);
     }
 }
