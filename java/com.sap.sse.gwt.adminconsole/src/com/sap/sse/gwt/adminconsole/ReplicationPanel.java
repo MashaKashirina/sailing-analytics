@@ -250,7 +250,8 @@ public class ReplicationPanel extends FlowPanel {
     }
     /**
      * Populates {@link #replicaDetailPanel} with the details of the given replica and makes it visible.
-     * Called when exactly one row is selected in {@link #replicasTable}.
+     * Called when exactly one row is selected in {@link #replicasTable}. The {@link #replicaDetailGrid}
+     * is resized to the required number of rows.
      */
     private void refreshReplicaDetail(final ReplicaDTO replica) {
         replicaDetailPanel.setCaptionText(replica.getHostname() + " (" + replica.getIdentifier() + ")");
