@@ -64,7 +64,7 @@ import com.sap.sse.util.impl.KnowsExecutorAndTracingGetImpl;
  * re-calculation and defer it until a {@link #get(Object, boolean)} request actually happens. For this purpose,
  * the {@link #suspend} and {@link #resume} methods can be used. No matter the suspend/resume state, the {@link #get(Object, boolean)}
  * method will always respond in line with the {@link #triggerUpdate(Object, UpdateInterval)} calls, only that re-calculations
- * are not immediately started when in suspended mode, and {@link #get(Object, boolean) get(key, false)} will no trigger a
+ * are not immediately started when in suspended mode, and {@link #get(Object, boolean) get(key, false)} will not trigger a
  * re-calculation at all. When resuming, any pending recalculations triggered so far are scheduled for immediate execution such
  * that subsequent {@link #get(Object, boolean) get(key, true)} calls will wait for their completion.
  * 
@@ -352,7 +352,7 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> {
                                 }
                             }
                             if (!newTaskScheduled) {
-                                ongoingRecalculations.remove(key);
+                                ongoingRecalculations.remove(key); // FIXME bug6245: when an exception was thrown, get(key, waitForLatest) may not find the FutureTask and return null instead of throwing ExecutionException
                             }
                         }
                     }
@@ -705,9 +705,9 @@ public class SmartFutureCache<K, V, U extends UpdateInterval<U>> {
             }
             try {
                 if (future != null) {
-                    value = future.get();
+                    value = future.get(); // will throw an ExecutionException if re-calculation threw an exception
                 } else {
-                    value = readCache(key);
+                    value = readCache(key); // FIXME bug6245: if an exception was thrown during computeCacheUpdate and the FutureTask was already removed from ongoingRecalculations, null would be returned
                 }
             } catch (InterruptedException | ExecutionException e) {
                 logger.log(Level.SEVERE, "get", e);

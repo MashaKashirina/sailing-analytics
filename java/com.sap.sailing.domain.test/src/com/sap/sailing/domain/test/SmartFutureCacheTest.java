@@ -48,6 +48,15 @@ public class SmartFutureCacheTest {
         System.out.println("testPerformanceOfGetAndCall took "+(System.currentTimeMillis()-start)+"ms");
     }
 
+    /**
+     * FIXME bug6245: the problem with this test is that its outcome depends on the timing with which SmartFutureCache removes the Future
+     * from its ongoingRecalculations map after the calculation finished with an exception. This happens before the exception is
+     * re-thrown, wrapped in a RuntimeException, which is then caught by the FutureTask's run() method where the exception
+     * is set on the FutureTask. So, if the get("humba", true) call obtains the FutureTask from ongoingRecalculations before
+     * SmartFutureCache.call() removes it in its finally block, the test will see the ExecutionException on the FutureTask.
+     * Otherwise, the get() call will not see any ongoingRecalculation and hence won't be able to obtain the FutureTask,
+     * hence returning null as if no calculation had been started at all.<p>
+     */
     @Test
     public void testExceptionInComputeCacheUpdate() {
         final boolean[] throwException = new boolean[1];
