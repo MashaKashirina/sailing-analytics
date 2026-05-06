@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,7 +83,7 @@ public class SmartFutureCacheTest {
             final String result = sfc.get("humba", /* waitForLatest */ true);
             fail("Expected RuntimeException because computeCacheUpdate threw one; instead, it returned "+result);
         } catch (RuntimeException expected) {
-            assertSame(ExecutionException.class, expected.getCause().getClass());
+            assertSame(NullPointerException.class, expected.getCause().getClass());
         }
         throwException[0] = false;
         sfc.triggerUpdate("humba", /* update interval */ null);
