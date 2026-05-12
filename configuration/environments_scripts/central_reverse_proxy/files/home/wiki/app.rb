@@ -126,8 +126,6 @@ class App < Precious::App
       path = self.env["PATH_INFO"].dup
       return if login_path?(path)
       return if asset_path?(path)
-      session[:prev] = path
-      LOGGER.debug(session[:prev])
       isPublicPath = public_path?(path)
       isAuthPath = auth_path?(path)
       if isPublicPath || isAuthPath
