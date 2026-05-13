@@ -137,7 +137,11 @@ class App < Precious::App
 
     def authorize_write
       LOGGER.debug("Checking auth before writing")
+
       if !session[:logged_in]
+        if env["PATH_INFO"].dup.match(%r{/gollum/delete/.*})
+            halt 401, "Unauthorized"
+        end
         redirect "/login"
       end
       halt 403, "Forbidden" unless user_can_write()
