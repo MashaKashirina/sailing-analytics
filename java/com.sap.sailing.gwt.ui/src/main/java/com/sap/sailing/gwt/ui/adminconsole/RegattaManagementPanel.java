@@ -81,7 +81,6 @@ public class RegattaManagementPanel extends SimplePanel implements FilterablePan
                 refreshableRegattaMultiSelectionModel, true, () -> {
                     // unmodifiable collection can't be sent to the server.
                     final Collection<RegattaIdentifier> regattas = createModifiableCollection();
-                    refreshableRegattaMultiSelectionModel.clear();
                     removeRegattas(regattas);
                 });
         buttonPanel.addUnsecuredWidget(new HelpButton(HelpButtonResources.INSTANCE,

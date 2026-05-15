@@ -612,7 +612,6 @@ public class LeaderboardGroupConfigPanel extends AbstractRegattaPanel
         removeButton = buttonPanel.addRemoveAction(stringMessages.remove(), refreshableGroupsSelectionModel, true,
                 () -> {
             final List<LeaderboardGroupDTO> selectedGroups = new ArrayList<>(refreshableGroupsSelectionModel.getSelectedSet());
-            refreshableGroupsSelectionModel.clear();
             removeLeaderboardGroups(selectedGroups);
         });
         removeButton.ensureDebugId("RemoveLeaderboardButton");

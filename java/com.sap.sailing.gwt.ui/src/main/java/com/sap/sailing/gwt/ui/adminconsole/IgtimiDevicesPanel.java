@@ -189,7 +189,6 @@ public class IgtimiDevicesPanel extends FlowPanel implements FilterablePanelProv
             if (refreshableDevicesSelectionModel.getSelectedSet().size() > 0) {
                 if (Window.confirm(stringMessages.doYouReallyWantToRemoveTheSelectedIgtimiDevices())) {
                     final List<IgtimiDeviceWithSecurityDTO> selected = new ArrayList<>(refreshableDevicesSelectionModel.getSelectedSet());
-                    refreshableDevicesSelectionModel.clear();
                     for (IgtimiDeviceWithSecurityDTO device : selected) {
                         removeDevice(device, filteredDevices);
                     }
@@ -237,7 +236,6 @@ public class IgtimiDevicesPanel extends FlowPanel implements FilterablePanelProv
             if (refreshableDataAccessWindowsSelectionModel.getSelectedSet().size() > 0) {
                 if (Window.confirm(stringMessages.doYouReallyWantToRemoveTheSelectedIgtimiDataAccessWindows())) {
                     final List<IgtimiDataAccessWindowWithSecurityDTO> selected = new ArrayList<>(refreshableDataAccessWindowsSelectionModel.getSelectedSet());
-                    refreshableDataAccessWindowsSelectionModel.clear();
                     for (IgtimiDataAccessWindowWithSecurityDTO daw : selected) {
                         removeDataAccessWindow(daw, filteredDAWs);
                     }

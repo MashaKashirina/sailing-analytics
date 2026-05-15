@@ -101,7 +101,6 @@ public class CourseTemplatePanel extends FlowPanel implements FilterablePanelPro
                 () -> openEditCourseTemplateDialog(new CourseTemplateDTO(), userService, true));
         buttonAndFilterPanel.addRemoveAction(stringMessages.remove(), refreshableSelectionModel, true,
                 () -> {final List<UUID> uuids = refreshableSelectionModel.getSelectedSet().stream().map(courseTemplateDTO -> courseTemplateDTO.getUuid()).collect(Collectors.toList());
-            refreshableSelectionModel.clear();
             removeCourseTemplates(uuids);
         });
         buttonAndFilterPanel.addUnsecuredWidget(lblFilterRaces);

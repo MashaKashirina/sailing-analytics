@@ -112,7 +112,6 @@ public class RoleDefinitionsPanel extends VerticalPanel {
         final Button removeButton = buttonPanel.addRemoveAction(stringMessages.remove(), roleSelectionModel, true,
                 () -> {
             final Set<RoleDefinitionDTO> selectedRoles = new HashSet<>(getSelectedRoleDefinitions());
-            refreshableRoleDefinitionMultiSelectionModel.clear();
             filterablePanelRoleDefinitions.removeAll(selectedRoles);
         });
         removeButton.ensureDebugId("RemoveRoleButton");

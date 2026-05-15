@@ -197,7 +197,6 @@ public class MediaPanel extends FlowPanel implements FilterablePanelProvider<Med
             @Override
             public void execute() {
                 final List<MediaTrackWithSecurityDTO> selected = new ArrayList<>(refreshableSelectionModel.getSelectedSet());
-                refreshableSelectionModel.clear();
                 for (final MediaTrackWithSecurityDTO track : selected) {
                     removeMediaTrack(track);
                 }

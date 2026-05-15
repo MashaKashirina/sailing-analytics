@@ -111,7 +111,6 @@ public class UserGroupDetailPanel extends Composite
                     Window.alert(stringMessages.youHaveToSelectAUserGroup());
                     return;
                 }
-                tenantUsersTable.getSelectionModel().clear();
                 for (StrippedUserDTO user : users) {
                     final String username = user.getName();
                     userManagementService.removeUserFromUserGroup(selectedUserGroup.getId().toString(), username,

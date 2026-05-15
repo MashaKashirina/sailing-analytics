@@ -170,7 +170,6 @@ public class LeaderboardConfigPanel extends AbstractLeaderboardConfigPanel
         leaderboardRemoveButton = buttonPanel.addRemoveAction(stringMessages.remove(), leaderboardSelectionModel, true,
                 () -> {
             final List<StrippedLeaderboardDTO> selectedLeaderboards = new ArrayList<>(leaderboardSelectionModel.getSelectedSet());
-            leaderboardSelectionModel.clear();
             removeLeaderboards(selectedLeaderboards);
         });
         leaderboardRemoveButton.ensureDebugId("LeaderboardsRemoveButton");

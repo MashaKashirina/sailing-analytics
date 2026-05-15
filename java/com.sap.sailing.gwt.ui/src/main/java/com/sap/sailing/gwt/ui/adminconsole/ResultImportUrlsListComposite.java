@@ -59,7 +59,6 @@ public class ResultImportUrlsListComposite extends Composite {
         final Button remove = buttonPanel.addRemoveAction(stringMessages.remove(), table.getSelectionModel(),
                 /* withConfirmation */ true, () -> {
             final Set<UrlDTO> selected = new HashSet<>(table.getSelectionModel().getSelectedSet());
-            table.getSelectionModel().clear();
             removeUrls(selected);
         });
         remove.ensureDebugId("RemoveUrlButton");

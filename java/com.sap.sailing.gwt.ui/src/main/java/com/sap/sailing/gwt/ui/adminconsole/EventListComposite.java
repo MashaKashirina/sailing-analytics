@@ -178,7 +178,6 @@ public class EventListComposite extends Composite {
         final Button remove = buttonPanel.addRemoveAction(stringMessages.remove(), refreshableEventSelectionModel, true,
                 () -> {
             final List<EventDTO> selected = new ArrayList<>(refreshableEventSelectionModel.getSelectedSet());
-            refreshableEventSelectionModel.clear();
             removeEvents(selected);
         });
         remove.ensureDebugId("RemoveEventsButton");
