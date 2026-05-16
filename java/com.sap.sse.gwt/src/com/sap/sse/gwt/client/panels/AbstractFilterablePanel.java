@@ -275,7 +275,9 @@ public abstract class AbstractFilterablePanel<T> extends HorizontalPanel {
      * Removes an object and applies the search filter.
      */
     public void remove(T object) {
-        select(object, false); // clear the object that was removed from the selection
+        if (all.getList().contains(object)) {
+            select(object, false);
+        }
         all.getList().remove(object);
         filter();
     }
