@@ -38,7 +38,6 @@ import com.sap.sailing.domain.common.LeaderboardNameConstants;
 import com.sap.sailing.domain.common.RegattaAndRaceIdentifier;
 import com.sap.sailing.domain.common.RegattaIdentifier;
 import com.sap.sailing.domain.common.RegattaName;
-import com.sap.sailing.domain.common.TrackedRaceStatusEnum;
 import com.sap.sailing.domain.common.abstractlog.TimePointSpecificationFoundInLog;
 import com.sap.sailing.domain.common.dto.BoatDTO;
 import com.sap.sailing.domain.common.dto.CompetitorDTO;
@@ -289,19 +288,6 @@ public class SmartphoneTrackingEventManagementPanel extends AbstractLeaderboardC
     private RaceLogTrackingState getTrackingState(
             RaceColumnDTOAndFleetDTOWithNameBasedEquality race) {
         return race.getA().getRaceLogTrackingInfo(race.getB()).raceLogTrackingState;
-    }
-    
-    private boolean trackerExists(RaceColumnDTOAndFleetDTOWithNameBasedEquality race) {
-        return race.getA().getRaceLogTrackingInfo(race.getB()).raceLogTrackerExists;
-    }
-    
-    private boolean isFinished(RaceColumnDTOAndFleetDTOWithNameBasedEquality race) {
-        RaceDTO raceDTO = race.getA().getRace(race.getB());
-        boolean raceFinished = false;
-        if (raceDTO != null) {
-            raceFinished = raceDTO.status.status.equals(TrackedRaceStatusEnum.FINISHED);
-        }
-        return raceFinished;
     }
     
     private boolean doesTrackerExist(
