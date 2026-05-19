@@ -107,8 +107,7 @@ public class UserGroupDetailPanel extends Composite
             if (selectedUserGroups != null && selectedUserGroups.size() == 1) {
                 final UserGroupDTO selectedUserGroup = selectedUserGroups.iterator().next();
                 final RefreshableMultiSelectionModel<StrippedUserDTO> usersSelectionModel = tenantUsersTable.getSelectionModel();
-                final List<StrippedUserDTO> users = Util.asList(usersSelectionModel.getSelectedElements());
-                for (StrippedUserDTO user : users) {
+                for (final StrippedUserDTO user : usersSelectionModel.getSelectedElements()) {
                     final String username = user.getName();
                     userManagementService.removeUserFromUserGroup(selectedUserGroup.getId().toString(), username,
                             new AsyncCallback<Void>() {
