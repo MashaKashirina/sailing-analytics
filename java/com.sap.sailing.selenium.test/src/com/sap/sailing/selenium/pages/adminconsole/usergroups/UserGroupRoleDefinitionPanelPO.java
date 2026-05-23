@@ -93,8 +93,9 @@ public class UserGroupRoleDefinitionPanelPO extends PageArea {
         waitForAlertContainingMessageAndAccept("The following element(s) will be removed");
     }
 
-    public void removeRoleViaActionButton(String name) {
+    public void removeRoleViaActionButton(final String name) {
         findRole(name).deleteRole();
+        waitForAlertContainingMessageAndAccept("Do you really want to remove role");
     }
     
     public void removeRoleAndExpectPermissionError(String name) {
