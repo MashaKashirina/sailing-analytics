@@ -1,9 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Hello Sailing World</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAP Sailing Analytics — Open-Source Regatta Platform</title>
+  <meta name="description" content="Open-source platform for live visualization, analysis, and broadcasting of sailing regattas. Proven at the 2020 and 2024 Olympics.">
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Brand tokens ── */
+    :root {
+      --blue:       #008fcc;
+      --blue-dark:  #006fa0;
+      --blue-light: #e6f5fc;
+      --yellow:     #efaa00;
+      --yellow-dark:#c88e00;
+      --dark:       #333333;
+      --dark-mid:   #444444;
+      --text:       #212529;
+      --muted:      #666666;
+      --border:     #e0e0e0;
+      --surface:    #f8f8f8;
+      --light:      #f6f9fc;
+      --white:      #ffffff;
+      --radius:     8px;
+      --radius-lg:  16px;
+      --shadow-sm:  0 2px 8px rgba(0,0,0,.08);
+      --shadow-md:  0 6px 24px rgba(0,0,0,.12);
+      --shadow-lg:  0 12px 48px rgba(0,0,0,.16);
+      --transition: .2s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Open Sans', system-ui, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      background-image:
+        radial-gradient(ellipse 340px 600px at 0% 50%, rgba(0,143,204,.06) 0%, transparent 100%),
+        radial-gradient(ellipse 340px 600px at 100% 50%, rgba(0,143,204,.06) 0%, transparent 100%);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 80px 0; }
+    .section--alt { background: var(--surface); }
+    .section--light { background: var(--light); }
+
+    .eyebrow {
+      font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--blue); margin-bottom: 10px;
+    }
+    .eyebrow--yellow { color: var(--yellow-dark); }
+    h1, h2, h3 { line-height: 1.25; color: var(--dark); }
+    h1 { font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 800; }
+    h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; }
+    h3 { font-size: 1.05rem; font-weight: 700; }
+    p { color: var(--muted); }
+    .lead { font-size: 1.1rem; line-height: 1.75; color: var(--muted); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px; border-radius: 100px;
+      font-weight: 700; font-size: .9rem; transition: var(--transition);
+      cursor: pointer; border: 2px solid transparent; white-space: nowrap;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-2px); }
+    .btn-primary { background: var(--blue); color: var(--white); box-shadow: 0 2px 12px rgba(0,143,204,.3); }
+    .btn-primary:hover { background: var(--blue-dark); box-shadow: 0 4px 20px rgba(0,143,204,.4); color: var(--white); }
+    .btn-yellow { background: var(--yellow); color: var(--white); box-shadow: 0 2px 12px rgba(239,170,0,.3); }
+    .btn-yellow:hover { background: var(--yellow-dark); color: var(--white); }
+    .btn-outline-white { border-color: rgba(255,255,255,.6); color: var(--white); }
+    .btn-outline-white:hover { background: rgba(255,255,255,.12); color: var(--white); }
+    .btn-ghost { border-color: var(--border); color: var(--dark); background: var(--white); }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ════════════ NAV ════════════ */
+    .nav {
+      position: sticky; top: 0; z-index: 200;
+      background: linear-gradient(135deg, #006fa0 0%, #008fcc 45%, #0099d6 60%, #006fa0 100%);
+      box-shadow: 0 2px 16px rgba(0,0,0,.22);
+    }
+    .nav__inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    .nav__brand img { height: 44px; width: auto; }
+    .nav__links {
+      display: flex; align-items: center; gap: 24px;
+    }
+    .nav__links a {
+      font-size: .875rem; font-weight: 600; color: rgba(255,255,255,.9);
+      transition: color var(--transition); padding: 4px 0;
+      border-bottom: 2px solid transparent;
+    }
+    .nav__links a:hover { color: var(--white); text-decoration: none; border-bottom-color: var(--yellow); }
+    .nav__cta {
+      margin-left: 8px; padding: 8px 18px; font-size: .85rem;
+      background: var(--white); border-color: var(--white); color: var(--blue-dark) !important;
+      font-weight: 700;
+    }
+    .nav__cta svg { color: var(--blue-dark) !important; }
+    .nav__cta:hover { background: rgba(255,255,255,.9) !important; color: var(--blue-dark) !important; }
+
+    /* ════════════ HERO ════════════ */
+    .hero {
+      position: relative; overflow: hidden;
+      min-height: 580px;
+      display: flex; align-items: center;
+      background: var(--dark);
+    }
+    .hero__bg {
+      position: absolute; inset: 0; overflow: hidden;
+    }
+    .hero__bg video {
+      width: 100%; height: 100%; object-fit: cover; object-position: center 40%;
+      opacity: .38;
+    }
+    .hero__content {
+      position: relative; z-index: 1;
+      padding: 80px 0;
+      max-width: 680px;
+    }
+    .hero__badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: .78rem; font-weight: 700; color: rgba(255,255,255,.9);
+      letter-spacing: .06em; text-transform: uppercase; margin-bottom: 22px;
+    }
+    .hero__badge-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #4caf50;
+      box-shadow: 0 0 0 3px rgba(76,175,80,.3);
+    }
+    .hero h1 { color: var(--white); margin-bottom: 18px; }
+    .hero h1 span { color: var(--yellow); }
+    .hero__sub { font-size: 1.1rem; color: rgba(255,255,255,.75); line-height: 1.7; margin-bottom: 36px; max-width: 560px; }
+    .hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero__stats {
+      display: flex; gap: 40px; flex-wrap: wrap;
+      margin-top: 52px; padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,.15);
+    }
+    .hero__stat-value { font-size: 2rem; font-weight: 800; color: var(--white); line-height: 1.1; }
+    .hero__stat-label { font-size: .78rem; color: rgba(255,255,255,.75); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+
+    /* ════════════ SOLUTIONS ════════════ */
+    .solution {
+      display: grid; grid-template-columns: 1fr 1fr;
+      align-items: center; gap: 64px;
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .solution:last-child { border-bottom: none; }
+    .solution--reverse { direction: rtl; }
+    .solution--reverse > * { direction: ltr; }
+    .solution__img {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,143,204,.15), 0 2px 12px rgba(0,0,0,.08);
+      position: relative;
+    }
+    .solution__img::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: var(--radius-lg);
+      box-shadow: inset 0 0 0 1px rgba(0,143,204,.12);
+      pointer-events: none;
+    }
+    .solution__img img { width: 100%; height: auto; }
+
+    /* Image slider */
+    .img-slider { position: relative; border-radius: var(--radius-lg); overflow: hidden; }
+    .img-slider__track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); }
+    .img-slider__track img { width: 100%; flex-shrink: 0; height: auto; display: block; }
+    .img-slider__btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(0,0,0,.42); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+      transition: background .18s; z-index: 2;
+    }
+    .img-slider__btn:hover { background: rgba(0,143,204,.75); }
+    .img-slider__btn--prev { left: 10px; }
+    .img-slider__btn--next { right: 10px; }
+    .img-slider__dots {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; z-index: 2;
+    }
+    .img-slider__dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,.5); border: none; padding: 0; cursor: pointer;
+      transition: background .18s;
+    }
+    .img-slider__dot.active { background: #fff; }
+    .solution__tag {
+      display: inline-block;
+      background: var(--blue-light); color: var(--blue);
+      font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 100px; margin-bottom: 14px;
+      border: 1px solid rgba(0,143,204,.2);
+    }
+    .solution__tag--android { background: #e8f5e9; color: #2e7d32; border-color: rgba(46,125,50,.2); }
+    .solution__tag--ios { background: #f3e5f5; color: #6a1b9a; border-color: rgba(106,27,154,.2); }
+    .solution__tag--web { background: var(--blue-light); color: var(--blue); border-color: rgba(0,143,204,.2); }
+    .solution h3 { font-size: 1.5rem; margin-bottom: 14px; }
+    .solution p { font-size: .95rem; line-height: 1.7; margin-bottom: 20px; }
+    .solution__links { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ════════════ MODAL ════════════ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.5);
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 580px;
+      overflow: hidden;
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(16px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal__header {
+      background: linear-gradient(135deg, #006fa0 0%, #008fcc 100%);
+      color: var(--white);
+      padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal__header-left { display: flex; flex-direction: column; gap: 4px; }
+    .modal__header-title { font-size: 1.1rem; font-weight: 800; }
+    .modal__header-sub { font-size: .78rem; color: rgba(255,255,255,.7); }
+    .modal__close {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      color: var(--white); width: 30px; height: 30px; border-radius: 50%;
+      font-size: 1.1rem; cursor: pointer; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition); flex-shrink: 0;
+    }
+    .modal__close:hover { background: rgba(255,255,255,.25); }
+    .modal__body { padding: 20px 24px 24px; }
+    .modal__cards { display: grid; gap: 10px; margin-bottom: 14px; }
+    .modal__cards--2 { grid-template-columns: 1fr 1fr; }
+    .modal__card {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--light); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 13px 16px;
+      text-decoration: none; color: var(--dark);
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    .modal__card:hover { border-color: var(--blue); box-shadow: 0 2px 12px rgba(0,143,204,.12); background: #f0f9ff; text-decoration: none; }
+    .modal__card-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .modal__card-icon--blue { background: var(--blue-light); }
+    .modal__card-icon--yellow { background: #fffbe6; }
+    .modal__card-icon--green { background: #e8f5e9; }
+    .modal__card-icon--purple { background: #f3e5f5; }
+    .modal__card-text { flex: 1; }
+    .modal__card-title { font-size: .85rem; font-weight: 700; color: var(--dark); line-height: 1.3; }
+    .modal__card-desc { font-size: .75rem; color: var(--muted); line-height: 1.3; margin-top: 2px; }
+    .modal__card-arrow { color: var(--blue); font-size: .9rem; opacity: 0; transition: opacity var(--transition), transform var(--transition); }
+    .modal__card:hover .modal__card-arrow { opacity: 1; transform: translateX(3px); }
+    .modal__section-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--muted); margin: 16px 0 8px;
+    }
+    .modal__store-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .modal__store-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--dark); color: var(--white);
+      border-radius: var(--radius); padding: 9px 16px;
+      font-size: .8rem; font-weight: 600;
+      transition: background var(--transition);
+    }
+    .modal__store-btn:hover { background: #444; text-decoration: none; color: var(--white); }
+
+    /* ════════════ TECH STACK ════════════ */
+    .tech__grid {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      justify-content: center; margin-top: 48px;
+    }
+    .tech-item {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px 20px 16px;
+      min-width: 120px; max-width: 148px;
+      box-shadow: var(--shadow-sm);
+    }
+    .tech-item img { width: 40px; height: 40px; object-fit: contain; }
+    .tech-item span { font-size: .78rem; font-weight: 700; color: var(--dark); text-align: center; }
+    .tech-item small { font-size: .7rem; color: var(--muted); text-align: center; line-height: 1.4; }
+    /* Tech items on dark background */
+    .getting-started .tech-item {
+      background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12);
+      box-shadow: none;
+    }
+    .getting-started .tech-item span { color: rgba(255,255,255,.9); }
+    .getting-started .tech-item small { color: rgba(255,255,255,.5); }
+    /* Java and Jetty use dark #333 — invert to white on dark bg */
+    .getting-started .tech-item--invert img { filter: brightness(0) invert(1) opacity(.85); }
+
+    /* ════════════ DOCS ════════════ */
+    .docs__grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-top: 48px;
+    }
+    .doc-group {
+      background: var(--white); border: 1px solid var(--border);
+      border-top: 3px solid var(--yellow);
+      border-radius: var(--radius-lg); padding: 28px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition);
+    }
+    .doc-group:hover { box-shadow: var(--shadow-md); }
+    .doc-group__icon { font-size: 1.6rem; margin-bottom: 12px; }
+    .doc-group h3 { font-size: .95rem; margin-bottom: 14px; color: var(--dark); }
+    .doc-group ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .doc-group ul li a {
+      font-size: .85rem; color: var(--muted);
+      transition: color var(--transition);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .doc-group ul li a::before { content: '›'; color: var(--blue); font-weight: 700; }
+    .doc-group ul li a:hover { color: var(--blue); text-decoration: none; }
+
+    /* ════════════ WHAT'S NEW ════════════ */
+    .accordion { margin-top: 48px; display: flex; flex-direction: column; gap: 12px; }
+    .accordion-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; background: var(--white);
+      cursor: pointer; user-select: none;
+      transition: background var(--transition);
+    }
+    .accordion-header:hover { background: var(--light); }
+    .accordion-header.open { background: var(--dark); }
+    .accordion-title {
+      display: flex; align-items: center; gap: 12px;
+      font-size: .95rem; font-weight: 700; color: var(--dark);
+    }
+    .accordion-header.open .accordion-title { color: var(--white); }
+    .accordion-tag {
+      font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      padding: 2px 9px; border-radius: 100px;
+    }
+    .tag-web    { background: var(--blue-light); color: var(--blue); }
+    .tag-android{ background: #e8f5e9; color: #2e7d32; }
+    .tag-ios    { background: #f3e5f5; color: #6a1b9a; }
+    .accordion-arrow {
+      font-size: 1.1rem; color: var(--muted); transition: transform var(--transition);
+    }
+    .accordion-header.open .accordion-arrow { transform: rotate(180deg); color: rgba(255,255,255,.6); }
+    .accordion-body {
+      display: none; background: var(--white);
+      border-top: 1px solid var(--border);
+    }
+    .accordion-body.open { display: block; }
+    /* Styles applied to the injected source HTML content */
+    .whatsnew-content { padding: 8px 28px 24px; }
+    .whatsnew-content h5, .whatsnew-content .articleSubheadline {
+      font-size: .78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--blue);
+      margin: 20px 0 8px; padding: 0;
+    }
+    .whatsnew-content ul, .whatsnew-content .bulletList {
+      list-style: none; display: flex; flex-direction: column; gap: 6px;
+      padding: 0; margin: 0;
+    }
+    .whatsnew-content li {
+      font-size: .875rem; color: var(--muted); line-height: 1.6;
+      padding-left: 14px; position: relative;
+    }
+    .whatsnew-content li::before { content: '–'; position: absolute; left: 0; color: var(--yellow); font-weight: 700; }
+    .whatsnew-content a { color: var(--blue); }
+    .whatsnew-content h4, .whatsnew-content .articleHeadline { display: none; }
+    .whatsnew-content tt, .whatsnew-content code {
+      font-family: 'JetBrains Mono', monospace; font-size: .82em;
+      background: #f0f4f8; border-radius: 3px; padding: 1px 4px; color: #c7254e;
+    }
+    .whatsnew-content p { display: inline; }
+    .accordion-loading {
+      padding: 24px; text-align: center; color: var(--muted); font-size: .85rem;
+    }
+    /* Floating close button for open accordions */
+    .accordion-close-fab { display: none; }
+    /* Sticky "Close all" bar — fixed, only visible while an accordion in #whatsnew is open */
+    .whatsnew__header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 0;
+    }
+    .whatsnew__sticky-bar {
+      display: none;
+      position: sticky; top: 72px; z-index: 100;
+      justify-content: flex-end;
+      pointer-events: none;
+      margin-bottom: -44px;
+    }
+    .whatsnew__sticky-bar.visible { display: flex; pointer-events: auto; }
+    .whatsnew__close-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--blue); color: var(--white);
+      border: none; border-radius: 100px; padding: 9px 20px;
+      font-size: .82rem; font-weight: 700;
+      cursor: pointer; box-shadow: 0 2px 16px rgba(0,143,204,.35);
+      transition: background .15s; white-space: nowrap;
+    }
+    .whatsnew__close-btn:hover { background: var(--blue-dark); }
+
+    /* ════════════ GETTING STARTED ════════════ */
+    .getting-started { background: var(--dark); color: var(--white); }
+    .getting-started .eyebrow { color: var(--yellow); }
+    .getting-started h2 { color: var(--white); }
+    .getting-started .lead { color: rgba(255,255,255,.7); }
+    .steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 48px; }
+    .step {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius-lg); padding: 28px;
+    }
+    .step__num {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--blue); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; margin-bottom: 16px;
+    }
+    .step h3 { color: var(--white); font-size: .95rem; margin-bottom: 8px; }
+    .step p { color: rgba(255,255,255,.6); font-size: .875rem; }
+    .code-block {
+      margin-top: 40px;
+      background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .code-block__bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 18px; background: rgba(255,255,255,.04);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .code-block__bar span { width: 10px; height: 10px; border-radius: 50%; }
+    .code-block__bar span:nth-child(1) { background: #ff5f57; }
+    .code-block__bar span:nth-child(2) { background: #ffbd2e; }
+    .code-block__bar span:nth-child(3) { background: #28c840; }
+    .code-block pre {
+      padding: 22px 24px;
+      font-family: 'JetBrains Mono', monospace; font-size: .875rem;
+      line-height: 1.8; color: rgba(255,255,255,.85); overflow-x: auto;
+    }
+    .cc { color: rgba(255,255,255,.35); }
+    .ck { color: #4caf50; }
+    .cv { color: var(--yellow); }
+
+    /* ════════════ FOOTER ════════════ */
+    .footer { background: var(--dark); color: rgba(255,255,255,.6); padding: 56px 0 28px; }
+    .footer__grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px; margin-bottom: 48px;
+    }
+    .footer__brand img { height: 36px; margin-bottom: 16px; }
+    .footer__brand p { font-size: .875rem; line-height: 1.7; max-width: 260px; color: rgba(255,255,255,.82); }
+    .footer__social { display: flex; gap: 12px; margin-top: 20px; }
+    .footer__social a {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+    }
+    .footer__social a:hover { background: rgba(255,255,255,.18); text-decoration: none; }
+    .footer__social img { width: 16px; height: 16px; filter: invert(1) brightness(2); }
+    .footer__col h4 {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .09em; color: rgba(255,255,255,.35); margin-bottom: 14px;
+    }
+    .footer__col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .footer__col ul li a {
+      font-size: .875rem; color: rgba(255,255,255,.6);
+      transition: color var(--transition);
+    }
+    .footer__col ul li a:hover { color: var(--white); text-decoration: none; }
+    .footer__bottom {
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer__bottom p { font-size: .8rem; color: rgba(255,255,255,.4); }
+    .footer__bottom-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .footer__bottom-links a { font-size: .8rem; color: rgba(255,255,255,.4); transition: color var(--transition); }
+    .footer__bottom-links a:hover { color: var(--white); text-decoration: none; }
+
+    /* ════════════ RESPONSIVE ════════════ */
+    @media (max-width: 1024px) {
+      .docs__grid { grid-template-columns: repeat(2, 1fr); }
+      .footer__grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .solution { grid-template-columns: 1fr; gap: 32px; }
+      .solution--reverse { direction: ltr; }
+    }
+    @media (max-width: 768px) {
+      .section { padding: 56px 0; }
+      .steps { grid-template-columns: 1fr; }
+      .docs__grid { grid-template-columns: 1fr; }
+      .footer__grid { grid-template-columns: 1fr; }
+      .nav__links { display: none; }
+      .hero__stats { gap: 24px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Hello Sailing World</h1>
-    <p>
-    This is the Sailing Analytics solution.
+
+<!-- ═══════════════════════════════════ NAV ═══════════════════════════════════ -->
+<nav class="nav">
+  <div class="container nav__inner">
+    <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+      <img src="../java/com.sap.sailing.www/images/logo-small@2x.png"
+           alt="SAP Sailing Analytics" style="height:40px;width:auto;">
+      <span style="font-size:.9rem;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.01em;white-space:nowrap;line-height:1;">Sailing Analytics</span>
+    </a>
+    <div class="nav__links">
+      <a href="#solutions">Solutions</a>
+      <a href="#getting-started">Quick Start</a>
+      <a href="#docs">Documentation</a>
+      <a href="#tech">Technology</a>
+      <a href="#whatsnew">What's New</a>
+      <a class="btn btn-ghost nav__cta" href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ HERO ═══════════════════════════════════ -->
+<section class="hero">
+  <div class="hero__bg"><video autoplay muted loop playsinline style="animation-duration:30s" src="source/bg_video.mp4" poster="../java/com.sap.sailing.www/images/bg-image.jpg"></video></div>
+  <div class="container">
+    <div class="hero__content">
+      <div class="hero__badge">
+        <span class="hero__badge-dot"></span>
+        Open Source &mdash; Apache 2.0
+      </div>
+      <h1>Open-source analytics for <span>competitive sailing</span></h1>
+      <p class="hero__sub">
+        SAP Sailing Analytics is a community-driven platform for live GPS tracking,
+        real-time race analysis, and fan engagement — from club regattas to the Olympic Games.
+        Free to use, free to contribute.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn-primary" href="#getting-started">Get Started</a>
+        <a class="btn btn-outline-white" href="https://www.sapsailing.com/gwt/Home.html" target="_blank" rel="noopener">Open Application</a>
+        <a class="btn btn-outline-white" href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="hero__stats">
+        <div>
+          <div class="hero__stat-value">2×</div>
+          <div class="hero__stat-label">Olympic Games</div>
+        </div>
+        <div>
+          <div class="hero__stat-value">~1M</div>
+          <div class="hero__stat-label">Olympic visitors</div>
+        </div>
+        <div>
+          <div class="hero__stat-value">15+</div>
+          <div class="hero__stat-label">GPS connectors</div>
+        </div>
+        <div>
+          <div class="hero__stat-value">225+</div>
+          <div class="hero__stat-label">OSGi modules</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ SOLUTIONS ══════════════════════════════ -->
+<section class="section" id="solutions">
+  <div class="container">
+    <p class="eyebrow eyebrow--yellow">Solutions</p>
+    <h2>A full suite of sailing tools</h2>
+    <p class="lead" style="max-width:600px;margin-top:10px;">
+      From the main cloud platform to companion mobile apps, every component is open-source
+      and designed to work together.
     </p>
+
+    <!-- Sailing Analytics -->
+    <div class="solution">
+      <div class="solution__img">
+        <img src="source/sailing-analytics.png"
+             alt="SAP Sailing Analytics web platform">
+      </div>
+      <div class="solution__text">
+        <span class="solution__tag solution__tag--web">Web Platform</span>
+        <h3>SAP Sailing Analytics</h3>
+        <p>By delivering real-time analytics around race rankings, speeds, maneuvers, and bearings,
+           SAP Sailing Analytics helps simplify and demystify the complex sport of sailing.
+           The platform processes GPS and wind measurement data in real time using cloud and
+           in-memory technology, visualizing content in various frontends accessible from anywhere.</p>
+        <div class="solution__links">
+          <button class="btn btn-primary" onclick="openModal('modal-sa')">Learn More</button>
+          <a class="btn btn-ghost" href="https://www.sapsailing.com/gwt/Home.html" target="_blank" rel="noopener">Open Application</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Race Manager -->
+    <div class="solution solution--reverse">
+      <div class="solution__img img-slider" id="slider-rm">
+        <div class="img-slider__track">
+          <img src="source/sailing-race-manager-1.png" alt="Sailing Race Manager screenshot 1">
+          <img src="source/sailing-race-manager-2.png" alt="Sailing Race Manager screenshot 2">
+          <img src="source/sailing-race-manager-3.png" alt="Sailing Race Manager screenshot 3">
+          <img src="source/sailing-race-manager-4.png" alt="Sailing Race Manager screenshot 4">
+        </div>
+        <button class="img-slider__btn img-slider__btn--prev" onclick="sliderPrev('slider-rm')">&#8249;</button>
+        <button class="img-slider__btn img-slider__btn--next" onclick="sliderNext('slider-rm')">&#8250;</button>
+        <div class="img-slider__dots" id="dots-rm">
+          <button class="img-slider__dot active" onclick="sliderGoto('slider-rm',0)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-rm',1)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-rm',2)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-rm',3)"></button>
+        </div>
+      </div>
+      <div class="solution__text">
+        <span class="solution__tag solution__tag--android">Android App</span>
+        <h3>Sailing Race Manager</h3>
+        <p>A powerful Android app for race committees and event officers. Manage start sequences,
+           record finishes, handle flags, and sync results directly to the Sailing Analytics
+           cloud — all from a tablet on the committee boat.</p>
+        <div class="solution__links">
+          <button class="btn btn-primary" onclick="openModal('modal-rm')">Learn More</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sail Insight -->
+    <div class="solution">
+      <div class="solution__img img-slider" id="slider-si">
+        <div class="img-slider__track">
+          <img src="source/sail-insight-1.png" alt="Sail Insight screenshot 1">
+          <img src="source/sail-insight-2.png" alt="Sail Insight screenshot 2">
+          <img src="source/sail-insight-3.png" alt="Sail Insight screenshot 3">
+          <img src="source/sail-insight-4.png" alt="Sail Insight screenshot 4">
+        </div>
+        <button class="img-slider__btn img-slider__btn--prev" onclick="sliderPrev('slider-si')">&#8249;</button>
+        <button class="img-slider__btn img-slider__btn--next" onclick="sliderNext('slider-si')">&#8250;</button>
+        <div class="img-slider__dots" id="dots-si">
+          <button class="img-slider__dot active" onclick="sliderGoto('slider-si',0)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-si',1)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-si',2)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-si',3)"></button>
+        </div>
+      </div>
+      <div class="solution__text">
+        <span class="solution__tag solution__tag--ios">iOS &amp; Android App</span>
+        <h3>Sail Insight</h3>
+        <p>Sailboat racers can join, set up, and manage GPS tracking for regattas of various formats
+           easier than ever before. One-design and single-number handicap regattas are supported,
+           with ORC Polar Curve Scoring coming soon. Connects to the SAP Sailing Analytics cloud
+           for deep performance analysis.</p>
+        <div class="solution__links">
+          <button class="btn btn-primary" onclick="openModal('modal-si')">Learn More</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buoy Pinger -->
+    <div class="solution solution--reverse">
+      <div class="solution__img img-slider" id="slider-bp">
+        <div class="img-slider__track">
+          <img src="source/sailing-buoy-pinger-1.png" alt="Sailing Buoy Pinger screenshot 1">
+          <img src="source/sailing-buoy-pinger-2.png" alt="Sailing Buoy Pinger screenshot 2">
+          <img src="source/sailing-buoy-pinger-3.png" alt="Sailing Buoy Pinger screenshot 3">
+        </div>
+        <button class="img-slider__btn img-slider__btn--prev" onclick="sliderPrev('slider-bp')">&#8249;</button>
+        <button class="img-slider__btn img-slider__btn--next" onclick="sliderNext('slider-bp')">&#8250;</button>
+        <div class="img-slider__dots" id="dots-bp">
+          <button class="img-slider__dot active" onclick="sliderGoto('slider-bp',0)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-bp',1)"></button>
+          <button class="img-slider__dot" onclick="sliderGoto('slider-bp',2)"></button>
+        </div>
+      </div>
+      <div class="solution__text">
+        <span class="solution__tag solution__tag--android">Android App</span>
+        <h3>Sailing Buoy Pinger</h3>
+        <p>Simplify the positioning of race marks and communication with mark layers, anywhere and
+           anytime. This app connects to SAP Sailing Analytics, allowing regatta managers to track
+           the geographical position of their race marks and enabling Sail Insight GPS tracking for
+           participating sailors.</p>
+        <div class="solution__links">
+          <button class="btn btn-primary" onclick="openModal('modal-bp')">Learn More</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy Simulator -->
+    <div class="solution">
+      <div class="solution__img">
+        <img src="source/strategy-simulator.png"
+             alt="SAP Sailing Strategy Simulator">
+      </div>
+      <div class="solution__text">
+        <span class="solution__tag solution__tag--web">Web Platform</span>
+        <h3>Strategy Simulator</h3>
+        <p>Choosing the right strategy can provide great competitive advantage during a race.
+           The Strategy Simulator determines the best sailing strategy for various wind conditions
+           and water currents. Since wind and current can be changed in the simulation in real time,
+           the robustness of a strategy can be easily evaluated even for uncertain weather conditions.</p>
+        <div class="solution__links">
+          <button class="btn btn-primary" onclick="openModal('modal-ss')">Learn More</button>
+          <a class="btn btn-ghost" href="https://www.sapsailing.com/gwt/Simulator.html" target="_blank" rel="noopener">Open Application</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ GETTING STARTED ═══════════════════════ -->
+<section class="section getting-started" id="getting-started">
+  <div class="container">
+    <p class="eyebrow">Quick Start</p>
+    <h2>Up and running in minutes</h2>
+    <p class="lead" style="max-width:540px;margin-top:10px;">
+      The fastest way to explore SAP Sailing Analytics locally is via Docker Compose —
+      no build required, just pull and run.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="step__num">1</div>
+        <h3>Prerequisites</h3>
+        <p>Install <strong style="color:rgba(255,255,255,.85)">Docker</strong> and
+           <strong style="color:rgba(255,255,255,.85)">Docker Compose</strong>.
+           Works on Linux, macOS, and Windows with bash.</p>
+      </div>
+      <div class="step">
+        <div class="step__num">2</div>
+        <h3>Fetch &amp; Launch</h3>
+        <p>Download the Compose file and start MongoDB, RabbitMQ, and Sailing Analytics
+           with a single command.</p>
+      </div>
+      <div class="step">
+        <div class="step__num">3</div>
+        <h3>Open the UI</h3>
+        <p>Navigate to <strong style="color:rgba(255,255,255,.85)">http://127.0.0.1:8888</strong>
+           and log in to the Admin Console with
+           <code style="color:var(--yellow)">admin / admin</code>.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block__bar"><span></span><span></span><span></span></div>
+      <pre><span class="cc"># Download the Docker Compose configuration</span>
+<span class="ck">wget</span> <span class="cv">"https://github.com/SAP/sailing-analytics/raw/main/docker/docker-compose.yml"</span>
+
+<span class="cc"># Start MongoDB, RabbitMQ, and Sailing Analytics</span>
+<span class="ck">docker-compose</span> up
+
+<span class="cc"># Open the Admin Console at http://127.0.0.1:8888/gwt/AdminConsole.html</span>
+<span class="cc"># Default credentials: admin / admin</span></pre>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:28px;">
+      <a class="btn btn-yellow" href="wiki.html?page=howto/onboarding" target="_blank" rel="noopener">Full Onboarding Guide</a>
+      <a class="btn btn-outline-white" href="https://github.com/SAP/sailing-analytics/releases" target="_blank" rel="noopener">Latest Release</a>
+      <a class="btn btn-outline-white" href="https://github.com/SAP/sailing-analytics/pkgs/container/sailing-analytics" target="_blank" rel="noopener">Docker Image</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ DOCUMENTATION ════════════════════════ -->
+<section class="section section--alt" id="docs">
+  <div class="container">
+    <p class="eyebrow">Documentation</p>
+    <h2>Everything you need to go further</h2>
+    <p class="lead" style="max-width:560px;margin-top:10px;">
+      Comprehensive guides for sailors, event managers, and developers —
+      hosted in the <a href="wiki.html" style="color:var(--blue)">project wiki</a>.
+    </p>
+    <div class="docs__grid">
+
+      <div class="doc-group">
+        <div class="doc-group__icon">🚀</div>
+        <h3>Getting Started</h3>
+        <ul>
+          <li><a href="wiki.html?page=howto/onboarding" target="_blank" rel="noopener">Developer Onboarding</a></li>
+          <li><a href="wiki.html?page=howto/glossary" target="_blank" rel="noopener">Sailing Glossary</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/sign-up" target="_blank" rel="noopener">Sign Up</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/simple-event-creation" target="_blank" rel="noopener">Create Your First Event</a></li>
+          <li><a href="wiki.html?page=info/general/general-information" target="_blank" rel="noopener">Project Overview</a></li>
+        </ul>
+      </div>
+
+      <div class="doc-group">
+        <div class="doc-group__icon">🏁</div>
+        <h3>Event Management</h3>
+        <ul>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/create-regattas" target="_blank" rel="noopener">Create Regattas</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/set-up-course" target="_blank" rel="noopener">Set Up a Course</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/publish-event" target="_blank" rel="noopener">Publish an Event</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/importing-results" target="_blank" rel="noopener">Import Results</a></li>
+          <li><a href="wiki.html?page=howto/eventmanagers/manage-media-content" target="_blank" rel="noopener">Manage Media Content</a></li>
+          <li><a href="wiki.html?page=howto/setup-orc-regatta" target="_blank" rel="noopener">Set Up ORC Regatta</a></li>
+        </ul>
+      </div>
+
+      <div class="doc-group">
+        <div class="doc-group__icon">📱</div>
+        <h3>App Tutorials</h3>
+        <ul>
+          <li><a href="wiki.html?page=howto/tutorials/sailinsight/getting-started" target="_blank" rel="noopener">Sail Insight: Getting Started</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailingracemanager/sailing-race-guide" target="_blank" rel="noopener">Race Manager Guide</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/race-manager-connection" target="_blank" rel="noopener">Connect Race Manager</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/tracking-race-player" target="_blank" rel="noopener">Race Replay Player</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/sailinganalytics/data-mining-tool" target="_blank" rel="noopener">Data Mining Tool</a></li>
+        </ul>
+      </div>
+
+      <div class="doc-group">
+        <div class="doc-group__icon">🔌</div>
+        <h3>API &amp; Integration</h3>
+        <ul>
+          <li><a href="wiki.html?page=info/api/api-v1" target="_blank" rel="noopener">REST API v1 Reference</a></li>
+          <li><a href="wiki.html?page=info/api/sailing-webservices" target="_blank" rel="noopener">Web Services API</a></li>
+          <li><a href="wiki.html?page=info/api/tracking-app-api" target="_blank" rel="noopener">Tracking App API</a></li>
+          <li><a href="wiki.html?page=howto/expeditionimport" target="_blank" rel="noopener">Expedition Import</a></li>
+          <li><a href="wiki.html?page=howto/windestimation" target="_blank" rel="noopener">Wind Estimation</a></li>
+        </ul>
+      </div>
+
+      <div class="doc-group">
+        <div class="doc-group__icon">☁️</div>
+        <h3>Deployment &amp; Ops</h3>
+        <ul>
+          <li><a href="wiki.html?page=info/landscape/building-and-deploying" target="_blank" rel="noopener">Build &amp; Deploy</a></li>
+          <li><a href="wiki.html?page=info/landscape/amazon-ec2" target="_blank" rel="noopener">AWS EC2 Setup</a></li>
+          <li><a href="wiki.html?page=howto/misc/server-replication" target="_blank" rel="noopener">Server Replication</a></li>
+          <li><a href="wiki.html?page=info/landscape/runtime-environment" target="_blank" rel="noopener">Runtime Environment</a></li>
+          <li><a href="wiki.html?page=info/landscape/docker-registry" target="_blank" rel="noopener">Docker Registry</a></li>
+        </ul>
+      </div>
+
+      <div class="doc-group">
+        <div class="doc-group__icon">⚙️</div>
+        <h3>Development</h3>
+        <ul>
+          <li><a href="wiki.html?page=info/landscape/basic-architectural-principles" target="_blank" rel="noopener">Architecture Principles</a></li>
+          <li><a href="wiki.html?page=howto/development/super-dev-mode" target="_blank" rel="noopener">GWT Super Dev Mode</a></li>
+          <li><a href="wiki.html?page=howto/development/profiling" target="_blank" rel="noopener">JVM Profiling</a></li>
+          <li><a href="wiki.html?page=howto/development/selenium-ui-tests" target="_blank" rel="noopener">Selenium UI Tests</a></li>
+          <li><a href="wiki.html?page=info/landscape/typical-development-scenarios" target="_blank" rel="noopener">Development Scenarios</a></li>
+          <li><a href="wiki.html?page=info/landscape/ai-agent" target="_blank" rel="noopener">AI Agent Integration</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ TECHNOLOGY ════════════════════════════ -->
+<section class="section getting-started" id="tech">
+  <div class="container">
+    <p class="eyebrow">Technology</p>
+    <h2>Built on proven open-source foundations</h2>
+    <p class="lead" style="max-width:560px;margin-top:10px;">
+      A polyglot stack — Java backend, GWT frontend, mobile apps — all tied together
+      by battle-tested middleware and cloud infrastructure.
+    </p>
+    <div class="tech__grid">
+      <div class="tech-item tech-item--invert">
+        <img src="https://cdn.simpleicons.org/openjdk/333333" alt="Java">
+        <span>Java 8+</span>
+        <small>Core server runtime &amp; all business logic</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/eclipseide/2C2255" alt="OSGi / Eclipse">
+        <span>OSGi / Equinox</span>
+        <small>Modular plugin architecture — 225+ bundles</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/google/4285F4" alt="GWT">
+        <span>GWT</span>
+        <small>Java-to-JavaScript web frontend compiler</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/mongodb/47A248" alt="MongoDB">
+        <span>MongoDB</span>
+        <small>Primary store for race &amp; GPS data</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/rabbitmq/FF6600" alt="RabbitMQ">
+        <span>RabbitMQ</span>
+        <small>Live GPS event bus between services</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/docker/2496ED" alt="Docker">
+        <span>Docker</span>
+        <small>Containerized deployment &amp; local dev</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/kubernetes/326CE5" alt="Kubernetes">
+        <span>Kubernetes</span>
+        <small>Production orchestration &amp; scaling</small>
+      </div>
+      <div class="tech-item">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 48" width="40" height="24" style="margin:8px 0">
+          <text x="0" y="36" font-family="Arial,sans-serif" font-weight="900" font-size="36" fill="#FF9900">aws</text>
+        </svg>
+        <span>AWS</span>
+        <small>Cloud hosting — EC2, S3, CloudFront</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/android/34A853" alt="Android">
+        <span>Android</span>
+        <small>Race Manager &amp; Buoy Pinger apps</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/apple/000000" alt="iOS">
+        <span>iOS / Swift</span>
+        <small>Sail Insight GPS tracking app</small>
+      </div>
+      <div class="tech-item">
+        <img src="https://cdn.simpleicons.org/apachemaven/C71A36" alt="Maven">
+        <span>Maven</span>
+        <small>Build system for all Java modules</small>
+      </div>
+      <div class="tech-item tech-item--invert">
+        <img src="https://cdn.simpleicons.org/eclipsejetty/333333" alt="Jetty">
+        <span>Jetty</span>
+        <small>Embedded HTTP server inside OSGi</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ WHAT'S NEW ════════════════════════════ -->
+<section class="section" id="whatsnew">
+  <div class="container">
+    <div class="whatsnew__header">
+      <div>
+        <p class="eyebrow eyebrow--yellow">What's New</p>
+        <h2>Latest updates across the platform</h2>
+        <p class="lead" style="max-width:560px;margin-top:10px;">
+          All products are actively maintained. Expand a product below to see its changelog.
+        </p>
+      </div>
+    </div>
+
+    <div class="accordion">
+
+      <div id="whatsnew-sticky" class="whatsnew__sticky-bar">
+        <button id="whatsnew-close-btn" class="whatsnew__close-btn" onclick="closeAllAccordions()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Close all
+        </button>
+      </div>
+
+      <!-- Sailing Analytics -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <span>Sailing Analytics</span>
+            <span class="accordion-tag tag-web">Web</span>
+          </div>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body" data-src="https://raw.githubusercontent.com/SAP/sailing-analytics/main/java/com.sap.sailing.gwt.ui/src/main/java/com/sap/sailing/gwt/home/desktop/places/whatsnew/resources/SailingAnalyticsNotes.html">
+          <div class="accordion-loading">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Race Manager -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <span>Sailing Race Manager</span>
+            <span class="accordion-tag tag-android">Android</span>
+          </div>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body" data-src="https://raw.githubusercontent.com/SAP/sailing-analytics/main/java/com.sap.sailing.gwt.ui/src/main/java/com/sap/sailing/gwt/home/desktop/places/whatsnew/resources/RaceCommitteeAppNotes.html">
+          <div class="accordion-loading">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Sail Insight -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <span>Sail Insight</span>
+            <span class="accordion-tag tag-ios">iOS &amp; Android</span>
+          </div>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body" data-src="https://raw.githubusercontent.com/SAP/sailing-analytics/main/java/com.sap.sailing.gwt.ui/src/main/java/com/sap/sailing/gwt/home/desktop/places/whatsnew/resources/InSightAppNotes.html">
+          <div class="accordion-loading">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Buoy Pinger -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <span>Sailing Buoy Pinger</span>
+            <span class="accordion-tag tag-android">Android</span>
+          </div>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body" data-src="https://raw.githubusercontent.com/SAP/sailing-analytics/main/java/com.sap.sailing.gwt.ui/src/main/java/com/sap/sailing/gwt/home/desktop/places/whatsnew/resources/BuoyPingerAppNotes.html">
+          <div class="accordion-loading">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Strategy Simulator -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <span>Strategy Simulator</span>
+            <span class="accordion-tag tag-web">Web</span>
+          </div>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body" data-src="https://raw.githubusercontent.com/SAP/sailing-analytics/main/java/com.sap.sailing.gwt.ui/src/main/java/com/sap/sailing/gwt/home/desktop/places/whatsnew/resources/SailingSimulatorNotes.html">
+          <div class="accordion-loading">Loading…</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ FOOTER ════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <img src="../java/com.sap.sailing.www/images/sap-logo.png"
+             alt="SAP Sailing Analytics">
+        <p>Open-source regatta analytics platform — live GPS tracking, race analysis, and fan engagement. Proven at the Olympic Games.</p>
+        <div class="footer__social">
+          <a href="https://instagram.com/sap" target="_blank" rel="noopener" title="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <a href="https://x.com/sap" target="_blank" rel="noopener" title="X / Twitter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://facebook.com/SAP" target="_blank" rel="noopener" title="Facebook">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener" title="GitHub">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer__col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#solutions">Solutions</a></li>
+          <li><a href="#getting-started">Quick Start</a></li>
+          <li><a href="#whatsnew">What's New</a></li>
+          <li><a href="https://www.sapsailing.com/gwt/Home.html" target="_blank" rel="noopener">Application</a></li>
+          <li><a href="https://github.com/SAP/sailing-analytics/releases" target="_blank" rel="noopener">Releases</a></li>
+        </ul>
+      </div>
+
+      <div class="footer__col">
+        <h4>Developers</h4>
+        <ul>
+          <li><a href="wiki.html" target="_blank" rel="noopener">Wiki</a></li>
+          <li><a href="wiki.html?page=howto/onboarding" target="_blank" rel="noopener">Onboarding</a></li>
+          <li><a href="wiki.html?page=info/api/api-v1" target="_blank" rel="noopener">API Reference</a></li>
+          <li><a href="https://github.com/SAP/sailing-analytics/actions" target="_blank" rel="noopener">CI / CD</a></li>
+          <li><a href="https://github.com/eclipse-sailing-analytics/sailing-analytics/issues/" target="_blank" rel="noopener">Issue Tracker</a></li>
+        </ul>
+      </div>
+
+      <div class="footer__col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/SAP/.github/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener">Code of Conduct</a></li>
+          <li><a href="wiki.html?page=howto/tutorials/home" target="_blank" rel="noopener">Support</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <p>&copy; 2011&ndash;2026 SAP SE or an SAP affiliate company and sailing-analytics contributors.</p>
+      <div class="footer__bottom-links">
+        <a href="https://www.sapsailing.com/gwt/Home.html#/imprint/:" target="_blank" rel="noopener">Legal Disclosure</a>
+        <a href="https://www.sap.com/about/legal/privacy.html" target="_blank" rel="noopener">Privacy</a>
+        <a href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener">Source Code</a>
+        <a href="wiki.html?page=howto/tutorials/home" target="_blank" rel="noopener">Support</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════ MODALS ════════════════════════════════ -->
+
+<!-- Modal: Sailing Analytics -->
+<div class="modal-overlay" id="modal-sa" onclick="closeModalOnOverlay(event, 'modal-sa')">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__header-left">
+        <div class="modal__header-title">SAP Sailing Analytics</div>
+        <div class="modal__header-sub">Web Platform · Cloud &amp; In-Memory</div>
+      </div>
+      <button class="modal__close" onclick="closeModal('modal-sa')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__cards">
+        <a class="modal__card" href="https://www.sapsailing.com/gwt/Home.html" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">🚀</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Open Application</div>
+            <div class="modal__card-desc">sapsailing.com — real events, real data</div>
+          </div>
+          <span class="modal__card-arrow">→</span>
+        </a>
+        <a class="modal__card" href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--yellow">⭐</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">GitHub Repository</div>
+            <div class="modal__card-desc">Source code, issues, pull requests</div>
+          </div>
+          <span class="modal__card-arrow">→</span>
+        </a>
+      </div>
+      <div class="modal__section-label">Documentation</div>
+      <div class="modal__cards modal__cards--2">
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailinganalytics/create-regattas" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">🏁</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Create Your First Event</div>
+            <div class="modal__card-desc">Step-by-step regatta setup</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailinganalytics/data-mining-tool" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">📊</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Data Mining Tool</div>
+            <div class="modal__card-desc">Race analytics deep-dive</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=info/api/sailing-webservices" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--yellow">🔌</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">REST API Reference</div>
+            <div class="modal__card-desc">Web services &amp; integrations</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=howto/onboarding" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--green">⚙️</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Developer Onboarding</div>
+            <div class="modal__card-desc">Build &amp; run the project locally</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Race Manager -->
+<div class="modal-overlay" id="modal-rm" onclick="closeModalOnOverlay(event, 'modal-rm')">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__header-left">
+        <div class="modal__header-title">Sailing Race Manager</div>
+        <div class="modal__header-sub">Android App · Race Committee Tool</div>
+      </div>
+      <button class="modal__close" onclick="closeModal('modal-rm')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__section-label">Download</div>
+      <div class="modal__store-row">
+        <a class="modal__store-btn" href="https://play.google.com/store/apps/details?id=com.sap.sailing.racecommittee.app" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.76a2 2 0 002.19-.31l11.27-6.51-3.1-3.1-10.36 9.92zm-1.56-20.5A2 2 0 001 5v14a2 2 0 00.62 1.74l.08.07 7.84-7.84v-.18L1.62 3.26zm17.64 8.07L16.6 9.1l-3.26 3.26 3.26 3.26 2.68-1.55a2 2 0 000-3.44zM5.37.55A2 2 0 003.18.24L13.55 10.6l-3.1 3.1L5.37.55z"/></svg>
+          Google Play
+        </a>
+      </div>
+      <div class="modal__section-label">Documentation</div>
+      <div class="modal__cards modal__cards--2">
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailingracemanager/sailing-race-guide" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">📖</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">User Guide</div>
+            <div class="modal__card-desc">Complete race manager walkthrough</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailingracemanager/configure-wind-settings" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--yellow">💨</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Configure Wind</div>
+            <div class="modal__card-desc">Wind sensor setup &amp; settings</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=info/mobile/racecommittee-app" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--green">🏗️</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">App Architecture</div>
+            <div class="modal__card-desc">Technical design &amp; concepts</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailinganalytics/sailing-race-manager" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--purple">🔗</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Connect to Analytics</div>
+            <div class="modal__card-desc">Link Race Manager to the platform</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Sail Insight -->
+<div class="modal-overlay" id="modal-si" onclick="closeModalOnOverlay(event, 'modal-si')">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__header-left">
+        <div class="modal__header-title">Sail Insight</div>
+        <div class="modal__header-sub">iOS &amp; Android · GPS Tracking for Sailors</div>
+      </div>
+      <button class="modal__close" onclick="closeModal('modal-si')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__section-label">Download</div>
+      <div class="modal__store-row">
+        <a class="modal__store-btn" href="https://apps.apple.com/us/app/sail-insight-powered-by-sap/id1495355086" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          App Store
+        </a>
+        <a class="modal__store-btn" href="https://play.google.com/store/apps/details?id=org.sailyachtresearch.sailinsight" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.76a2 2 0 002.19-.31l11.27-6.51-3.1-3.1-10.36 9.92zm-1.56-20.5A2 2 0 001 5v14a2 2 0 00.62 1.74l.08.07 7.84-7.84v-.18L1.62 3.26zm17.64 8.07L16.6 9.1l-3.26 3.26 3.26 3.26 2.68-1.55a2 2 0 000-3.44zM5.37.55A2 2 0 003.18.24L13.55 10.6l-3.1 3.1L5.37.55z"/></svg>
+          Google Play
+        </a>
+      </div>
+      <div class="modal__section-label">Documentation</div>
+      <div class="modal__cards modal__cards--2">
+        <a class="modal__card" href="wiki.html?page=howto/tutorials/sailinsight/getting-started" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">🚀</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Getting Started</div>
+            <div class="modal__card-desc">First-time setup &amp; tracking</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=info/mobile/mobilesailinganalytics" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--purple">📱</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Mobile Overview</div>
+            <div class="modal__card-desc">Architecture &amp; design goals</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Buoy Pinger -->
+<div class="modal-overlay" id="modal-bp" onclick="closeModalOnOverlay(event, 'modal-bp')">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__header-left">
+        <div class="modal__header-title">Sailing Buoy Pinger</div>
+        <div class="modal__header-sub">Android App · Race Mark Positioning</div>
+      </div>
+      <button class="modal__close" onclick="closeModal('modal-bp')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__section-label">Download</div>
+      <div class="modal__store-row">
+        <a class="modal__store-btn" href="https://play.google.com/store/apps/details?id=com.sap.sailing.android.buoy.positioning.app" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.76a2 2 0 002.19-.31l11.27-6.51-3.1-3.1-10.36 9.92zm-1.56-20.5A2 2 0 001 5v14a2 2 0 00.62 1.74l.08.07 7.84-7.84v-.18L1.62 3.26zm17.64 8.07L16.6 9.1l-3.26 3.26 3.26 3.26 2.68-1.55a2 2 0 000-3.44zM5.37.55A2 2 0 003.18.24L13.55 10.6l-3.1 3.1L5.37.55z"/></svg>
+          Google Play
+        </a>
+      </div>
+      <div class="modal__section-label">Documentation</div>
+      <div class="modal__cards modal__cards--2">
+        <a class="modal__card" href="wiki.html?page=info/mobile/smartphone-tracking-steps" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">📍</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Tracking Setup</div>
+            <div class="modal__card-desc">Configure mark GPS tracking</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=info/mobile/smartphone-tracking-general" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--green">📡</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">How Tracking Works</div>
+            <div class="modal__card-desc">GPS signal pipeline overview</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Strategy Simulator -->
+<div class="modal-overlay" id="modal-ss" onclick="closeModalOnOverlay(event, 'modal-ss')">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__header-left">
+        <div class="modal__header-title">Strategy Simulator</div>
+        <div class="modal__header-sub">Web Platform · Wind &amp; Current Analysis</div>
+      </div>
+      <button class="modal__close" onclick="closeModal('modal-ss')">&times;</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__cards">
+        <a class="modal__card" href="https://www.sapsailing.com/gwt/Simulator.html" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">🧭</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Strategy Simulator Application</div>
+            <div class="modal__card-desc">Live wind &amp; current strategy tool</div>
+          </div>
+          <span class="modal__card-arrow">→</span>
+        </a>
+      </div>
+      <div class="modal__section-label">Documentation</div>
+      <div class="modal__cards modal__cards--2">
+        <a class="modal__card" href="wiki.html?page=misc/windestimation-core-concepts" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--blue">💨</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Wind Estimation</div>
+            <div class="modal__card-desc">Core concepts &amp; algorithms</div>
+          </div>
+        </a>
+        <a class="modal__card" href="wiki.html?page=howto/misc/polars" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--yellow">⛵</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">Polar Performance Data</div>
+            <div class="modal__card-desc">Boat speed curves explained</div>
+          </div>
+        </a>
+      </div>
+      <div class="modal__section-label">Source Code</div>
+      <div class="modal__cards">
+        <a class="modal__card" href="https://github.com/SAP/sailing-analytics" target="_blank" rel="noopener">
+          <div class="modal__card-icon modal__card-icon--green">💻</div>
+          <div class="modal__card-text">
+            <div class="modal__card-title">GitHub Repository</div>
+            <div class="modal__card-desc">Simulator module in java/com.sap.sailing.simulator</div>
+          </div>
+          <span class="modal__card-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Hero video — normal speed
+  (function() {
+    const vid = document.querySelector('.hero__bg video');
+    if (vid) {
+      vid.playbackRate = 1.0;
+    }
+  })();
+
+  // Image slider
+  var sliderState = {};
+  function sliderGoto(id, idx) {
+    var el = document.getElementById(id);
+    var track = el.querySelector('.img-slider__track');
+    var imgs = track.querySelectorAll('img');
+    var n = imgs.length;
+    idx = ((idx % n) + n) % n;
+    sliderState[id] = idx;
+    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+    var dots = document.getElementById('dots-' + id.replace('slider-', ''));
+    if (!dots) { dots = el.querySelector('.img-slider__dots'); }
+    dots.querySelectorAll('.img-slider__dot').forEach(function(d, i) {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+  function sliderPrev(id) {
+    sliderGoto(id, (sliderState[id] || 0) - 1);
+  }
+  function sliderNext(id) {
+    sliderGoto(id, (sliderState[id] || 0) + 1);
+  }
+
+  // Accordion: lazy-load source HTML on first open
+  function toggleAccordion(header) {
+    const body = header.nextElementSibling;
+    const isOpen = header.classList.contains('open');
+    header.classList.toggle('open', !isOpen);
+    body.classList.toggle('open', !isOpen);
+    updateAccordionFab();
+    if (!isOpen && body.dataset.src && !body.dataset.loaded) {
+      body.dataset.loaded = '1';
+      fetch(body.dataset.src)
+        .then(function(r) { return r.ok ? r.text() : Promise.reject(r.status); })
+        .then(function(html) {
+          // Extract the innerContent div from the source file
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html;
+          const inner = tmp.querySelector('.innerContent') || tmp.querySelector('#mainContent') || tmp;
+          const div = document.createElement('div');
+          div.className = 'whatsnew-content';
+          div.innerHTML = inner.innerHTML;
+          body.innerHTML = '';
+          body.appendChild(div);
+        })
+        .catch(function() {
+          body.innerHTML = '<div class="accordion-loading">Could not load changelog — <a href="' + body.dataset.src + '" target="_blank">view source file</a></div>';
+        });
+    }
+  }
+  // Close-all button: fixed position, visible only while #whatsnew is in viewport AND an accordion is open
+  var whatsnewVisible = false;
+  (function() {
+    var section = document.getElementById('whatsnew');
+    if (!section) return;
+    var obs = new IntersectionObserver(function(entries) {
+      whatsnewVisible = entries[0].isIntersecting;
+      updateAccordionFab();
+    }, { threshold: 0 });
+    obs.observe(section);
+  })();
+  function updateAccordionFab() {
+    var anyOpen = document.querySelector('.accordion-header.open') !== null;
+    document.getElementById('whatsnew-sticky').classList.toggle('visible', anyOpen && whatsnewVisible);
+  }
+  function closeAllAccordions() {
+    document.querySelectorAll('.accordion-header.open').forEach(function(h) {
+      h.classList.remove('open');
+      h.nextElementSibling.classList.remove('open');
+    });
+    updateAccordionFab();
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeModalOnOverlay(event, id) {
+    if (event.target === document.getElementById(id)) {
+      closeModal(id);
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+        m.classList.remove('open');
+      });
+      document.body.style.overflow = '';
+    }
+  });
+</script>
 </body>
+</html>
