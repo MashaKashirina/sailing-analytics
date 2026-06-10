@@ -425,7 +425,7 @@ public class RiotServerImpl extends AbstractReplicableWithObjectInputStream<Repl
     }
     
     @Override
-    public Device internalCreateDevice(String deviceSerialNumber) {
+    public synchronized Device internalCreateDevice(String deviceSerialNumber) {
         final long id = devices.isEmpty() ? 1 : Collections.max(devices.keySet()) + 1;
         final Device device = Device.create(id, deviceSerialNumber);
         devices.put(device.getId(), device);
