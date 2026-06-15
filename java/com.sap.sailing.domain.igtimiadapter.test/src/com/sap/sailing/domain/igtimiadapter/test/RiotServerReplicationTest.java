@@ -96,6 +96,7 @@ public class RiotServerReplicationTest extends AbstractRiotServerReplicationTest
         Thread.sleep(3000); // wait for replica to receive and apply after replicator has emptied its queue
         assertNotNull(master.getDeviceBySerialNumber(deviceSerialNumber));
         assertNotNull(replica.getDeviceBySerialNumber(deviceSerialNumber));
+        assertEquals(master.getDeviceBySerialNumber(deviceSerialNumber).getId(), replica.getDeviceBySerialNumber(deviceSerialNumber).getId());
         synchronized (bytesSent) {
             assertNotNull(bytesSent[0]);
             final Msg messageReceived = Msg.parseFrom(bytesSent[0]);
