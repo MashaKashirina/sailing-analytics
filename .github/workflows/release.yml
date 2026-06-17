@@ -25,6 +25,7 @@ on:
 jobs:
   # The "changes" job will cause the "build" job to get skipped for trivial changes
   changes:
+    permissions: {}
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.filter.outputs.code }}
@@ -238,6 +239,7 @@ jobs:
           curl -u "${{ vars.HUDSON_JOB_USERNAME }}:${{ secrets.HUDSON_JOB_PASSWORD}}" https://hudson.sapsailing.com/job/${JOB}/build?token=${{ secrets.HUDSON_JOB_TOKEN }}
 
   build-gate:
+    permissions: {}
     needs: [changes, build]
     if: always()
     runs-on: ubuntu-latest
