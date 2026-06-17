@@ -1,0 +1,15 @@
+name: release
+on:
+  push:
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/*'
+      - '**/*.md'
+      - 'README.md'
+      - 'docs/**'
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No relevant changes --- skipping."
