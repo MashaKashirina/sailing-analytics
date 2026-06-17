@@ -3339,6 +3339,8 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory {
             if (competitorIdAtRoot != null) {
                 loadManeuversForCompetitorNewFormat(doc, result, course, trackedRace);
             } else {
+                logger.warning("Found maneuver document in old format (all competitors in one document) for race "
+                        + raceIdentifier + ". Consider running migration to new per-competitor format to avoid BSON size limit issues on large races (bug 6226).");
                 loadManeuversForAllCompetitorsOldFormat(doc, result, course, trackedRace);
             }
         }
