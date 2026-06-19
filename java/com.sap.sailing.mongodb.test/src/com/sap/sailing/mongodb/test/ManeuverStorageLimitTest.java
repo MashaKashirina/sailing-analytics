@@ -108,27 +108,6 @@ public class ManeuverStorageLimitTest {
         assertEquals(totalManeuvers, totalManeuversLoaded, "Expected all maneuvers to be stored across pages");
     }
 
-    /**
-     * Demonstrates that the pre-pagination implementation fails with BsonMaximumSizeExceededException
-     * for a competitor with 15000 maneuvers (matching Axel's real-world case of 18,270). The old code
-     * stored all maneuvers in one document with no page splitting, reproduced here via
-     * OldSinglePageMongoObjectFactoryForBug6226Test.
-     */
-    @Test
-    public void testOldSinglePageImplementationFailsWithBsonLimitExceeded() {
-        final RegattaNameAndRaceName raceIdentifier = new RegattaNameAndRaceName("505 Pre-Worlds 2014 synthetic", "Race 1");
-        final Competitor competitor = mock(CompetitorImpl.class);
-        when(competitor.getId()).thenReturn("competitor-0");
-        final Map<Competitor, List<Maneuver>> maneuvers = new HashMap<>();
-        maneuvers.put(competitor, buildManeuverList(15000));
-        final ManeuverRaceFingerprint fingerprint = buildMockFingerprint();
-        final Course course = mock(Course.class);
-        assertThrows(BsonMaximumSizeExceededException.class, () ->
-            new OldSinglePageMongoObjectFactoryForBug6226Test(database).storeManeuvers(raceIdentifier, fingerprint, course, maneuvers),
-            "Old single-page implementation must throw BsonMaximumSizeExceededException for a competitor with 2500 maneuvers"
-        );
-    }
-
     private ManeuverRaceFingerprint buildMockFingerprint() {
         final ManeuverRaceFingerprint fingerprint = mock(ManeuverRaceFingerprint.class);
         final JSONObject fingerprintJson = new JSONObject();
