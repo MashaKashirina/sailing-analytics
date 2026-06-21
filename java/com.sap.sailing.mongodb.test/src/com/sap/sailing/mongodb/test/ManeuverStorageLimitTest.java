@@ -12,6 +12,7 @@ import java.util.Map;
 import org.bson.BsonMaximumSizeExceededException;
 import org.bson.Document;
 import org.json.simple.JSONObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,15 @@ public class ManeuverStorageLimitTest {
         final MongoClient mongoClient = MongoClients.create(dbConfiguration.getMongoClientURI());
         database = mongoClient.getDatabase(dbConfiguration.getDatabaseName());
         database.drop();
+    }
+    
+    @AfterEach
+    public void tearDown() {
+        dbConfiguration = MongoDBConfiguration.getDefaultTestConfiguration();
+        final MongoClient mongoClient = MongoClients.create(dbConfiguration.getMongoClientURI());
+        database = mongoClient.getDatabase(dbConfiguration.getDatabaseName());
+        database.drop(); // dropping *after* the test is particularly important to clean up otherwise unreadable
+                         // DUMMY/mock fingerprints
     }
 
     /**
